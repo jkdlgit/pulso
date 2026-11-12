@@ -62,16 +62,6 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         accent: '#38bdf8',
         website: 'optica-johanna.ec',
       },
-      {
-        id: 'taller',
-        name: 'Mecánica Luis',
-        emoji: '🔧',
-        industry: 'Taller Automotriz & Frenos',
-        hasLocalCrm: false,
-        currency: 'USD',
-        accent: '#f59e0b',
-        website: 'mecanicaluis.ec',
-      },
     ],
     campaigns: [
       {
@@ -82,10 +72,10 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         adset: 'Público 25-45 años Oficina',
         ad: 'Creativo Video Luz Azul v3',
         creative: 'Luz Azul & Pantallas',
-        spend: 15,
-        impressions: 1200,
-        clicks: 84,
-        started_on: new Date(Date.now() - 7 * 86_400_000).toISOString(),
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        started_on: new Date().toISOString(),
         status: 'activa',
       },
       {
@@ -96,10 +86,10 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         adset: 'Búsqueda Local Quito / Valle',
         ad: 'Anuncio Chequeo Completo',
         creative: 'Consulta Especialista',
-        spend: 10,
-        impressions: 890,
-        clicks: 52,
-        started_on: new Date(Date.now() - 14 * 86_400_000).toISOString(),
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        started_on: new Date().toISOString(),
         status: 'activa',
       },
     ],
@@ -114,18 +104,18 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         id: 'exp_quiz_versions',
         business_id: 'optica',
         name: 'Evaluación Quiz 3 (Fatiga Luz Azul) vs Quiz 1 (General)',
-        hypothesis: 'Un test específico de fatiga visual por pantallas incrementa la tasa de agendamiento en un 25%.',
+        hypothesis: 'Un test específico de fatiga visual por pantallas incrementa la tasa de agendamiento.',
         element: 'Enfoque temático y gancho inicial del Quiz',
         variants: [
           { name: 'Control · Quiz 1 General', visitors: 0, conversions: 0 },
           { name: 'Variante B · Quiz 3 Luz Azul', visitors: 0, conversions: 0 },
         ],
         metric: 'Tasa de agendamiento (Booking Rate)',
-        started_on: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+        started_on: new Date().toISOString(),
         ended_on: undefined,
         status: 'en_curso',
         result: 'Midiendo en tiempo real con interacciones de usuario',
-        confidence: 85,
+        confidence: 0,
         decision: 'sin_decision',
       },
     ],
@@ -137,13 +127,13 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         recommendation: 'Normalizador flexible que acepte cualquier formato ecuatoriano de 10 dígitos',
         action: 'Implementado normalizeEcuadorianPhone en usePulsoTracker',
         owner: 'Ingeniería / Telemetría',
-        implemented_at: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-        metric: 'Tasa de envío de formulario',
-        before_value: 58.2,
-        after_value: 94.6,
+        implemented_at: new Date().toISOString(),
+        metric: 'Tasa de validación de celular',
+        before_value: 0,
+        after_value: 100,
         unit: '%',
         status: 'implementada',
-        conclusion: 'Cero rechazos por formato de celular; +36.4% de leads recuperados.',
+        conclusion: 'Cero rechazos por formato de celular; validación 100% activa.',
       },
       {
         id: 'imp_telemetria_deduplicada',
@@ -152,13 +142,13 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         recommendation: 'Bloqueo estricto por session_id para registrar únicamente una reserva por sesión',
         action: 'Deduplicación atómica en usePulsoTracker y storage de sesión',
         owner: 'Analítica',
-        implemented_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+        implemented_at: new Date().toISOString(),
         metric: 'Precisión de conversión de agendamiento',
-        before_value: 71.0,
-        after_value: 99.8,
+        before_value: 0,
+        after_value: 100,
         unit: '%',
         status: 'implementada',
-        conclusion: 'Métricas limpias 1:1 verificables con el CRM.',
+        conclusion: 'Deduplicación 1:1 verificable con el CRM.',
       },
     ],
   }
@@ -493,6 +483,29 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       }
     })
 
+    // Actualizar campañas con las métricas observadas reales
+    const discoveredCampaigns: Campaign[] = []
+    const allCampaignIds = new Set<string>(['camp_luz_azul', ...campaignNames])
+    allCampaignIds.forEach(cId => {
+      const campSessions = sessions.filter(s => s.campaign_id === cId)
+      const isMeta = cId.toLowerCase().includes('meta') || cId.toLowerCase().includes('fb') || cId.includes('luz')
+      discoveredCampaigns.push({
+        id: cId,
+        business_id: 'optica',
+        platform: isMeta ? 'Meta Ads' : 'Google Ads',
+        name: cId === 'camp_luz_azul' ? 'Meta Ads · Fatiga Visual & Luz Azul' : `Campaña ${cId}`,
+        adset: 'Público Objetivo',
+        ad: 'Anuncio Digital',
+        creative: 'Creativo Quiz',
+        spend: 0,
+        impressions: campSessions.length,
+        clicks: campSessions.length,
+        started_on: campSessions[campSessions.length - 1]?.started_at || new Date().toISOString(),
+        status: 'activa',
+      })
+    })
+    base.campaigns = discoveredCampaigns
+
     // Actualizar experimentos en base a conversiones reales medidas
     const q1Visitors = sessions.filter(s => s.landing_page.includes('quiz1')).length
     const q1Booked = sessions.filter(s => s.landing_page.includes('quiz1') && s.booked).length
@@ -515,7 +528,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         ended_on: undefined,
         status: 'en_curso',
         result: q3Visitors > 0 ? `Quiz 3 tasa actual: ${((q3Booked / Math.max(1, q3Visitors)) * 100).toFixed(1)}% vs Quiz 1: ${((q1Booked / Math.max(1, q1Visitors)) * 100).toFixed(1)}%` : 'Esperando interacción del usuario',
-        confidence: q3Visitors >= 5 ? 95 : 80,
+        confidence: q3Visitors >= 5 ? 95 : q3Visitors > 0 ? 80 : 0,
         decision: q3Booked > q1Booked ? 'implementar' : 'sin_decision',
       },
     ]
