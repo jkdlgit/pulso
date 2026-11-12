@@ -35,7 +35,9 @@ const router = createRouter({
       ],
     },
 
-    // 🧪 Quiz interactivo para alimentar la analítica en tiempo real
+    // 🧪 Quizzes interactivos para alimentar la analítica en tiempo real
+    { path: '/quiz1', name: 'quiz1-general', component: () => import('../views/QuizGeneralView.vue') },
+    { path: '/quiz2', name: 'quiz2-visioncheck', component: () => import('../views/QuizVisionCheckView.vue') },
     { path: '/quiz3', name: 'quiz3-fatiga', component: () => import('../views/QuizFatigaView.vue') },
 
     // Compatibilidad con la app Pulso original
