@@ -59,6 +59,9 @@ export function applyFilters(ds: AnalyticsDataset, filters: AnalyticsFilters, en
       if (filters.buyer === 'buyers' && !s.purchased) return false
       if (filters.buyer === 'nonbuyers' && s.purchased) return false
     }
+    if (filters.quiz !== 'all') {
+      if (!s.landing_page.includes(filters.quiz)) return false
+    }
     return true
   })
 

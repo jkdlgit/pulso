@@ -33,6 +33,13 @@
         <option value="tablet">Tablet</option>
       </select>
 
+      <select v-model="filters.quiz" class="filter-select" title="Quiz / Landing">
+        <option value="all">Quiz: todos</option>
+        <option value="quiz1">Quiz 1 · Chequeo General</option>
+        <option value="quiz2">Quiz 2 · VisiónCheck</option>
+        <option value="quiz3">Quiz 3 · Luz Azul</option>
+      </select>
+
       <select v-model="filters.visitor" class="filter-select" title="Tipo de visitante">
         <option value="all">Visitante: todos</option>
         <option value="new">Nuevos</option>

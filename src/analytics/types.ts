@@ -272,6 +272,7 @@ export interface AnalyticsFilters {
   visitor: VisitorStatus
   buyer: BuyerStatus
   compare: boolean
+  quiz: 'all' | 'quiz1' | 'quiz2' | 'quiz3'
 }
 
 export interface Kpis {

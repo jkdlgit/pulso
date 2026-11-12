@@ -560,6 +560,8 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
     // Actualizar experimentos en base a conversiones reales medidas
     const q1Visitors = sessions.filter(s => s.landing_page.includes('quiz1')).length
     const q1Booked = sessions.filter(s => s.landing_page.includes('quiz1') && s.booked).length
+    const q2Visitors = sessions.filter(s => s.landing_page.includes('quiz2')).length
+    const q2Booked = sessions.filter(s => s.landing_page.includes('quiz2') && s.booked).length
     const q3Visitors = sessions.filter(s => s.landing_page.includes('quiz3') || s.landing_page.includes('luz')).length
     const q3Booked = sessions.filter(s => (s.landing_page.includes('quiz3') || s.landing_page.includes('luz')) && s.booked).length
 
@@ -567,20 +569,23 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       {
         id: 'exp_quiz_versions',
         business_id: 'optica',
-        name: 'Evaluación Quiz 3 (Fatiga Digital) vs Quiz 1 (General)',
+        name: 'Quiz 1 (General) vs Quiz 2 (VisiónCheck) vs Quiz 3 (Fatiga Digital)',
         hypothesis: 'El nuevo Quiz 3 de fatiga por luz azul genera mayor tasa de agendamiento gracias a un gancho publicitario más específico.',
         element: 'Copy inicial y diagnóstico de fatiga visual',
         variants: [
-          { name: 'Control · Quiz 1 General', visitors: q1Visitors, conversions: q1Booked },
-          { name: 'Variante B · Quiz 3 Luz Azul', visitors: q3Visitors, conversions: q3Booked },
+          { name: 'Quiz 1 · Chequeo General', visitors: q1Visitors, conversions: q1Booked },
+          { name: 'Quiz 2 · VisiónCheck', visitors: q2Visitors, conversions: q2Booked },
+          { name: 'Quiz 3 · Luz Azul / Fatiga', visitors: q3Visitors, conversions: q3Booked },
         ],
         metric: 'Tasa de agendamiento (Booking Rate)',
         started_on: new Date(Date.now() - 5 * 86_400_000).toISOString(),
         ended_on: undefined,
         status: 'en_curso',
-        result: q3Visitors > 0 ? `Quiz 3 tasa actual: ${((q3Booked / Math.max(1, q3Visitors)) * 100).toFixed(1)}% vs Quiz 1: ${((q1Booked / Math.max(1, q1Visitors)) * 100).toFixed(1)}%` : 'Esperando interacción del usuario',
-        confidence: q3Visitors >= 5 ? 95 : q3Visitors > 0 ? 80 : 0,
-        decision: q3Booked > q1Booked ? 'implementar' : 'sin_decision',
+        result: (q1Visitors + q2Visitors + q3Visitors) > 0
+          ? `Q1: ${((q1Booked / Math.max(1, q1Visitors)) * 100).toFixed(1)}% · Q2: ${((q2Booked / Math.max(1, q2Visitors)) * 100).toFixed(1)}% · Q3: ${((q3Booked / Math.max(1, q3Visitors)) * 100).toFixed(1)}%`
+          : 'Esperando interacción del usuario',
+        confidence: (q1Visitors + q2Visitors + q3Visitors) >= 5 ? 95 : (q1Visitors + q2Visitors + q3Visitors) > 0 ? 80 : 0,
+        decision: q3Booked > q1Booked && q3Booked > q2Booked ? 'implementar' : 'sin_decision',
       },
     ]
 

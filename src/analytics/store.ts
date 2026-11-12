@@ -32,6 +32,7 @@ const defaultFilters: AnalyticsFilters = {
   visitor: 'all',
   buyer: 'all',
   compare: true,
+  quiz: 'all',
 }
 
 const filters = reactive<AnalyticsFilters>({ ...defaultFilters })
