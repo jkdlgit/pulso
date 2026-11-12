@@ -202,20 +202,39 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
     // 2. Sesiones y eventos locales
     const localSessions = getLocalSessions()
     const localEvents = getLocalEvents()
-    const localSessionMap = new Map(localSessions.map(s => [s.id, s]))
 
-    // 3. Generar Visitantes y Sesiones a partir de los Leads reales
-    const visitors: Visitor[] = []
-    const sessions: Session[] = []
-    const appointments: Appointment[] = []
-    const communications: Communication[] = []
+    // 3. Estructuras de deduplicación estricta
+    const visitorMap = new Map<string, Visitor>()
+    const sessionMap = new Map<string, Session>()
+    const appointmentMap = new Map<string, Appointment>()
+    const communicationMap = new Map<string, Communication>()
+    const eventMap = new Map<string | number, AnalyticsEvent>()
     const sales: Sale[] = []
-    const events: AnalyticsEvent[] = [...localEvents]
+
+    // Indexar eventos locales existentes
+    localEvents.forEach(e => {
+      if (e && e.id) eventMap.set(e.id, e)
+    })
 
     // Campañas dinámicas descubiertas en los leads
     const campaignNames = new Set<string>()
 
+    // Filtrar visitas anónimas duplicadas creadas en ráfaga (mismo origen en ventana de 5s)
+    const filteredLeads: any[] = []
+    const seenVisits = new Set<string>()
     uniqueLeads.forEach(lead => {
+      if (lead.estado === 'Visita' && (!lead.nombre || lead.nombre === 'Visita Anónima')) {
+        const timeBucket = Math.floor(new Date(lead.created_at).getTime() / 5000)
+        const visitKey = `${lead.origen}_${timeBucket}`
+        if (seenVisits.has(visitKey)) {
+          return // Ignorar duplicado de ráfaga
+        }
+        seenVisits.add(visitKey)
+      }
+      filteredLeads.push(lead)
+    })
+
+    filteredLeads.forEach(lead => {
       const resp = lead.respuestas || {}
       const vid = resp.visitor_id || `optica_v${String(lead.id).padStart(4, '0')}`
       const sid = resp.session_id || `s_${lead.id}`
@@ -273,31 +292,40 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         pageviews.push({ path: '/agendar', label: 'Agendar Cita', scroll: 100, clicks: 5, seconds: 45, ts: lead.created_at })
       }
 
-      // Visitor Fact
-      visitors.push({
-        id: vid,
-        business_id: businessId,
-        first_seen: lead.created_at,
-        last_seen: lead.created_at,
-        sessions_count: 1,
-        device: devType,
-        os: devType === 'mobile' ? 'Android / iOS' : 'Windows / macOS',
-        browser: 'Chrome / Safari',
-        language: 'es-EC',
-        country: 'Ecuador',
-        city,
-        source,
-        medium,
-        campaign_id: campId,
-        landing_page: `/${quizName}`,
-        is_returning: false,
-        is_identified: isIdentified,
-        is_lead: isLead,
-        is_buyer: isBuyer,
-        revenue,
-      })
+      // Visitor Fact (Deduplicado)
+      if (visitorMap.has(vid)) {
+        const existingV = visitorMap.get(vid)!
+        existingV.last_seen = lead.created_at
+        existingV.is_lead = existingV.is_lead || isLead
+        existingV.is_identified = existingV.is_identified || isIdentified
+        existingV.is_buyer = existingV.is_buyer || isBuyer
+        existingV.revenue = Math.max(existingV.revenue, revenue)
+      } else {
+        visitorMap.set(vid, {
+          id: vid,
+          business_id: businessId,
+          first_seen: lead.created_at,
+          last_seen: lead.created_at,
+          sessions_count: 1,
+          device: devType,
+          os: devType === 'mobile' ? 'Android / iOS' : 'Windows / macOS',
+          browser: 'Chrome / Safari',
+          language: 'es-EC',
+          country: 'Ecuador',
+          city,
+          source,
+          medium,
+          campaign_id: campId,
+          landing_page: `/${quizName}`,
+          is_returning: false,
+          is_identified: isIdentified,
+          is_lead: isLead,
+          is_buyer: isBuyer,
+          revenue,
+        })
+      }
 
-      // Session Fact
+      // Session Fact (Deduplicado)
       const sFact: Session = {
         id: sid,
         visitor_id: vid,
@@ -335,42 +363,48 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         revenue,
         had_error: false,
       }
-      sessions.push(sFact)
+      sessionMap.set(sid, sFact)
 
-      // Citas
+      // Citas (Deduplicado por session_id)
       if (isBooked || lead.fecha_cita) {
-        appointments.push({
-          id: `apt_${lead.id}`,
-          business_id: businessId,
-          visitor_id: vid,
-          session_id: sid,
-          campaign_id: campId,
-          created_at: lead.created_at,
-          scheduled_for: lead.fecha_cita || lead.created_at,
-          status: isAttended ? 'atendida' : isConfirmed ? 'confirmada' : 'pendiente',
-          reminder: '24h',
-          lead_time_hours: 24,
-          source,
-        })
+        const aptKey = `apt_${lead.id}`
+        if (!appointmentMap.has(aptKey)) {
+          appointmentMap.set(aptKey, {
+            id: aptKey,
+            business_id: businessId,
+            visitor_id: vid,
+            session_id: sid,
+            campaign_id: campId,
+            created_at: lead.created_at,
+            scheduled_for: lead.fecha_cita || lead.created_at,
+            status: isAttended ? 'atendida' : isConfirmed ? 'confirmada' : 'pendiente',
+            reminder: '24h',
+            lead_time_hours: 24,
+            source,
+          })
+        }
       }
 
-      // Seguimiento y Comunicaciones WhatsApp
+      // Seguimiento y Comunicaciones WhatsApp (Deduplicado)
       if (isIdentified && lead.telefono) {
-        communications.push({
-          id: `comm_${lead.id}`,
-          business_id: businessId,
-          visitor_id: vid,
-          session_id: sid,
-          channel: 'WhatsApp',
-          direction: 'saliente',
-          sent_at: lead.created_at,
-          responded: isBooked,
-          status: isBooked ? 'respondido' : 'enviado',
-          outcome: isBooked ? 'agendado' : 'interesado',
-          first_contact: true,
-          minutes_to_reply: isBooked ? 8 : undefined,
-          notes: `Lead registrado: ${lead.nombre} (${lead.telefono}) · Resultado: ${lead.resultado || 'Quiz visual'}`,
-        })
+        const commKey = `comm_${lead.id}`
+        if (!communicationMap.has(commKey)) {
+          communicationMap.set(commKey, {
+            id: commKey,
+            business_id: businessId,
+            visitor_id: vid,
+            session_id: sid,
+            channel: 'WhatsApp',
+            direction: 'saliente',
+            sent_at: lead.created_at,
+            responded: isBooked,
+            status: isBooked ? 'respondido' : 'enviado',
+            outcome: isBooked ? 'agendado' : 'interesado',
+            first_contact: true,
+            minutes_to_reply: isBooked ? 8 : undefined,
+            notes: `Lead registrado: ${lead.nombre} (${lead.telefono}) · Resultado: ${lead.resultado || 'Quiz visual'}`,
+          })
+        }
       }
 
       // Ventas de pedidos reales
@@ -397,10 +431,11 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         })
       })
 
-      // Eventos atómicos para Live, Heatmaps y Replay
-      events.push(
-        {
-          id: Number(lead.id) * 10 + 1,
+      // Eventos atómicos para Live, Heatmaps y Replay (Deduplicados)
+      const evVisitaId = Number(lead.id) * 10 + 1
+      if (!eventMap.has(evVisitaId)) {
+        eventMap.set(evVisitaId, {
+          id: evVisitaId,
           business_id: businessId,
           session_id: sid,
           visitor_id: vid,
@@ -409,9 +444,13 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           page: `/${quizName}`,
           label: `Ingreso a ${quizName}`,
           metadata: { device: devType, source, city },
-        },
-        {
-          id: Number(lead.id) * 10 + 2,
+        })
+      }
+
+      const evStartId = Number(lead.id) * 10 + 2
+      if (!eventMap.has(evStartId)) {
+        eventMap.set(evStartId, {
+          id: evStartId,
           business_id: businessId,
           session_id: sid,
           visitor_id: vid,
@@ -420,44 +459,50 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           page: `/${quizName}`,
           label: 'Inicio de preguntas',
           metadata: { quiz: quizName },
-        }
-      )
-
-      if (lead.estado === 'Completado' || isBooked) {
-        events.push({
-          id: Number(lead.id) * 10 + 3,
-          business_id: businessId,
-          session_id: sid,
-          visitor_id: vid,
-          ts: lead.created_at,
-          type: 'quiz_complete',
-          page: '/resultado',
-          label: 'Completó evaluación',
-          metadata: { score: lead.resultado },
         })
       }
 
+      if (lead.estado === 'Completado' || isBooked) {
+        const evCompleteId = Number(lead.id) * 10 + 3
+        if (!eventMap.has(evCompleteId)) {
+          eventMap.set(evCompleteId, {
+            id: evCompleteId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: lead.created_at,
+            type: 'quiz_complete',
+            page: '/resultado',
+            label: 'Completó evaluación',
+            metadata: { score: lead.resultado },
+          })
+        }
+      }
+
       if (isBooked) {
-        events.push({
-          id: Number(lead.id) * 10 + 4,
-          business_id: businessId,
-          session_id: sid,
-          visitor_id: vid,
-          ts: lead.created_at,
-          type: 'booking',
-          page: '/agendar',
-          label: 'Cita Agendada',
-          metadata: { fecha: lead.fecha_cita, hora: lead.hora_cita },
-        })
+        const evBookId = Number(lead.id) * 10 + 4
+        if (!eventMap.has(evBookId)) {
+          eventMap.set(evBookId, {
+            id: evBookId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: lead.created_at,
+            type: 'booking',
+            page: '/agendar',
+            label: 'Cita Agendada',
+            metadata: { fecha: lead.fecha_cita, hora: lead.hora_cita },
+          })
+        }
       }
     })
 
     // Incorporar sesiones locales activas que aún no estén en base de datos
     localSessions.forEach(ls => {
-      if (!sessions.some(s => s.id === ls.id)) {
-        sessions.unshift(ls)
-        if (!visitors.some(v => v.id === ls.visitor_id)) {
-          visitors.unshift({
+      if (ls && ls.id && !sessionMap.has(ls.id)) {
+        sessionMap.set(ls.id, ls)
+        if (!visitorMap.has(ls.visitor_id)) {
+          visitorMap.set(ls.visitor_id, {
             id: ls.visitor_id,
             business_id: ls.business_id,
             first_seen: ls.started_at,
@@ -482,6 +527,12 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         }
       }
     })
+
+    const visitors = Array.from(visitorMap.values())
+    const sessions = Array.from(sessionMap.values())
+    const appointments = Array.from(appointmentMap.values())
+    const communications = Array.from(communicationMap.values())
+    const events = Array.from(eventMap.values())
 
     // Actualizar campañas con las métricas observadas reales
     const discoveredCampaigns: Campaign[] = []
