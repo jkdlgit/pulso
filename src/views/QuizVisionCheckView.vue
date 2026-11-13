@@ -219,7 +219,7 @@
           <p>📱 <strong class="text-white">Celular:</strong> {{ form.telefono }}</p>
           <p>🎯 <strong class="text-white">Agudeza estimada:</strong> {{ acuityScore }}</p>
           <p v-if="form.fecha_cita">📅 <strong class="text-white">Cita:</strong> {{ form.fecha_cita }} {{ form.hora_cita }}</p>
-          <p>📍 <strong class="text-white">Lugar:</strong> Óptica Johanna Matriz · Sangolquí</p>
+          <p>📍 <strong class="text-white">Lugar:</strong> Óptica Johanna Matriz · Guayaquil</p>
         </div>
         <a href="/analytics/visitors" class="inline-block mt-4 px-6 py-3 rounded-xl bg-violet-500/15 border border-violet-500/40 text-violet-300 font-mono text-sm hover:bg-violet-500/25 transition">
           📊 Ver en Pulso Analytics →
@@ -372,7 +372,7 @@ async function submitForm() {
     telefono: form.telefono,
     fecha_cita: form.fecha_cita || null,
     hora_cita: form.hora_cita || null,
-    sucursal: 'Matriz Sangolquí',
+    sucursal: 'Matriz Guayaquil',
     metadata: { ...answers, agudeza_estimada: acuityScore.value, diagnostico: diagnosisTitle.value },
   })
 

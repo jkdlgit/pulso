@@ -171,7 +171,7 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
             visitor_id: visitorId.value,
             session_id: sessionId.value,
             dispositivo: devType === 'mobile' ? 'móvil' : 'escritorio',
-            city: 'Quito',
+            city: 'Guayaquil',
           },
         }
         const { data, error } = await devDb.from('leads').insert(payload).select('id').single()

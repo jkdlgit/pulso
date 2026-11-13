@@ -82,8 +82,8 @@ export function createEmptyLiveDataset(): AnalyticsDataset {
         id: 'camp_google_optica',
         business_id: 'optica',
         platform: 'Google Ads',
-        name: 'Google Ads · Examen Visual Sangolquí',
-        adset: 'Búsqueda Local Quito / Valle',
+        name: 'Google Ads · Examen Visual Guayaquil',
+        adset: 'Búsqueda Local Guayaquil',
         ad: 'Anuncio Chequeo Completo',
         creative: 'Consulta Especialista',
         spend: 0,
@@ -257,7 +257,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const source = lead.utm_source || (quizName.includes('quiz') ? 'organico' : 'directo')
       const medium = lead.utm_medium || ''
       const campId = lead.utm_campaign || 'camp_luz_azul'
-      const city = resp.city || 'Quito'
+      const city = resp.city || (businessId === 'optica' ? 'Guayaquil' : 'Ecuador')
 
       if (lead.utm_campaign) campaignNames.add(lead.utm_campaign)
 
@@ -513,7 +513,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
             browser: ls.browser,
             language: 'es-EC',
             country: 'Ecuador',
-            city: 'Quito',
+            city: 'Guayaquil',
             source: ls.source,
             medium: ls.medium,
             campaign_id: ls.campaign_id,
