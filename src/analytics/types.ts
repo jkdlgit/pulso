@@ -425,3 +425,94 @@ export interface MetaDemographicInsight {
   clicks: number
   landing_page_views: number
 }
+
+// ============================================================================
+// CENTRO DE MANDO DE OPTIMIZACION (AGENTE DE DECISIÓN Y AUDITORÍA)
+// ============================================================================
+
+export interface QuizReconciliationRow {
+  quizKey: string
+  quizName: string
+  // Capa Meta Ads
+  metaSpend: number
+  metaImpressions: number
+  metaReach: number
+  metaClicks: number
+  metaCtr: number
+  metaCpc: number
+  metaLandingViews: number
+  metaCostPerLanding: number
+  // Capa Web / Telemetría
+  webSessions: number
+  arrivalEfficiency: number // (webSessions / metaClicks) * 100
+  quizStarts: number
+  startRate: number // (quizStarts / webSessions) * 100
+  quizCompletes: number
+  completionRate: number // (quizCompletes / quizStarts) * 100
+  // Capa CRM & Comercial
+  leads: number
+  leadConversionRate: number // (leads / quizCompletes) * 100
+  cplReal: number // metaSpend / leads
+  appointments: number
+  appointmentRate: number // (appointments / leads) * 100
+  costPerAppointment: number // metaSpend / appointments
+  sales: number
+  salesConversionRate: number // (sales / appointments) * 100
+  revenue: number
+  cacReal: number // metaSpend / sales
+  roasReal: number // revenue / metaSpend
+  // Validez Estadística
+  sampleSize: number
+  confidenceLevel: number // 0 a 100%
+  confidenceStatus: 'baja' | 'media' | 'alta'
+}
+
+export interface DiscrepancyGap {
+  id: string
+  stage: string
+  sourceA: string
+  valueA: number | string
+  sourceB: string
+  valueB: number | string
+  gapPct: number
+  impactSummary: string
+  rootCause: string
+  severity: 'alta' | 'media' | 'baja'
+  whyExplanation: string
+}
+
+export interface CriticalityItem {
+  id: string
+  level: 'P1' | 'P2' | 'P3' // P1 Crítico, P2 Alerta, P3 Oportunidad
+  type: 'falla' | 'estancado' | 'positivo'
+  title: string
+  affectedQuiz: string
+  impactMetric: string
+  dollarImpactEstimate: string
+  evidence: string
+  recommendation: string
+}
+
+export interface SimulationScenario {
+  id: string
+  quizKey: string
+  title: string
+  lever: string
+  currentValue: number
+  improvedValue: number
+  unit: string
+  projectedLeads: number
+  projectedAppointments: number
+  projectedRevenue: number
+  projectedCpl: number
+}
+
+export interface OptimizationCommandData {
+  healthScore: number // 0 a 100
+  globalConfidence: number // 0 a 100
+  reconciliations: QuizReconciliationRow[]
+  gaps: DiscrepancyGap[]
+  criticalities: CriticalityItem[]
+  simulations: SimulationScenario[]
+  executiveSummary: string
+}

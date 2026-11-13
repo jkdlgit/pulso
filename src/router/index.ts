@@ -10,6 +10,7 @@ const router = createRouter({
       component: AnalyticsLayout,
       children: [
         { path: '', redirect: '/analytics/overview' },
+        { path: 'command-center', name: 'analytics-command-center', component: () => import('../analytics/views/DecisionCommandView.vue') },
         { path: 'overview', name: 'analytics-overview', component: () => import('../analytics/views/OverviewView.vue') },
         { path: 'visitors', name: 'analytics-visitors', component: () => import('../analytics/views/VisitorsView.vue') },
         { path: 'live', name: 'analytics-live', component: () => import('../analytics/views/LiveActivityView.vue') },

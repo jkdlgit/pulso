@@ -29,8 +29,8 @@
             <span class="truncate flex-1">{{ item.label }}</span>
             <span
               v-if="item.badge"
-              class="text-[8px] px-1 py-0.5 rounded border"
-              :class="item.badge === 'IA' ? 'text-violet-300 border-violet-500/40 bg-violet-500/10' : 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'"
+              class="text-[8px] px-1 py-0.5 rounded border font-bold"
+              :class="item.badge === 'AGENT' ? 'text-cyan-200 border-cyan-400/50 bg-cyan-500/20 shadow-glow-cyan' : item.badge === 'IA' ? 'text-violet-300 border-violet-500/40 bg-violet-500/10' : 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'"
             >
               {{ item.badge }}
             </span>
@@ -69,8 +69,9 @@ const schema = analyticsSchema
 
 const NAV = [
   {
-    label: 'Inteligencia',
+    label: 'Inteligencia & Decisión',
     items: [
+      { path: '/analytics/command-center', label: 'Centro de Mando', icon: '🚀', code: '00', badge: 'AGENT' },
       { path: '/analytics/overview', label: 'Overview', icon: '📊', code: '01' },
       { path: '/analytics/insights', label: 'AI Insights', icon: '🧠', code: '19', badge: 'IA' },
     ],
