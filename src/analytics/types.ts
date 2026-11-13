@@ -253,6 +253,8 @@ export interface AnalyticsDataset {
   generated_at: string
   businesses: Business[]
   campaigns: Campaign[]
+  metaCampaigns?: MetaCampaignInsight[]
+  metaDemographics?: MetaDemographicInsight[]
   visitors: Visitor[]
   sessions: Session[]
   events: AnalyticsEvent[]
@@ -381,4 +383,45 @@ export interface SavedView {
   name: string
   filters: AnalyticsFilters
   created_at: string
+}
+
+// ============================================================================
+// METRICAS UNIVERSALES DE META ADS (Agnósticas al formato de creativo)
+// ============================================================================
+
+export interface MetaCampaignInsight {
+  id: string | number
+  campaign_id: string
+  campaign_name: string
+  adset_name: string
+  ad_name: string
+  quiz_target: 'quiz1' | 'quiz2' | 'quiz3' | string
+  date: string
+  spend: number
+  impressions: number
+  reach: number
+  frequency: number
+  cpm: number
+  inline_link_clicks: number
+  cpc: number
+  ctr: number
+  landing_page_views: number
+  cost_per_landing_page_view: number
+  post_engagements: number
+  status: string
+}
+
+export interface MetaDemographicInsight {
+  id?: string | number
+  campaign_id: string
+  quiz_target: string
+  date: string
+  age_group: string // '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+'
+  gender: 'female' | 'male' | string
+  percentage: number
+  spend: number
+  reach: number
+  impressions: number
+  clicks: number
+  landing_page_views: number
 }
