@@ -9,11 +9,11 @@
     </template>
     <template #actions>
       <span class="badge badge-cyan text-[9px]">{{ filteredInsights.length }} HALLAZGOS</span>
-      <button class="btn-hud-secondary text-[10px] py-1.5" @click="exportFindings">📥 EXPORTAR</button>
+      <button class="btn-hud-secondary text-[10px] py-1.5" @click="exportFindings">📤 EXPORTAR</button>
     </template>
 
     <!-- Resumen ejecutivo -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <div class="hud-card border-l-2 border-l-emerald-500 py-3">
         <div class="flex items-center justify-between">
           <span class="text-[9px] font-mono uppercase tracking-wider text-slate-500">Funcionando</span>
@@ -48,7 +48,28 @@
       </div>
     </div>
 
-    <!-- Filtros del centro de inteligencia -->
+    <!-- Panel de estado de resoluciones -->
+    <div v-if="watchingCount > 0 || resolvedCount > 0 || reopenedCount > 0" class="hud-card mb-4 py-3 border border-cyan-500/20 bg-cyan-500/5">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[9px] font-mono text-cyan-400 uppercase tracking-wider font-bold">📋 Estado de implementaciones</span>
+      </div>
+      <div class="flex gap-4 flex-wrap items-center text-[9px] font-mono">
+        <span v-if="watchingCount > 0" class="flex items-center gap-1.5 text-cyan-300">
+          ⏳ <strong>{{ watchingCount }}</strong> en observación
+        </span>
+        <span v-if="reopenedCount > 0" class="flex items-center gap-1.5 text-amber-300">
+          🔁 <strong>{{ reopenedCount }}</strong> reabierto(s) — revisar
+        </span>
+        <span v-if="resolvedCount > 0" class="flex items-center gap-1.5 text-emerald-400">
+          ✅ <strong>{{ resolvedCount }}</strong> resuelto(s) definitivamente
+        </span>
+        <button @click="showResolved = !showResolved" class="ml-auto text-slate-500 hover:text-slate-300 transition-colors text-[8px]">
+          {{ showResolved ? 'Ocultar resueltos' : 'Mostrar resueltos' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
     <div class="hud-card mb-4 py-3">
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-1.5 flex-wrap">
@@ -87,7 +108,12 @@
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-4">
       <!-- Lista de hallazgos -->
       <div class="xl:col-span-3 space-y-3">
-        <InsightCard v-for="i in filteredInsights" :key="i.id" :insight="i" />
+        <InsightCard
+          v-for="i in filteredInsights"
+          :key="i.id"
+          :insight="i"
+          :current-lead-count="totalLeads"
+        />
 
         <div v-if="filteredInsights.length === 0" class="hud-card py-16 text-center">
           <p class="text-[11px] font-mono text-slate-400">// SIN HALLAZGOS PARA ESTOS FILTROS</p>
@@ -111,6 +137,19 @@
                 <span class="text-slate-300 w-4 text-right">{{ a.count }}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Panel de implementaciones -->
+        <div class="hud-card">
+          <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold mb-2 pb-2 border-b border-pulso-border/50">
+            Sistema de mejoras
+          </h3>
+          <div class="space-y-1.5 text-[9px] font-mono text-slate-400 leading-relaxed">
+            <p><span class="text-cyan-300 font-bold">✓ Ya lo implementé</span> — marca el hallazgo como "en observación".</p>
+            <p><span class="text-emerald-300 font-bold">✅ Mejoró</span> — confirma que la métrica mejoró.</p>
+            <p><span class="text-amber-300 font-bold">🔁 Reabierto</span> — el sistema verifica automáticamente tras N leads.</p>
+            <p class="text-slate-600 mt-2">Los resueltos se ocultan pero quedan archivados. Haz clic en uno para restaurarlo.</p>
           </div>
         </div>
 
@@ -160,13 +199,24 @@ import { RouterLink } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import InsightCard from '../components/InsightCard.vue'
 import { useAnalytics } from '../store'
+import { useInsightResolutions } from '../composables/useInsightResolutions'
 import type { Insight } from '../types'
 
 const { insights, filtered, dataset } = useAnalytics()
 
+// Total de leads para el sistema de verificación
+const totalLeads = computed(() => filtered.value.sessions.filter(s => s.quiz_completed).length)
+
+const { watchingCount, resolvedCount, reopenedCount, runAutoVerification } = useInsightResolutions(totalLeads.value)
+
+// Auto-verificación al cargar: si hay insights en observación, revisar si deben reabrirse
+// Pasa métricas vacías por ahora; en Fase 2 se cruzan con datos reales
+runAutoVerification({})
+
 const severity = ref<'all' | 'good' | 'bad' | 'warn' | 'info'>('all')
 const category = ref('Todas')
 const sortBy = ref<'priority' | 'impact' | 'confidence'>('priority')
+const showResolved = ref(false)
 
 const counts = computed(() => ({
   good: insights.value.filter(i => i.severity === 'good').length,
