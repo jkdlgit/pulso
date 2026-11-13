@@ -96,7 +96,7 @@
 
             <!-- Cursor / clic -->
             <div
-              v-if="currentEvent && currentEvent.type === 'click'"
+              v-if="currentEvent && (currentEvent.type === 'click' || currentEvent.metadata?.x)"
               class="absolute w-6 h-6 rounded-full border-2 border-rose-400 bg-rose-500/30 shadow-[0_0_18px_rgba(244,63,94,.7)] transition-all duration-500"
               :style="{ left: `${currentEvent.metadata?.x ?? 50}%`, top: `${currentEvent.metadata?.y ?? 50}%`, transform: 'translate(-50%,-50%)' }"
             >
@@ -285,6 +285,7 @@ function timeOf(iso: string) {
 }
 function eventDot(type: string) {
   if (type === 'click') return 'bg-rose-400'
+  if (type === 'scroll') return 'bg-cyan-400'
   if (type === 'error') return 'bg-rose-500'
   if (type === 'sale') return 'bg-emerald-400'
   if (type === 'booking') return 'bg-violet-400'

@@ -432,14 +432,19 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       })
 
       // Eventos atómicos para Live, Heatmaps y Replay (Deduplicados)
-      const evVisitaId = Number(lead.id) * 10 + 1
+      const tBase = new Date(lead.created_at).getTime()
+      const devXOffset = ((Number(lead.id) * 17) % 15) - 7
+      const devYOffset = ((Number(lead.id) * 13) % 9) - 4
+
+      // 1. Visita a la landing del quiz
+      const evVisitaId = Number(lead.id) * 100 + 1
       if (!eventMap.has(evVisitaId)) {
         eventMap.set(evVisitaId, {
           id: evVisitaId,
           business_id: businessId,
           session_id: sid,
           visitor_id: vid,
-          ts: lead.created_at,
+          ts: new Date(tBase).toISOString(),
           type: 'visita',
           page: `/${quizName}`,
           label: `Ingreso a ${quizName}`,
@@ -447,14 +452,51 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         })
       }
 
-      const evStartId = Number(lead.id) * 10 + 2
+      // 2. Scroll de lectura inicial
+      const evScrollInitId = Number(lead.id) * 100 + 2
+      if (!eventMap.has(evScrollInitId)) {
+        eventMap.set(evScrollInitId, {
+          id: evScrollInitId,
+          business_id: businessId,
+          session_id: sid,
+          visitor_id: vid,
+          ts: new Date(tBase + 1800).toISOString(),
+          type: 'scroll',
+          page: `/${quizName}`,
+          label: 'Lectura de cabecera',
+          metadata: { scroll: 32 },
+        })
+      }
+
+      // 3. Clic inicial para iniciar evaluación (CTA)
+      const evStartClickId = Number(lead.id) * 100 + 3
+      if (!eventMap.has(evStartClickId)) {
+        eventMap.set(evStartClickId, {
+          id: evStartClickId,
+          business_id: businessId,
+          session_id: sid,
+          visitor_id: vid,
+          ts: new Date(tBase + 3500).toISOString(),
+          type: 'click',
+          page: `/${quizName}`,
+          label: 'Botón: Iniciar Test Visual',
+          metadata: {
+            x: Math.max(18, Math.min(82, 50 + devXOffset)),
+            y: Math.max(25, Math.min(88, 68 + devYOffset)),
+            step: 0,
+          },
+        })
+      }
+
+      // 4. Inicio de preguntas
+      const evStartId = Number(lead.id) * 100 + 4
       if (!eventMap.has(evStartId)) {
         eventMap.set(evStartId, {
           id: evStartId,
           business_id: businessId,
           session_id: sid,
           visitor_id: vid,
-          ts: lead.created_at,
+          ts: new Date(tBase + 4000).toISOString(),
           type: 'quiz_start',
           page: `/${quizName}`,
           label: 'Inicio de preguntas',
@@ -462,15 +504,101 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         })
       }
 
-      if (lead.estado === 'Completado' || isBooked) {
-        const evCompleteId = Number(lead.id) * 10 + 3
+      // 5. Clics y scroll en cada respuesta del usuario
+      if (quizSteps.length > 0) {
+        quizSteps.forEach((q, idx) => {
+          const stepNum = idx + 1
+          const yPos = Math.min(82, 38 + ((idx % 4) * 12) + devYOffset)
+          const xPos = Math.max(18, Math.min(82, 50 + devXOffset))
+
+          const evOptionClickId = Number(lead.id) * 100 + 10 + idx * 3
+          if (!eventMap.has(evOptionClickId)) {
+            eventMap.set(evOptionClickId, {
+              id: evOptionClickId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 5000 + stepNum * 5500).toISOString(),
+              type: 'click',
+              page: `/${quizName}`,
+              label: `Opción: ${q.question.replace(/¿|\?/g, '').slice(0, 24)} → ${(q.answer || '').slice(0, 18)}`,
+              metadata: {
+                x: resp.last_click?.x ?? xPos,
+                y: resp.last_click?.y ?? yPos,
+                step: stepNum,
+                question: q.question_id,
+                answer: q.answer || '',
+              },
+            })
+          }
+
+          const evStepScrollId = Number(lead.id) * 100 + 11 + idx * 3
+          if (!eventMap.has(evStepScrollId)) {
+            eventMap.set(evStepScrollId, {
+              id: evStepScrollId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 5000 + stepNum * 5500 + 1200).toISOString(),
+              type: 'scroll',
+              page: `/${quizName}`,
+              label: `Avance a Paso ${stepNum + 1}`,
+              metadata: { scroll: Math.min(95, 30 + stepNum * 18) },
+            })
+          }
+        })
+      } else if (lead.estado && lead.estado.startsWith('Paso')) {
+        const reachedStep = Number(lead.estado.replace('Paso', '').trim()) || 1
+        for (let s = 1; s <= reachedStep; s++) {
+          const evPasoClickId = Number(lead.id) * 100 + 20 + s * 2
+          if (!eventMap.has(evPasoClickId)) {
+            eventMap.set(evPasoClickId, {
+              id: evPasoClickId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 5000 + s * 4500).toISOString(),
+              type: 'click',
+              page: `/${quizName}`,
+              label: `Selección Paso ${s}`,
+              metadata: {
+                x: resp.last_click?.x ?? Math.max(20, Math.min(80, 50 + devXOffset)),
+                y: resp.last_click?.y ?? (38 + s * 14 + devYOffset),
+                step: s,
+              },
+            })
+          }
+        }
+      }
+
+      // 6. Diagnóstico y finalización
+      if (lead.estado === 'Completado' || isBooked || !!lead.resultado) {
+        const evDiagClickId = Number(lead.id) * 100 + 70
+        if (!eventMap.has(evDiagClickId)) {
+          eventMap.set(evDiagClickId, {
+            id: evDiagClickId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 30000).toISOString(),
+            type: 'click',
+            page: `/${quizName}`,
+            label: 'Botón: Ver Diagnóstico Visual',
+            metadata: {
+              x: Math.max(20, Math.min(80, 50 + devXOffset)),
+              y: 74 + devYOffset,
+            },
+          })
+        }
+
+        const evCompleteId = Number(lead.id) * 100 + 71
         if (!eventMap.has(evCompleteId)) {
           eventMap.set(evCompleteId, {
             id: evCompleteId,
             business_id: businessId,
             session_id: sid,
             visitor_id: vid,
-            ts: lead.created_at,
+            ts: new Date(tBase + 31000).toISOString(),
             type: 'quiz_complete',
             page: '/resultado',
             label: 'Completó evaluación',
@@ -479,15 +607,34 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         }
       }
 
+      // 7. Clic y confirmación de cita
       if (isBooked) {
-        const evBookId = Number(lead.id) * 10 + 4
+        const evBookClickId = Number(lead.id) * 100 + 80
+        if (!eventMap.has(evBookClickId)) {
+          eventMap.set(evBookClickId, {
+            id: evBookClickId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 45000).toISOString(),
+            type: 'click',
+            page: '/agendar',
+            label: 'Botón: Confirmar Cita Gratuita',
+            metadata: {
+              x: Math.max(20, Math.min(80, 50 + devXOffset)),
+              y: 80 + devYOffset,
+            },
+          })
+        }
+
+        const evBookId = Number(lead.id) * 100 + 81
         if (!eventMap.has(evBookId)) {
           eventMap.set(evBookId, {
             id: evBookId,
             business_id: businessId,
             session_id: sid,
             visitor_id: vid,
-            ts: lead.created_at,
+            ts: new Date(tBase + 47000).toISOString(),
             type: 'booking',
             page: '/agendar',
             label: 'Cita Agendada',
