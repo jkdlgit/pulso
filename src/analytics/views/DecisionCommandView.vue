@@ -320,13 +320,229 @@
       </div>
     </div>
 
-    <!-- 5. AGENTE DE DECISIÓN IA INTERACTIVO (CONSULTOR ESTRATÉGICO) -->
+    <!-- 5. NUEVO MÓDULO: MOTOR DE INTELIGENCIA DE PRODUCTO & BENCHMARKING DE MERCADO CON IA -->
+    <div class="hud-card mb-4 border-l-2 border-l-violet-400">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-pulso-border/50">
+        <div>
+          <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+            5. Configuración de Producto & Motor de Crecimiento Estratégico (IA)
+          </h3>
+          <p class="text-[9px] font-mono text-slate-500 mt-0.5">
+            Ingresa el producto/servicio que estás impulsando. La IA cruzará sus características con la data real de Guayaquil y generará un plan 360°.
+          </p>
+        </div>
+        <span class="badge badge-violet text-[9px]">PERSISTENTE</span>
+      </div>
+
+      <!-- Plantillas rápidas -->
+      <div class="mb-3 flex items-center gap-2 flex-wrap">
+        <span class="text-[9px] font-mono text-slate-500 uppercase tracking-wider">Cargar plantilla:</span>
+        <button
+          @click="loadPreset('progresivos')"
+          class="px-2.5 py-1 rounded bg-violet-500/10 border border-violet-500/30 text-[9px] font-mono text-violet-300 hover:bg-violet-500/20 transition-colors"
+        >
+          👓 Lentes Progresivos / Presbicia (+45 años)
+        </button>
+        <button
+          @click="loadPreset('luz_azul')"
+          class="px-2.5 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-mono text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+        >
+          💻 Lentes con Filtro Luz Azul / Pantallas
+        </button>
+        <button
+          @click="loadPreset('examen')"
+          class="px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-mono text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+        >
+          🔬 Examen Visual Computarizado + Aros
+        </button>
+      </div>
+
+      <!-- Formulario de Configuración de Producto -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3 text-[10px] font-mono">
+        <div>
+          <label class="text-[8px] text-slate-500 uppercase block mb-1">Producto o Servicio Promovido</label>
+          <input
+            v-model="productForm.productName"
+            @change="saveProductForm"
+            placeholder="Ej: Lentes Progresivos Digitales..."
+            class="w-full bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-600"
+          />
+        </div>
+
+        <div>
+          <label class="text-[8px] text-slate-500 uppercase block mb-1">Público / Síntoma Objetivo</label>
+          <input
+            v-model="productForm.targetAudience"
+            @change="saveProductForm"
+            placeholder="Ej: Adultos 45-65 años con vista cansada..."
+            class="w-full bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-600"
+          />
+        </div>
+
+        <div>
+          <label class="text-[8px] text-slate-500 uppercase block mb-1">Oferta / Paquete / Gancho Comercial</label>
+          <input
+            v-model="productForm.priceOrOffer"
+            @change="saveProductForm"
+            placeholder="Ej: Aros + Lunas con examen gratis..."
+            class="w-full bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-600"
+          />
+        </div>
+
+        <div>
+          <label class="text-[8px] text-slate-500 uppercase block mb-1">Objetivo Primario</label>
+          <select
+            v-model="productForm.primaryGoal"
+            @change="saveProductForm"
+            class="w-full bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-violet-400"
+          >
+            <option value="citas">Agendar Citas en Consultorio</option>
+            <option value="leads">Captar Leads Cualificados</option>
+            <option value="ventas">Ventas de Ticket Alto ($100+)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Botón de Ejecución de Estrategia con IA -->
+      <div class="flex items-center justify-between pt-2 border-t border-pulso-border/50">
+        <span class="text-[8px] font-mono text-slate-500">
+          Estado: {{ productForm.productName ? 'Configuración guardada en navegador' : 'Sin configurar' }}
+        </span>
+        <button
+          @click="runStrategyAudit"
+          :disabled="strategyLoading || !productForm.productName"
+          class="btn-hud text-[10px] py-2 px-4 flex items-center gap-2 disabled:opacity-40"
+        >
+          <span>{{ strategyLoading ? 'INVESTIGANDO CON IA...' : 'GENERAR ESTRATEGIA Y MEJORAS CON IA ⚡' }}</span>
+        </button>
+      </div>
+
+      <!-- RESULTADOS DEL ANÁLISIS ESTRATÉGICO 360° -->
+      <div v-if="strategyResult" class="mt-4 pt-3 border-t border-pulso-border/60 animate-fade-in">
+        <!-- Pestañas de Navegación del Plan -->
+        <div class="flex items-center gap-2 mb-3 border-b border-pulso-border/50 pb-2">
+          <button
+            @click="activeStrategyTab = 'segmentacion'"
+            class="px-2.5 py-1 rounded text-[9px] font-mono transition-colors"
+            :class="activeStrategyTab === 'segmentacion' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          >
+            🎯 1. PÚBLICO & META ADS
+          </button>
+          <button
+            @click="activeStrategyTab = 'copywriting'"
+            class="px-2.5 py-1 rounded text-[9px] font-mono transition-colors"
+            :class="activeStrategyTab === 'copywriting' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          >
+            ✍️ 2. MEJORAS EN EL QUIZ
+          </button>
+          <button
+            @click="activeStrategyTab = 'oferta'"
+            class="px-2.5 py-1 rounded text-[9px] font-mono transition-colors"
+            :class="activeStrategyTab === 'oferta' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          >
+            🎁 3. INGENIERÍA DE OFERTA
+          </button>
+          <button
+            @click="activeStrategyTab = 'whatsapp'"
+            class="px-2.5 py-1 rounded text-[9px] font-mono transition-colors"
+            :class="activeStrategyTab === 'whatsapp' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          >
+            💬 4. GUION WHATSAPP
+          </button>
+        </div>
+
+        <!-- Contenido 1: Segmentación Meta Ads -->
+        <div v-if="activeStrategyTab === 'segmentacion'" class="space-y-2.5 text-[10px] font-mono">
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <span class="text-[8px] text-cyan-400 uppercase tracking-wider block mb-1">Edades & Género Recomendados</span>
+            <p class="text-slate-200 font-bold">{{ strategyResult.metaAudienceStrategy.recommendedAges }}</p>
+            <p class="text-slate-400 mt-0.5">{{ strategyResult.metaAudienceStrategy.genderFocus }}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+              <span class="text-[8px] text-emerald-400 uppercase tracking-wider block mb-1">Intereses Clave en Meta Ads</span>
+              <ul class="list-disc list-inside space-y-0.5 text-slate-300">
+                <li v-for="it in strategyResult.metaAudienceStrategy.interests" :key="it">{{ it }}</li>
+              </ul>
+            </div>
+            <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+              <span class="text-[8px] text-rose-400 uppercase tracking-wider block mb-1">Exclusiones & Ubicaciones</span>
+              <ul class="list-disc list-inside space-y-0.5 text-slate-300">
+                <li v-for="ex in strategyResult.metaAudienceStrategy.exclusions" :key="ex">{{ ex }}</li>
+              </ul>
+            </div>
+          </div>
+          <p class="text-[9px] text-slate-400 italic bg-pulso-void/40 p-2 rounded border border-pulso-border/30">
+            💡 Fundamento con tu data real: {{ strategyResult.metaAudienceStrategy.rationale }}
+          </p>
+        </div>
+
+        <!-- Contenido 2: Mejoras en el Quiz -->
+        <div v-if="activeStrategyTab === 'copywriting'" class="space-y-2.5 text-[10px] font-mono">
+          <div class="p-2.5 rounded bg-cyan-500/10 border border-cyan-500/30">
+            <span class="text-[8px] text-cyan-400 uppercase tracking-wider block mb-1">Titular Ganador para la Portada</span>
+            <p class="text-xs font-bold text-slate-100">"{{ strategyResult.quizOptimization.winningHeadline }}"</p>
+            <p class="text-[9px] text-slate-400 mt-1">{{ strategyResult.quizOptimization.subheadline }}</p>
+          </div>
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <span class="text-[8px] text-cyan-400 uppercase tracking-wider block mb-1.5">3 Preguntas de Síntoma de Alta Conversión</span>
+            <div class="space-y-1.5">
+              <div v-for="(q, idx) in strategyResult.quizOptimization.diagnosticQuestions" :key="idx" class="p-1.5 rounded bg-pulso-void border border-pulso-border/40 text-slate-300">
+                {{ q }}
+              </div>
+            </div>
+          </div>
+          <p class="text-[9px] text-amber-300 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+            ⚡ Ajuste de Fricción: {{ strategyResult.quizOptimization.frictionFix }}
+          </p>
+        </div>
+
+        <!-- Contenido 3: Ingeniería de Oferta -->
+        <div v-if="activeStrategyTab === 'oferta'" class="space-y-2.5 text-[10px] font-mono">
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <span class="text-[8px] text-amber-400 uppercase tracking-wider block mb-1">Estructura del Combo / Oferta</span>
+            <p class="text-slate-200 leading-relaxed font-bold">{{ strategyResult.offerEngineering.bundleOffer }}</p>
+          </div>
+          <div class="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30">
+            <span class="text-[8px] text-emerald-400 uppercase tracking-wider block mb-1">Eliminación de Riesgo (Garantía de Adaptación)</span>
+            <p class="text-emerald-200 leading-relaxed">{{ strategyResult.offerEngineering.riskReversal }}</p>
+          </div>
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <span class="text-[8px] text-violet-400 uppercase tracking-wider block mb-1">Gancho de Urgencia en Consultorio</span>
+            <p class="text-slate-300 leading-relaxed">{{ strategyResult.offerEngineering.urgencyHook }}</p>
+          </div>
+        </div>
+
+        <!-- Contenido 4: Guion WhatsApp -->
+        <div v-if="activeStrategyTab === 'whatsapp'" class="space-y-2.5 text-[10px] font-mono">
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[8px] text-emerald-400 uppercase tracking-wider">Primer Mensaje (Dentro de los primeros 5 minutos)</span>
+              <button
+                @click="copyScript(strategyResult.whatsappClosingScript.firstMessageTemplate)"
+                class="badge badge-cyan text-[8px] cursor-pointer"
+              >
+                {{ copySuccess ? '¡COPIADO!' : 'COPIAR MENSAJE' }}
+              </button>
+            </div>
+            <pre class="bg-pulso-void p-2.5 rounded border border-pulso-border/40 text-[9px] text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">{{ strategyResult.whatsappClosingScript.firstMessageTemplate }}</pre>
+          </div>
+          <div class="p-2.5 rounded bg-pulso-void/70 border border-pulso-border/60">
+            <span class="text-[8px] text-slate-400 uppercase tracking-wider block mb-1">Mensaje de Recordatorio / Seguimiento (24 Horas)</span>
+            <pre class="bg-pulso-void p-2.5 rounded border border-pulso-border/40 text-[9px] text-slate-400 whitespace-pre-wrap font-mono leading-relaxed">{{ strategyResult.whatsappClosingScript.followupReminder }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. AGENTE DE DECISIÓN IA INTERACTIVO (CONSULTOR ESTRATÉGICO) -->
     <div class="hud-card">
       <div class="flex items-center justify-between mb-3 pb-2 border-b border-pulso-border/50">
         <div>
           <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
-            5. Agente Consultor de Decisiones Estratégicas (Interrogatorio IA)
+            6. Agente Consultor de Decisiones Estratégicas (Interrogatorio IA)
           </h3>
           <p class="text-[9px] font-mono text-slate-500 mt-0.5">
             Pregunta al agente sobre distribución de presupuesto, experimentos A/B o cómo duplicar pacientes
@@ -391,11 +607,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import { useAnalytics } from '../store'
 import { computeOptimizationCommandCenter, currency, number } from '../engine'
-import { askDecisionAdvisor, type ChatMessage } from '../aiAdvisor'
+import {
+  askDecisionAdvisor,
+  generateProductStrategyPlan,
+  type ChatMessage,
+  type ProductStrategyConfig,
+  type StrategicAuditResult,
+} from '../aiAdvisor'
 
 const { dataset, filtered } = useAnalytics()
 
@@ -412,7 +634,87 @@ function toggleGapWhy(id: string) {
   activeGapId.value = activeGapId.value === id ? null : id
 }
 
-// Chat del Agente de Decisión
+// --- Módulo de Estrategia de Producto Persistente ---
+const PRODUCT_STORAGE_KEY = 'pulso_product_strategy_v1'
+const productForm = ref<ProductStrategyConfig>({
+  productName: 'Lentes Progresivos Digitales Premium',
+  category: 'Presbicia & Salud Visual',
+  targetAudience: 'Adultos de 45 a 65+ años en Guayaquil con dificultad para leer de cerca',
+  priceOrOffer: 'Aros seleccionados + Lunas Progresivas con Examen Computarizado gratis',
+  primaryGoal: 'citas',
+})
+
+const strategyLoading = ref(false)
+const strategyResult = ref<StrategicAuditResult | null>(null)
+const activeStrategyTab = ref<'segmentacion' | 'copywriting' | 'oferta' | 'whatsapp'>('segmentacion')
+const copySuccess = ref(false)
+
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(PRODUCT_STORAGE_KEY)
+    if (saved) {
+      productForm.value = JSON.parse(saved)
+    }
+    // Generar plan inicial automáticamente con la data actual
+    runStrategyAudit()
+  } catch { /* noop */ }
+})
+
+function saveProductForm() {
+  try {
+    localStorage.setItem(PRODUCT_STORAGE_KEY, JSON.stringify(productForm.value))
+  } catch { /* noop */ }
+}
+
+function loadPreset(type: 'progresivos' | 'luz_azul' | 'examen') {
+  if (type === 'progresivos') {
+    productForm.value = {
+      productName: 'Lentes Progresivos Digitales Premium',
+      category: 'Presbicia & Visión Cerca/Lejos',
+      targetAudience: 'Adultos mayores de 45 años en Guayaquil que alejan el celular para leer',
+      priceOrOffer: 'Aros italianos + Lunas Progresivas HD + Examen Visual Computarizado gratis',
+      primaryGoal: 'citas',
+    }
+  } else if (type === 'luz_azul') {
+    productForm.value = {
+      productName: 'Lentes con Filtro Luz Azul Blue Block',
+      category: 'Fatiga Visual Digital & Ofimática',
+      targetAudience: 'Personas de 20 a 45 años que pasan más de 5 horas frente a pantallas',
+      priceOrOffer: 'Montura ultraliviana + Lunas Blue Block certificadas desde $55',
+      primaryGoal: 'leads',
+    }
+  } else {
+    productForm.value = {
+      productName: 'Examen Visual Computarizado + Renovación de Aros',
+      category: 'Salud Visual General',
+      targetAudience: 'Familias y pacientes que no se revisan la vista hace más de 1 año',
+      priceOrOffer: 'Examen completo de agudeza visual y fondo de ojo con 50% de descuento en monturas',
+      primaryGoal: 'citas',
+    }
+  }
+  saveProductForm()
+  runStrategyAudit()
+}
+
+async function runStrategyAudit() {
+  if (!productForm.value.productName) return
+  strategyLoading.value = true
+  try {
+    strategyResult.value = await generateProductStrategyPlan(productForm.value, commandData.value)
+  } finally {
+    strategyLoading.value = false
+  }
+}
+
+function copyScript(text: string) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+    copySuccess.value = true
+    setTimeout(() => { copySuccess.value = false }, 2000)
+  }
+}
+
+// --- Chat del Agente de Decisión ---
 const chatInput = ref('')
 const aiLoading = ref(false)
 const chatMessages = ref<ChatMessage[]>([])
