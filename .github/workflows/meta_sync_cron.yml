@@ -1,0 +1,30 @@
+name: Meta Ads Insights Sync Cron
+
+on:
+  schedule:
+    # Se ejecuta cada 4 horas automáticamente (a costo $0 en GitHub Actions)
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Permite ejecutar manualmente con un clic en GitHub si se desea
+
+jobs:
+  sync:
+    name: Sincronizar Métricas de Meta Ads
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar sincronización Meta Ads -> Supabase
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN || 'EAAiKvcIbSDUBS82hoaicApoNe3glJ8vp9UAQEUyAqbJZCKZAYZBVCvopbpLn28492waacVTYofdfOCX7pj4pw3Ne5NE7WWq0HZBnTUlWHqVU2qwkhK1hEODSFOpiqSW4DuXxLjuJDwJ5SRpclIUbyuksoJL7Q5SPVHCdkGWZBfQLEwyIHaKTRaWg3KTKGnfLiuVMuvw5AURpiAOJ5gdYAZCmZB9XwHOXZAnRcfK9ae12SzDkN32w01oR5lHD33aTQ0Oy6JJdhgwZASk01AVaK4DEkfsWZA' }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID || 'act_1639596734153897' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://hghhanfwdskkddtasiij.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhnaGhhbmZ3ZHNra2RkdGFzaWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE5MDAsImV4cCI6MjA5NzMwNzkwMH0.GQJxQBhYDWtUWNNaAOH104HMD_L_Votr46voP1YlH_s' }}
+        run: |
+          node sync_meta_ads.mjs
