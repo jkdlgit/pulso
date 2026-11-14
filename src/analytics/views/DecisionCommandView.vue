@@ -611,9 +611,10 @@
             </span>
           </div>
           <div v-else class="flex justify-start">
-            <div class="bg-pulso-void/90 border border-pulso-border/70 rounded-lg p-3 text-slate-300 max-w-[95%] whitespace-pre-wrap leading-relaxed">
-              {{ msg.content }}
-            </div>
+            <div
+              class="bg-pulso-void/95 border border-pulso-border/80 rounded-lg p-3.5 text-slate-200 max-w-[98%] text-[10px] leading-relaxed shadow-lg overflow-x-auto space-y-1.5 font-sans"
+              v-html="renderMarkdown(msg.content)"
+            ></div>
           </div>
         </div>
 
@@ -793,6 +794,79 @@ function askQuick(p: string) {
   handleSendChat()
 }
 
+function renderMarkdown(raw: string): string {
+  if (!raw) return ''
+
+  let html = raw
+
+  // 1. Escapar tags HTML peligrosos
+  html = html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // 2. Tablas Markdown (| ... |)
+  const tableRegex = /((?:\|[^\n]+\|\r?\n)+)/g
+  html = html.replace(tableRegex, (match) => {
+    const lines = match.trim().split(/\r?\n/)
+    if (lines.length < 2) return match
+    
+    // Header
+    const headerCols = lines[0].split('|').slice(1, -1).map(c => c.trim())
+    // Skip separator line lines[1]
+    const bodyLines = lines.slice(2)
+    
+    let tableHtml = '<div class="overflow-x-auto my-2 rounded border border-pulso-border/60 shadow"><table class="w-full text-left font-mono text-[9px] border-collapse bg-pulso-void/70">'
+    tableHtml += '<thead class="bg-pulso-void border-b border-pulso-border text-cyan-300 uppercase tracking-wider text-[8px]"><tr>'
+    for (const h of headerCols) {
+      tableHtml += `<th class="py-2 px-2.5 font-bold">${h}</th>`
+    }
+    tableHtml += '</tr></thead><tbody class="divide-y divide-pulso-border/30">'
+    for (const line of bodyLines) {
+      const cols = line.split('|').slice(1, -1).map(c => c.trim())
+      if (cols.length === 0) continue
+      tableHtml += '<tr class="hover:bg-pulso-void/90 transition-colors">'
+      for (const col of cols) {
+        tableHtml += `<td class="py-1.5 px-2.5 text-slate-200">${col}</td>`
+      }
+      tableHtml += '</tr>'
+    }
+    tableHtml += '</tbody></table></div>'
+    return tableHtml
+  })
+
+  // 3. Encabezados (###, ####, #####)
+  html = html.replace(/^### (.*$)/gim, '<h4 class="text-cyan-300 font-bold text-xs mt-3 mb-1 flex items-center gap-1.5 border-b border-pulso-border/40 pb-1">$1</h4>')
+  html = html.replace(/^#### (.*$)/gim, '<h5 class="text-violet-300 font-bold text-[11px] mt-2 mb-1">$1</h5>')
+  html = html.replace(/^##### (.*$)/gim, '<h6 class="text-slate-200 font-bold text-[10px] mt-1.5 mb-0.5">$1</h6>')
+
+  // 4. Blockquotes (> ...)
+  html = html.replace(/^&gt; (.*$)/gim, '<blockquote class="border-l-2 border-cyan-400 pl-2.5 py-1.5 my-1.5 bg-cyan-950/20 text-cyan-200 text-[10px] rounded-r italic">$1</blockquote>')
+
+  // 5. Negrita (**texto**)
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-100 font-bold">$1</strong>')
+
+  // 6. Cursiva (*texto*)
+  html = html.replace(/\*(.*?)\*/g, '<em class="text-slate-300 italic">$1</em>')
+
+  // 7. Código (`código`)
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-pulso-void px-1.5 py-0.5 rounded text-cyan-300 border border-pulso-border text-[9px] font-mono">$1</code>')
+
+  // 8. Separadores (---)
+  html = html.replace(/^---$/gim, '<hr class="border-pulso-border/40 my-2" />')
+
+  // 9. Listas no ordenadas (* o -)
+  html = html.replace(/^[\*\-] (.*$)/gim, '<div class="flex items-start gap-1.5 my-0.5 ml-1"><span class="text-cyan-400 text-[8px] mt-1">•</span><span class="text-slate-200 text-[10px] leading-relaxed">$1</span></div>')
+
+  // 10. Listas numeradas (1. ...)
+  html = html.replace(/^(\d+)\. (.*$)/gim, '<div class="flex items-start gap-1.5 my-1 ml-1"><span class="text-violet-400 font-bold text-[9px] mt-0.5">$1.</span><span class="text-slate-200 text-[10px] leading-relaxed">$2</span></div>')
+
+  // 11. Espaciado entre bloques
+  html = html.replace(/\n\n+/g, '<div class="h-1.5"></div>')
+
+  return html
+}
+
 async function handleSendChat() {
   const q = chatInput.value.trim()
   if (!q || aiLoading.value) return
@@ -815,6 +889,14 @@ async function handleSendChat() {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
       content: answer,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (err: any) {
+    console.error('[AI-ADVISOR] Error en chat:', err)
+    chatMessages.value.push({
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: `⚠️ Disculpa, ocurrió un error temporal al procesar tu consulta: ${err?.message || 'Error interno'}. Por favor intenta nuevamente.`,
       timestamp: new Date().toISOString(),
     })
   } finally {
