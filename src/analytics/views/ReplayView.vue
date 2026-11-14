@@ -70,9 +70,9 @@
           </div>
 
           <!-- Pantalla reconstruida -->
-          <div class="relative rounded-xl border border-pulso-border/70 bg-[#060a14] overflow-hidden" style="height: 300px">
+          <div class="relative rounded-xl border border-pulso-border/70 bg-[#060a14] overflow-hidden" style="height: 380px">
             <!-- Barra de navegador -->
-            <div class="h-8 bg-pulso-surface border-b border-pulso-border/60 flex items-center gap-2 px-3">
+            <div class="h-8 bg-pulso-surface border-b border-pulso-border/60 flex items-center gap-2 px-3 z-10 relative">
               <span class="w-2 h-2 rounded-full bg-rose-500/70"></span>
               <span class="w-2 h-2 rounded-full bg-amber-500/70"></span>
               <span class="w-2 h-2 rounded-full bg-emerald-500/70"></span>
@@ -81,35 +81,98 @@
               </div>
             </div>
 
-            <!-- Contenido simulado -->
-            <div class="p-5 opacity-25 select-none">
-              <div class="h-7 w-1/2 rounded bg-slate-600/50 mb-3"></div>
-              <div class="h-3 w-3/4 rounded bg-slate-700/50 mb-2"></div>
-              <div class="h-3 w-2/3 rounded bg-slate-700/40 mb-4"></div>
-              <div class="grid grid-cols-3 gap-3">
-                <div class="h-20 rounded bg-slate-700/30"></div>
-                <div class="h-20 rounded bg-slate-700/25"></div>
-                <div class="h-20 rounded bg-slate-700/30"></div>
+            <!-- Contenido Reconstruido del Quiz / Sitio -->
+            <div class="p-4 sm:p-6 h-[calc(100%-2rem)] overflow-y-auto flex items-center justify-center relative select-none bg-gradient-to-b from-[#080d1a] to-[#040711]">
+              <!-- Card del Quiz Reconstruido -->
+              <div class="w-full max-w-sm bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 text-slate-800">
+                <!-- Header del Quiz -->
+                <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                    <span class="font-tech text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                      {{ session.landing_page.includes('quiz2') ? 'Quiz 2 · VisiónCheck' : 'Quiz 1 · Chequeo Visual' }}
+                    </span>
+                  </div>
+                  <span class="text-[8px] font-mono text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full font-bold">
+                    {{ isResultStage ? 'RESULTADOS' : `PASO ${activeQuizStep?.step || 1} DE 3` }}
+                  </span>
+                </div>
+
+                <!-- Caso A: Pantalla de Resultado / Agendamiento -->
+                <div v-if="isResultStage" class="text-center py-2 space-y-2">
+                  <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-lg shadow-sm">
+                    👓
+                  </div>
+                  <h4 class="font-bold text-xs text-slate-900 leading-tight">
+                    {{ session.quiz_completed ? 'Evaluación Visual Completada' : 'Resultado Diagnóstico' }}
+                  </h4>
+                  <p class="text-[9px] text-slate-600 leading-relaxed px-2">
+                    {{ session.booked ? 'Cita médica agendada en Óptica Johanna (Matriz Guayaquil).' : 'Tus síntomas indican necesidad de examen visual computarizado.' }}
+                  </p>
+                  <div class="pt-1">
+                    <button class="w-full py-2 px-3 rounded-xl bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-md">
+                      <span>💬</span>
+                      <span>{{ session.booked ? 'Turno Confirmado en WhatsApp' : 'Agendar mi Cita Gratuita' }}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Caso B: Pregunta Clínica Activa del Quiz -->
+                <div v-else class="space-y-2">
+                  <h4 class="font-bold text-[11px] text-slate-900 leading-snug">
+                    {{ activeQuizStep?.question || '¿Cuál es tu molestia principal en los ojos?' }}
+                  </h4>
+                  
+                  <div class="space-y-1.5 pt-1">
+                    <div
+                      v-for="(opt, optIdx) in mockOptionsForStep"
+                      :key="optIdx"
+                      class="p-2 rounded-xl border text-[10px] font-medium flex items-center justify-between transition-all"
+                      :class="opt.isSelected 
+                        ? 'bg-cyan-50 border-cyan-400 text-cyan-900 font-bold shadow-sm' 
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span>{{ opt.icon }}</span>
+                        <span>{{ opt.text }}</span>
+                      </div>
+                      <span v-if="opt.isSelected" class="w-4 h-4 rounded-full bg-cyan-500 text-white flex items-center justify-center text-[9px] font-bold">✓</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="h-8 w-32 rounded bg-cyan-500/20 mt-4"></div>
             </div>
 
-            <!-- Cursor / clic -->
+            <!-- Cursor / clic con Tooltip informativo -->
             <div
               v-if="currentEvent && (currentEvent.type === 'click' || currentEvent.metadata?.x)"
-              class="absolute w-6 h-6 rounded-full border-2 border-rose-400 bg-rose-500/30 shadow-[0_0_18px_rgba(244,63,94,.7)] transition-all duration-500"
-              :style="{ left: `${currentEvent.metadata?.x ?? 50}%`, top: `${currentEvent.metadata?.y ?? 50}%`, transform: 'translate(-50%,-50%)' }"
+              class="absolute z-20 pointer-events-none transition-all duration-300"
+              :style="{ left: `${currentEvent.metadata?.x ?? 50}%`, top: `${Math.min(85, Math.max(15, currentEvent.metadata?.y ?? 50))}%`, transform: 'translate(-50%,-50%)' }"
             >
-              <span class="absolute inset-0 rounded-full border border-white/50 animate-ping"></span>
+              <!-- Tooltip flotante con la acción real -->
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-rose-950/95 border border-rose-500/60 text-rose-100 text-[8px] font-mono px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+                <span>🔴</span>
+                <span class="font-bold">{{ currentEvent.label || 'Clic en pantalla' }}</span>
+              </div>
+
+              <!-- Anillo y pulso de clic -->
+              <div class="relative w-7 h-7 rounded-full border-2 border-rose-400 bg-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,.8)] flex items-center justify-center">
+                <span class="w-2 h-2 rounded-full bg-white"></span>
+                <span class="absolute inset-0 rounded-full border border-white animate-ping"></span>
+              </div>
             </div>
 
             <!-- Overlay de scroll -->
-            <div class="absolute right-2 top-10 bottom-2 w-1.5 rounded bg-pulso-void/80 overflow-hidden">
+            <div class="absolute right-2 top-10 bottom-10 w-1.5 rounded bg-pulso-void/80 overflow-hidden z-10">
               <div class="w-full bg-cyan-400/70 transition-all duration-500" :style="{ height: `${scrollDepth}%`, marginTop: `${100 - scrollDepth}%` }"></div>
             </div>
 
-            <div class="absolute bottom-2 left-3 text-[8px] font-mono text-slate-500">
-              {{ currentEvent ? `${currentEvent.type.toUpperCase()} · ${currentEvent.label}` : 'SIN EVENTO' }}
+            <div class="absolute bottom-2 left-3 right-3 z-10 flex items-center justify-between text-[8px] font-mono text-slate-400 bg-slate-900/90 px-2.5 py-1 rounded border border-pulso-border/50">
+              <span class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span>{{ currentEvent ? `${currentEvent.type.toUpperCase()} · ${currentEvent.label}` : 'SIN EVENTO' }}</span>
+              </span>
+              <span class="text-slate-500">RECONSTRUCCIÓN VECTORIAL DOM (PRIVACIDAD POR DISEÑO)</span>
             </div>
           </div>
 
@@ -251,6 +314,51 @@ const scrollDepth = computed(() => {
   if (!e) return 0
   if (e.type === 'scroll') return Number(e.metadata?.scroll ?? 50)
   return Math.min(100, Math.round((index.value / Math.max(1, frames.value.length)) * 100))
+})
+
+const isResultStage = computed(() => {
+  const p = currentPage.value.toLowerCase()
+  const ev = currentEvent.value?.type || ''
+  const lbl = currentEvent.value?.label?.toLowerCase() || ''
+  return p.includes('resultado') || p.includes('agendar') || ev === 'booking' || ev === 'sale' || lbl.includes('resultado') || lbl.includes('cita') || (session.value?.quiz_completed && index.value >= frames.value.length - 2)
+})
+
+const activeQuizStep = computed(() => {
+  if (!session.value?.quiz_steps || session.value.quiz_steps.length === 0) return null
+  const steps = session.value.quiz_steps
+  const evStep = currentEvent.value?.metadata?.step
+  if (typeof evStep === 'number' && evStep >= 1 && evStep <= steps.length) {
+    return steps[evStep - 1]
+  }
+  const total = steps.length
+  const ratio = frames.value.length > 0 ? index.value / frames.value.length : 0
+  const stepIdx = Math.min(total - 1, Math.floor(ratio * total))
+  return steps[stepIdx]
+})
+
+const mockOptionsForStep = computed(() => {
+  const step = activeQuizStep.value?.step || 1
+  const ans = (activeQuizStep.value?.answer || '').toLowerCase()
+
+  if (step === 1) {
+    return [
+      { icon: '👓', text: 'Cansancio o fatiga visual', isSelected: ans.includes('fatiga') || ans.includes('cansancio') || true },
+      { icon: '🔍', text: 'Visión borrosa de cerca', isSelected: ans.includes('cerca') || ans.includes('borrosa') },
+      { icon: '🚗', text: 'Visión borrosa de lejos', isSelected: ans.includes('lejos') },
+      { icon: '✨', text: 'Dolor de cabeza frecuente', isSelected: ans.includes('cabeza') || ans.includes('dolor') },
+    ]
+  } else if (step === 2) {
+    return [
+      { icon: '📱', text: 'Más de 5 horas frente a pantallas', isSelected: true },
+      { icon: '💼', text: 'De 2 a 4 horas al día', isSelected: false },
+      { icon: '🌿', text: 'Menos de 2 horas al día', isSelected: false },
+    ]
+  } else {
+    return [
+      { icon: '👓', text: 'Uso lentes actualmente', isSelected: ans.includes('sí') || ans.includes('lentes') },
+      { icon: '✨', text: 'Nunca he usado lentes', isSelected: !ans.includes('sí') },
+    ]
+  }
 })
 
 watch(selectedId, () => { index.value = 0; stop() })
