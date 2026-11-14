@@ -781,7 +781,8 @@ function clearApiKey() {
 
 const suggestedPrompts = [
   '¿Por qué se pierden personas entre Meta y la web?',
-  'Revisa más a detalle por qué se pierden personas entre Meta y la web',
+  'Simular el impacto económico de eliminar la pantalla de bienvenida',
+  '¿Cómo duplicar pacientes en consultorio?',
   '¿En qué quiz debo invertir más presupuesto hoy?',
   '¿Cómo aumentar la asistencia de citas de WhatsApp al consultorio?',
   '¿Qué cambios hacer para el público mayor de 50 años en Guayaquil?',
