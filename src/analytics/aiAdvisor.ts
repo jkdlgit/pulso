@@ -192,9 +192,30 @@ Actualmente la métrica de esta evaluación registra: **${metric}** sobre **${sa
 // ============================================================================
 // ASESOR EJECUTIVO DEL CENTRO DE MANDO Y OPTIMIZACIÓN (AGENTE DE DECISIÓN)
 // Soporta:
-// 1) Conexión en vivo con LLM (Gemini 1.5 Flash / Pro) si el usuario configura API Key
+// 1) Conexión en vivo con LLM (Gemini 1.5 Flash / 2.0 / Pro) si el usuario configura API Key
 // 2) Motor Forense de Razonamiento Profundo Multi-Turno basado en todos los datos reales
 // ============================================================================
+
+export async function testGeminiApiKey(apiKey: string): Promise<{ ok: boolean; message: string }> {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: 'Hola, confirma con un OK breve que estás activo.' }] }],
+        generationConfig: { maxOutputTokens: 20 }
+      })
+    })
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}))
+      return { ok: false, message: err?.error?.message || `Error HTTP ${resp.status} al conectar con Gemini` }
+    }
+    return { ok: true, message: '¡Conexión exitosa! El Agente ahora responderá con Google Gemini Cloud.' }
+  } catch (err: any) {
+    return { ok: false, message: err?.message || 'Error de red al conectar con Google Gemini' }
+  }
+}
 
 export async function askDecisionAdvisor(
   cmd: OptimizationCommandData,
@@ -203,10 +224,11 @@ export async function askDecisionAdvisor(
 ): Promise<string> {
   const q = userQuestion.toLowerCase().trim()
 
-  // 1. Verificar si hay API Key propia de Gemini configurada por el usuario
+  // 1. Verificar si hay API Key propia de Gemini configurada por el usuario (localStorage o env)
+  const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
   const customApiKey = (typeof window !== 'undefined'
-    ? (localStorage.getItem('pulso_gemini_api_key') || localStorage.getItem('pulso_ai_api_key') || '')
-    : '').trim()
+    ? (localStorage.getItem('pulso_gemini_api_key') || localStorage.getItem('pulso_ai_api_key') || envKey || '')
+    : envKey).trim()
 
   if (customApiKey) {
     try {
@@ -220,8 +242,8 @@ export async function askDecisionAdvisor(
     }
   }
 
-  // 2. Simulación de procesamiento analítico profundo (400ms)
-  await new Promise(resolve => setTimeout(resolve, 400))
+  // 2. Simulación de procesamiento analítico profundo (350ms)
+  await new Promise(resolve => setTimeout(resolve, 350))
 
   return runDeepForensicEngine(cmd, q, history)
 }
@@ -346,103 +368,380 @@ function runDeepForensicEngine(
   const assistantHistory = history.filter(m => m.role === 'assistant')
   const userHistory = history.filter(m => m.role === 'user')
   const lastAssistantMessage = assistantHistory.length > 0 ? assistantHistory[assistantHistory.length - 1].content.toLowerCase() : ''
-  const prevUserQuery = userHistory.length > 1 ? userHistory[userHistory.length - 2].content.toLowerCase() : ''
 
   // 1. Detección de Afirmaciones / Confirmaciones (el usuario dice "sí", "dale", "hazlo", etc.)
   const isAffirmation = /^(s[ií]|dale|ok|hag[aá]moslo|de acuerdo|adelante|perfecto|todod|continaur|continuar|claro|por supuesto|si por favor|va|listo|hazlo)[\s!.]*$/i.test(q)
     || (q.length <= 15 && /^(s[ií]|ok|dale|todod|adelante|hagamoslo|hazlo)/i.test(q))
 
-  // 2. Detección de Solicitud de Simulación Económica / Proyección
-  const isAskingSimulation = /simula|simulemos|impacto econ|proyecci[oó]n|n[uú]meros|cu[aá]nto gano|ganancia|rentabilidad|retorno|ahorro|cu[aá]nto se gana|beneficio/i.test(q)
+  // ── DETECCIÓN TEMÁTICA PRECISA (ORDENADA POR ESPECIFICIDAD) ──
 
-  // 3. Detección de "Qué es esto" / Explicación sencilla
-  const isAskingWhatIsThis = /qu[eé] es esto|qu[eé] significa|no entiendo|a qu[eé] te refieres|explica(me)?|expl[ií]came|no me queda claro/i.test(q)
+  // 2. Audiencia, Público y Segmentación en Meta Ads
+  const isAskingAudience = /p[uú]blico|audiencia|segmenta|target|a qui[eé]n|para qui[eé]n|edad|edades|demograf|adulto|mayor|50 a[ñn]os|mujer|mujeres|cliente ideal|perfil/i.test(q)
 
-  // 4. Detección de Dudas / Certeza / Escepticismo
-  const isAskingCertainty = /est[aá]s 100% segur|segur[oa]|garantiz|100%|certeza|funciona de verdad|c[oó]mo sabes|qu[eé] garantiza/i.test(q)
+  // 3. Oferta, Precios, Combos, Lentes Progresivos y Ticket Alto
+  const isAskingOfferPricing = /oferta|precio|combo|paquete|gancho|promoc|descuent|garant[ií]a|ticket|progresiv|luz azul|filtro|montura|aros|vender m[aá]s caro|cobrar|rentab|paquete comercial/i.test(q)
 
-  // 5. Detección de Cómo Duplicar Pacientes / Escalar
+  // 4. WhatsApp, Cierre de Ventas, Asistencia a Citas, Madeline
+  const isAskingWhatsAppClosing = /whatsapp|asist|show-?up|inasist|no van|no vienen|no asisten|dejan en visto|visto|secretaria|madeline|cerrar|cierre|objeci[oó]n|confirm|mensaje de bienvenida|mensaje.*whatsapp/i.test(q)
+
+  // 5. Creativos, Anuncios, Videos, Copys y Titulares
+  const isAskingCreatives = /creativ|anuncio|video|qu[eé] grabo|imagen|foto|copy|texto|titular|headline|redacci[oó]n|frase/i.test(q)
+
+  // 6. Presupuesto, Escalamiento y Gasto Diario
+  const isAskingBudget = /presupuest|cu[aá]nto invert|cu[aá]nto meter|d[oó]lar|inversi[oó]n|escalar|repart|distribu|gasto diario|plata/i.test(q)
+
+  // 7. Competencia y Posicionamiento Local en Guayaquil
+  const isAskingCompetition = /competencia|competir|otras [oó]pticas|[oó]pticas grandes|gmo|econ[oó]pticas|diferenci|por qu[eé] elegirnos|mercado|ventaja/i.test(q)
+
+  // 8. Soluciones y Plan de Acción Inmediato
+  const isAskingSolutions = /qu[eé] hago( hoy)?|pasos a seguir|plan de acci[oó]n|hoja de ruta|prioridad|por d[oó]nde empiezo|qu[eé] me recomiendas|c[oó]mo (lo )?(solucion|arreglo|corrij|hago)/i.test(q)
+
+  // 9. Cómo Duplicar Pacientes
   const isAskingScalePatients = /duplicar pacientes|m[aá]s pacientes|duplicar citas|aumentar citas|escalar el negocio|m[aá]s clientes|conseguir clientes|atraer pacientes/i.test(q)
 
-  // 6. Detección de Configuración Meta Ads
-  const isAskingMetaConfig = /configuraci[oó]n.*meta|meta ads|pixel|audience network|segmentaci[oó]n meta|campa[ñn]a/i.test(q)
-
-  // 7. Comparación entre Quizzes (Por qué Quiz 2 funciona mejor)
+  // 10. Comparativa entre Quizzes (Por qué Quiz 2 supera a Quiz 1)
   const isAskingQuizComparison = /por qu[eé].*quiz 2|quiz 2.*mejor|comparar.*quiz|diferencia.*quiz|por qu[eé].*visi[oó]ncheck/i.test(q)
 
-  // 8. Cálculo de Dinero Perdido / Desperdicio
+  // 11. Simulación Económica / Proyección
+  const isAskingSimulation = /simula|simulemos|impacto econ|proyecci[oó]n|n[uú]meros|cu[aá]nto gano|ganancia|rentabilidad|retorno|ahorro/i.test(q)
+
+  // 12. Fuga de Tráfico (General vs. Auditoría Exhaustiva)
+  const isAskingDeepDive = /m[aá]s a detalle|a fondo|exhaustiv|profundiz|explica m[aá]s|qu[eé] m[aá]s|auditor[ií]a forense completa/i.test(q)
+  const isAskingTrafficLoss = /fuga|perdid|pierd|perder|ca[ií]da|abandon|rebot|clic.*visita|discrepanc|llegada|velocidad|lentitud|cargar|carga|preconnect/i.test(q)
+
+  // 13. Pérdida de Dinero / Desperdicio
   const isAskingMoneyLoss = /cu[aá]nto dinero (estoy )?perdiendo|cu[aá]nto se pierde|dinero perdido|p[eé]rdida econ[oó]mica|desperdicio|fuga de plata/i.test(q)
 
-  // 9. Soluciones y Plan de Acción
-  const isAskingSolutions = /c[oó]mo (lo )?(solucion|arreglo|corrij|hago)|pasos a seguir|plan de acci[oó]n|qu[eé] hago( ahora)?|acciones concretas|c[oó]mo arreglar/i.test(q)
+  // 14. Certeza / Escepticismo
+  const isAskingCertainty = /est[aá]s 100% segur|segur[oa]|garantiz|100%|certeza|funciona de verdad|c[oó]mo sabes|qu[eé] garantiza/i.test(q)
 
-  // 10. Fuga de tráfico: Distinción CLARA entre consulta general vs. auditoría exhaustiva a fondo
-  const isAskingDeepDive = /m[aá]s a detalle|a fondo|exhaustiv|profundiz|explica m[aá]s|qu[eé] m[aá]s|auditor[ií]a forense completa/i.test(q)
-  const isAskingTrafficLoss = /fuga|perdid|pierd|perder|ca[ií]da|abandon|rebot|clic.*visita|meta.*web|web.*meta|discrepanc|llegada|velocidad|lentitud|cargar|carga/i.test(q)
+  // 15. Qué es esto / Explicación sencilla
+  const isAskingWhatIsThis = /qu[eé] es esto|qu[eé] significa|no entiendo|a qu[eé] te refieres|explica(me)?|expl[ií]came|no me queda claro/i.test(q)
 
-  // 11. Otras intenciones temáticas
-  const isAskingBudget = /presupuest|d[oó]lar|escalar|invertir|inversi[oó]n|apagar|pausar|distribu|repart|dinero/i.test(q)
-  const isAskingAppointments = /cita|agend|whatsapp|paciente|consultorio|asist|asistencia|show-?up|cierre|venta|madeline/i.test(q)
-  const isAskingDemographics = /edad|demograf|adulto|mayor|50 a[ñn]os|mujer|mujeres|p[uú]blico|segmentaci[oó]n|guayaquil/i.test(q)
+  // 16. Configuración Técnica Meta Ads Manager (Herramienta pura)
+  const isAskingMetaTechnical = /administrador de anuncios|meta ads manager|pixel|audience network|ubicaciones|exclusiones t[eé]cnicas/i.test(q)
+
+  // 17. Estadísticas / Muestra
   const isAskingStats = /muestra|confianza|estad[ií]stic|datos|ruido|significanc/i.test(q)
-  const isAskingExperiments = /a\/b|test|experiment|prueba|variante|control|hip[oó]tesis/i.test(q)
-  const isAskingCopy = /copy|texto|anuncio|titular|headline|redacci[oó]n|frase/i.test(q)
 
-  // ── CASO MULTI-TURNO: RESPUESTA A AFIRMACIÓN (EL USUARIO RESPONDE "SÍ" O "DALE") ──
+  // 18. Experimentos A/B
+  const isAskingExperiments = /a\/b|test|experiment|prueba|variante|control|hip[oó]tesis/i.test(q)
+
+  // ── ENRUTAMIENTO DE INTENCIONES ──
+
+  // A. Respuesta a afirmación en multi-turno
   if (isAffirmation) {
-    if (/meta ads|administrador de anuncios/i.test(lastAssistantMessage) && !/simul/i.test(lastAssistantMessage)) {
+    if (/meta ads|administrador de anuncios/i.test(lastAssistantMessage)) {
       return renderMetaConfigResponse()
     }
-    // Si la propuesta era simular el impacto económico o por defecto
     return renderSimulationResponse(totalSpend, totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments)
   }
 
-  // ── CASO 1: SIMULACIÓN ECONÓMICA DE IMPACTO ──────────────────────────────
+  // B. Audiencia y Segmentación Meta Ads (PRIORIDAD ALTA)
+  if (isAskingAudience) {
+    return renderAudienceTargetingStrategy()
+  }
+
+  // C. Ofertas, Precios y Lentes Progresivos
+  if (isAskingOfferPricing) {
+    return renderOfferPricingStrategy()
+  }
+
+  // D. WhatsApp, Cierre de Ventas y Asistencia de Citas
+  if (isAskingWhatsAppClosing) {
+    return renderWhatsAppClosingStrategy()
+  }
+
+  // E. Creativos, Copys y Anuncios
+  if (isAskingCreatives) {
+    return renderCreativeAdStrategy()
+  }
+
+  // F. Presupuesto y Escalamiento
+  if (isAskingBudget) {
+    return renderBudgetStrategy(quiz1, quiz2)
+  }
+
+  // G. Competencia y Posicionamiento en Guayaquil
+  if (isAskingCompetition) {
+    return renderCompetitionStrategy()
+  }
+
+  // H. Plan de Acción Inmediato / Qué hacer hoy
+  if (isAskingSolutions) {
+    return renderImmediateActionPlan()
+  }
+
+  // I. Cómo Duplicar Pacientes
+  if (isAskingScalePatients) {
+    return renderScalePatientsStrategy()
+  }
+
+  // J. Comparativa entre Quizzes
+  if (isAskingQuizComparison) {
+    return renderQuizComparison(quiz1, quiz2)
+  }
+
+  // K. Simulación Económica
   if (isAskingSimulation) {
     return renderSimulationResponse(totalSpend, totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments)
   }
 
-  // ── CASO 2: EXPLICACIÓN SENCILLA ("¿QUÉ ES ESTO?") ────────────────────────
-  if (isAskingWhatIsThis) {
-    return `### 💡 Explicación Sencilla de este Diagnóstico
-
-Te lo explico en términos prácticos y cotidianos de cómo funciona tu embudo comercial en Guayaquil:
-
-1. **El Anuncio en Facebook/Instagram:**
-   - Las personas ven tu publicidad sobre chequeo visual o agudeza. Tocan el anuncio y Meta te cobra una pequeña fracción (unos $0.015 a $0.028 por clic).
-2. **La Fuga Técnica Inicial:**
-   - De cada 100 personas que tocan el anuncio en su celular con datos móviles 4G (Claro/Movistar), unas 10 a 14 personas cierran la pantalla antes de que cargue la web porque se impacientan.
-3. **El Freno de la Pantalla de Bienvenida (El Gran Problema):**
-   - De las personas que sí esperaban a que cargara, se encontraban con una portada estática que decía *"Bienvenido... toma 2 minutos... presiona Comenzar"*. Cerca del **35% abandonaba en ese botón sin haber contestado nada**.
-4. **La Solución Implementada:**
-   - **Entrada Directa:** Al tocar el anuncio, la persona ve directamente: *"¿Cuál es tu molestia principal en los ojos?"* con botones grandes y claros.
-   - **Aceleración Preconnect:** Conectamos el servidor con el celular en segundo plano para que la web cargue casi instantáneamente.
-
-En resumen: **Es el plan para que ninguna persona que haga clic en tu anuncio se pierda antes de ver la primera pregunta médica.**
-
-¿Te gustaría que simulemos el impacto económico de este cambio o prefieres ver cómo configurar Meta Ads?`
+  // L. Fuga de Tráfico (Exhaustiva vs General)
+  if (isAskingTrafficLoss && isAskingDeepDive) {
+    return renderDeepDiveTrafficLoss(totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments, clickToViewGapPct, viewToStartGapPct, netLostClicks)
+  }
+  if (isAskingTrafficLoss) {
+    return renderGeneralTrafficLoss(totalClicks, totalLandingViews, totalStarts, clickToViewGapPct, netLostClicks)
   }
 
-  // ── CASO 3: CERTEZA / ESCEPTICISMO ("¿ESTÁS 100% SEGURO?") ─────────────────
+  // M. Pérdida de Dinero
+  if (isAskingMoneyLoss) {
+    return renderMoneyLossResponse(totalClicks, totalLandingViews)
+  }
+
+  // N. Certeza y Validación CRO
   if (isAskingCertainty) {
-    return `### 🎯 Fundamento Técnico y Certeza de la Recomendación
-
-En optimización de tasa de conversión digital (CRO), **ningún especialista serio garantiza un 100% absoluto**, pero esta decisión se sustenta en tres pilares empíricos irrefutables:
-
-1. **La Ley de Fricción Móvil (Validada en millones de sesiones):**
-   - En dispositivos móviles, cada pantalla intermedia que no aporta valor inmediato genera una deserción promedio del **25% al 40%**.
-   - Al remover la pantalla de bienvenida y mostrar directamente la pregunta clínica, eliminamos el 100% de esa fricción innecesaria. El usuario vino a evaluarse, no a leer introducciones.
-2. **La Demografía de tus Pacientes (+61.6% mayores de 50 años):**
-   - Un adulto mayor navegando en Facebook en un teléfono Android no quiere leer párrafos explicativos pequeños; responde inmediatamente a botones táctiles grandes como los de 24px que configuramos.
-3. **Comprobación Científica en Tiempo Real:**
-   - No necesitas creerme a ciegas: en los próximos **50 a 100 clics** que registre tu campaña, observarás en el tablero de Pulso Analytics que la métrica **Inicios de Quiz (start_rate)** subirá notablemente respecto al 44% histórico.
-
-¿Deseas ver la simulación de números o prefieres revisar las exclusiones en Meta Ads?`
+    return renderCertaintyResponse()
   }
 
-  // ── CASO 4: CÓMO DUPLICAR PACIENTES ───────────────────────────────────────
-  if (isAskingScalePatients) {
-    return `### 🚀 Plan de Crecimiento: 4 Palancas para Duplicar Pacientes en Consultorio
+  // O. Explicación Sencilla
+  if (isAskingWhatIsThis) {
+    return renderSimpleExplanation()
+  }
+
+  // P. Configuración Técnica Meta Ads Manager
+  if (isAskingMetaTechnical) {
+    return renderMetaConfigResponse()
+  }
+
+  // Q. Madurez Estadística
+  if (isAskingStats) {
+    return renderStatsResponse(cmd, totalClicks, totalLandingViews, totalStarts, totalAppointments, quiz2)
+  }
+
+  // R. Experimentos A/B
+  if (isAskingExperiments) {
+    return renderExperimentsResponse()
+  }
+
+  // S. Sintetizador Dinámico Cognitivo para cualquier otra consulta abierta
+  return renderDynamicCognitiveResponse(q, cmd, reconciliations, totalClicks, totalSpend, totalStarts, totalAppointments)
+}
+function renderAudienceTargetingStrategy(): string {
+  return `### 🎯 Segmentación y Público Óptimo en Meta Ads para Óptica Johanna (Guayaquil)
+
+Cruzando los datos de telemetría de tus campañas con la demografía de Guayaquil, el público que genera **mayor retorno sobre la inversión (ROAS)** no es genérico, sino que se divide en **dos segmentos bien definidos**:
+
+---
+
+#### 🏆 Segmento 1 (El Más Rentable): Adultos con Presbicia / Lectura (+45 a 65+ años)
+* **Por qué es el ganador:** El **61.6% de tus visitantes reales en Meta Ads ya tienen más de 50 años** (40.0% entre 50 y 64 años, y 21.6% mayores de 65). Es un público con necesidad visual urgente, poder adquisitivo para lentes progresivos y menor indecisión.
+* **Sesgo de Género:** **Mujeres (58.8% del volumen en Guayaquil)**. En este rango de edad, las mujeres son las principales gestoras de salud familiar: compran sus lentes y llevan al esposo o a sus padres a revisarse.
+* **Ubicación Geográfica en Meta:** 
+  - Guayaquil Urbano (radio de 15 km a 20 km alrededor del local / Matriz).
+  - Incluir: Samborondón, Durán y parroquias urbanas (Tarqui, Febres Cordero, Ximena).
+* **Intereses Recomendados en el Conjunto de Anuncios:**
+  - *Intereses Principales:* Salud visual, Cuidado de la vista, Lectura de libros, Bienestar, Lentes/Gafas oftálmicas.
+  - *Intereses Conductuales:* Usuarios de smartphones Android (Samsung Galaxy A / Xiaomi Redmi), Pasatiempos en celular.
+* **Creativo / Quiz asignado:** **Quiz 2 (VisiónCheck - Test de Agudeza)**. El creativo amarillo con la prueba de lectura tiene un **CTR de 8.19%** y un CPC de apenas **$0.0149**.
+
+---
+
+#### 💻 Segmento 2 (Volumen y Recambio): Fatiga Digital & Pantallas (25 a 44 años)
+* **Perfil:** Oficinistas, estudiantes universitarios y trabajadores remotos que pasan más de 6 horas diarias frente a computadoras y celulares.
+* **Síntomas clave:** Dolor de cabeza vespertino, ardor o sequedad ocular y pesadez en párpados.
+* **Género:** Hombres y Mujeres (50% / 50%).
+* **Intereses Recomendados:** Trabajo remoto, Teletrabajo, Computadoras personales, Software, Desarrollo web, Tecnología.
+* **Creativo / Quiz asignado:** **Quiz 1 (Chequeo General de Molestias)** enfocado en descanso visual y filtro de luz azul (Blue Block).
+
+---
+
+#### 🚫 Exclusiones Críticas para No Desperdiciar Presupuesto:
+1. **Excluir radio superior a 25 km:** Evita personas en Milagro, Daule rural o cantones lejanos que harán clic pero nunca se trasladarán al consultorio en Guayaquil.
+2. **Excluir Audience Network:** Elimina anuncios dentro de juegos móviles y aplicaciones donde los toques accidentales (*fat-finger clicks*) son altísimos.
+3. **Ubicaciones manuales:** Mantener activo **únicamente Facebook Feed Móvil e Instagram Feed**.
+
+---
+
+#### 💰 Reparto de Presupuesto Sugerido:
+* **75% del presupuesto diario al Segmento 1 (Presbicia / Quiz 2):** Es el que llena la agenda de pacientes para lentes progresivos de alto ticket ($80 - $160).
+* **25% del presupuesto al Segmento 2 (Fatiga Digital / Quiz 1):** Mantiene flujo constante de aros livianos con filtro azul ($45 - $75).
+
+¿Deseas que preparemos el copy exacto para este anuncio o prefieres simular cuántas citas semanales generará esta segmentación?`
+}
+
+function renderOfferPricingStrategy(): string {
+  return `### 💎 Estrategia de Oferta, Combos y Venta de Lentes de Alto Ticket
+
+Para que las citas agendadas por WhatsApp se conviertan en ventas de **$80 a $160+ en consultorio** (en lugar de solo revisiones gratuitas sin compra), implementa la siguiente ingeniería de oferta:
+
+---
+
+#### 1. El "Combo Visión Total" (Lentes Progresivos Digitales)
+En lugar de cobrar por separado el aro, las lunas y el examen:
+* **Estructura del Paquete:** 
+  > *Montura de Acetato / Metal seleccionada + Lunas Progresivas Digitales FreeForm + Antirreflejo UV + Examen Visual Computarizado Completo incluido.*
+* **Precio Ancla vs. Oferta Especial:**
+  - Precio normal por separado: $155
+  - **Precio Combo en Cita Reservada:** **$95 a $115** (o 3 cuotas sin intereses de ~$35 con tarjetas locales).
+* **Por qué funciona:** El paciente mayor de 50 años percibe una solución integral sin costos sorpresa ni cálculos complicados.
+
+#### 2. Reversión de Riesgo: Garantía de Adaptación de 30 Días
+* El mayor miedo de un paciente al comprar lentes progresivos es: *"¿Y si no me adapto y me mareo?"*.
+* **La Solución:** Ofrecer formalmente por escrito:
+  > *"Garantía de Adaptación 100%: Si en 30 días sientes incomodidad, ajustamos tu graduación y cambiamos tus lunas sin costo adicional."*
+* Esto elimina el 90% de las dudas de compra en el momento de la venta.
+
+#### 3. Facilidades de Pago Locales (Guayaquil)
+* Habilitar cobro con datáfono (Datafast / Medianet) para diferir a **3 y 6 meses sin intereses** con Banco Pichincha, Guayaquil, Pacífico y Diners.
+* Comunicar la facilidad: *"Llévate tus progresivos completos por menos de $1.20 al día"*.
+
+¿Deseas que revisemos el guion de WhatsApp para presentar esta oferta antes de la cita o prefieres ver la segmentación de Meta Ads?`
+}
+
+function renderWhatsAppClosingStrategy(): string {
+  return `### 💬 Protocolo de Cierre en WhatsApp & Garantía de Asistencia (Show-Up Rate)
+
+El éxito del embudo no depende solo del anuncio, sino de **la velocidad y el tono en WhatsApp durante los primeros 5 minutos**:
+
+---
+
+#### ⚡ Regla de Oro: Velocidad de Respuesta (< 3 minutos)
+* Cuando una persona completa el quiz y abre WhatsApp con el mensaje:
+  > *"Hola! deseo agendar un examen visual gratuito"*
+  su intención de compra está en el punto más alto del día. Si tardas 30 minutos en responder, el 40% ya cerró la app o se ocupó en otra cosa.
+
+---
+
+#### 📋 Guion 1: Contacto Inmediato (Técnica de la Alternativa)
+> *"¡Hola [Nombre]! 👋 Qué gusto saludarte de Óptica Johanna (Matriz Guayaquil). Recibimos tus respuestas del chequeo visual. Tus molestias indican que tus ojos necesitan una revisión computarizada personalizada.*
+> 
+> *Para tu comodidad, tenemos disponibilidad hoy en dos turnos:*
+> 🔹 **Opción A:** 11:30 de la mañana
+> 🔹 **Opción B:** 16:00 de la tarde
+> 
+> *¿Cuál de estos dos horarios te queda mejor para apartar tu cupo sin tiempo de espera?"*
+* **Por qué funciona:** Da a elegir entre dos opciones concretas en lugar de una pregunta abierta (*"¿cuándo quieres venir?"*), lo que acelera la respuesta del paciente.
+
+---
+
+#### 🔄 Guion 2: Reactivación de Leads que Dejan en Visto (A las 3 horas)
+Si el usuario leyó pero no confirmó:
+> *"Hola [Nombre] ✨, te saluda Madeline de Óptica Johanna. Quería asegurarme de que recibiste la información. Tenemos un cupo reservado a tu nombre con el examen computarizado sin costo hasta mañana. ¿Prefieres que te agendemos para el sábado o te queda mejor entre semana?"*
+
+---
+
+#### 📍 Protocolo Anti-Inasistencia (2 horas antes de la cita)
+* Enviar la **ubicación exacta de Google Maps** con una foto clara de la fachada de la matriz en Guayaquil.
+* Recordar: *"Tu turno está preparado con el optómetra para tus pruebas visuales y selección de aros. Te esperamos puntualmente."*
+
+¿Deseas que analicemos la segmentación de Meta Ads o prefieres simular el retorno económico de estas citas?`
+}
+
+function renderCreativeAdStrategy(): string {
+  return `### 🎨 Estrategia de Creativos y Copys Ganadores para Meta Ads
+
+Para captar la atención en el feed de Facebook e Instagram en Guayaquil frente a adultos y familias:
+
+---
+
+#### 1. Formato y Reglas Visuales Obligatorias:
+* **Relación de Aspecto:** Vertical **4:5 (1080x1350 px)** para feed o **9:16** para Reels/Stories. Ocupa el 100% de la pantalla del celular Android.
+* **Tipografía:** Textos grandes (mínimo 24px equivalente), fondo de alto contraste (amarillo con negro o azul médico con blanco).
+* **Regla de los 1.5 Segundos:** El gancho visual debe ocurrir de inmediato. No uses introducciones con logos animados.
+
+---
+
+#### 2. Creativo Ganador A (Presbicia & Lectura de Cerca - Quiz 2):
+* **Elemento Visual:** Foto o video corto de una persona de 50 años alejando el celular con el brazo para poder enfocar un mensaje de texto.
+* **Texto en la Imagen:** *"¿Alejas el celular para leer? Haz este test visual de 1 minuto"*
+* **Copy del Anuncio:**
+  > *"Si te cuesta leer letras pequeñas en tu teléfono o al final del día sientes dolor de cabeza por forzar la vista, haz este chequeo interactivo de agudeza visual. Descubre en 60 segundos si requieres graduación para lectura o lentes progresivos. Citas gratuitas en Matriz Guayaquil."*
+* **Botón CTA:** **[Realizar Test de Visión]**
+
+---
+
+#### 3. Creativo Ganador B (Fatiga Digital & Pantallas - Quiz 1):
+* **Elemento Visual:** Persona frente a laptop frotándose los ojos con pesadez.
+* **Texto en la Imagen:** *"¿Ojos rojos o cansados frente a la computadora?"*
+* **Copy del Anuncio:**
+  > *"¿Pasas más de 5 horas al día frente a pantallas? Descubre qué tipo de descanso necesitan tus ojos y agenda tu examen computarizado sin costo en Óptica Johanna."*
+
+¿Deseas revisar también la distribución de presupuesto o el guion de respuesta en WhatsApp?`
+}
+
+function renderBudgetStrategy(quiz1: any, quiz2: any): string {
+  const q1Ctr = quiz1?.metaCtr || 5.54
+  const q2Ctr = quiz2?.metaCtr || 8.19
+  const q1Cpc = quiz1?.metaCpc || 0.028
+  const q2Cpc = quiz2?.metaCpc || 0.0149
+
+  return `### 💰 Estrategia Forense de Presupuesto & Pauta Publicitaria
+
+Comparando el rendimiento en vivo de tus campañas:
+
+| Métrica | Quiz 1 (Chequeo General) | Quiz 2 (VisiónCheck / Presbicia) | Ganador |
+| :--- | :--- | :--- | :--- |
+| **CTR (Enganche)** | ${q1Ctr}% | **${q2Ctr}%** | 🏆 **Quiz 2 (+48% mayor)** |
+| **CPC (Costo/Clic)** | $${q1Cpc} | **$${q2Cpc}** | 🏆 **Quiz 2 (47% más barato)** |
+| **Costo por Visita** | $${quiz1?.metaCostPerLanding || 0.028} | **$${quiz2?.metaCostPerLanding || 0.0173}** | 🏆 **Quiz 2 (Casi el doble de visitas/dólar)** |
+
+---
+
+#### Recomendación de Inversión Ejecutiva:
+1. **Distribución Óptima:** Asignar **75% del presupuesto diario a Quiz 2** y **25% a Quiz 1**.
+   - Si inviertes **$10/día**: $7.50 para Quiz 2 y $2.50 para Quiz 1.
+2. **Por qué mantener Quiz 1:** Aunque Quiz 2 es más barato en clics, Quiz 1 atrae casos integrales con mayor ticket promedio si compran lentes de alta gama.
+3. **Regla de Escalamiento Seguro:** Si decides aumentar presupuesto de $5 a $15/día, hazlo en incrementos de **máximo 20% cada 48 horas** para que el algoritmo de Meta no pierda la optimización de público ni encarezca el CPC.
+4. **Regla de Apagado de Creativos:** Si un anuncio consume $3 sin generar al menos 1 lead o inicio de quiz, se pausa inmediatamente y se prueba un nuevo titular.
+
+¿Deseas simular cuántas citas obtendrás con tu presupuesto actual o prefieres ver la segmentación de Meta?`
+}
+
+function renderCompetitionStrategy(): string {
+  return `### 🛡️ Estrategia Competitiva: Cómo Ganarle a Cadenas Grandes en Guayaquil (GMO, Econópticas)
+
+Las cadenas corporativas de ópticas tienen presupuestos millonarios de publicidad, pero adolecen de tres debilidades críticas en las que **Óptica Johanna tiene ventaja absoluta**:
+
+---
+
+#### 1. Atención Personalizada vs. "Fábrica Rápida de Recetas"
+* En las cadenas masivas, el optómetra tiene 8 a 10 minutos por paciente porque debe cumplir cuotas de atención. Muchas veces la refracción queda imprecisa.
+* **Tu Ventaja:** Posicionar la consulta como un **Examen Visual Clínico Computarizado Detallado** donde se escuchan las molestias reales del paciente.
+
+#### 2. Tiempos de Entrega Ágiles (24 a 48 Horas)
+* Muchas cadenas envían sus trabajos a laboratorios centralizados fuera de la ciudad (Quito o el extranjero), tardando de **7 a 15 días** en entregar lentes progresivos.
+* **Tu Ventaja:** Entrega rápida local en Guayaquil y ajuste personalizado de aros en el mismo establecimiento.
+
+#### 3. Garantía Real de Adaptación Cercana
+* Un paciente prefiere atenderse con una óptica local donde conoce a la optómetra y a la encargada (Madeline), sabiendo que ante cualquier duda puede acercarse al local sin trámites burocráticos.
+
+¿Deseas que preparemos un gancho comercial que destaque estas ventajas o prefieres revisar el guion de WhatsApp?`
+}
+
+function renderImmediateActionPlan(): string {
+  return `### 🛠️ Hoja de Ruta Táctica: 3 Acciones Inmediatas para tu Embudo
+
+Para consolidar la captación en Guayaquil, sigue este orden de ejecución:
+
+1. **Paso 1 · Front-End (Completado Hoy en Producción):**
+   - ✅ Eliminada la pantalla intermedia de bienvenida en ambos quizzes.
+   - ✅ Pre-conexión DNS y SSL a Supabase en el \`<head>\` HTML (ahorro de 300ms en 4G).
+   - ✅ Redirección inmediata a WhatsApp al tocar agendar cita gratuita.
+2. **Paso 2 · Administrador de Anuncios de Meta Ads (Hacer Hoy):**
+   - Excluir **Audience Network** y ubicar solo en **Facebook Móvil Feed** e **Instagram Feed**.
+   - Optimizar por **Visitas a la Página de Destino** (*Landing Page Views*), nunca por simples clics en el enlace.
+   - Segmentar el 75% del presupuesto para adultos de **45 a 65+ años** en Guayaquil metropolitano.
+3. **Paso 3 · Operación en WhatsApp (Diario):**
+   - Responder al lead en menos de **3 minutos** con mensaje cerrado de doble opción:
+     > *"¡Hola [Nombre]! Recibimos tu auto-chequeo. ¿Te queda más cómodo hoy a las 11:30 o a las 16:00 para tu examen gratuito?"*
+
+¿Deseas que revisemos el guion completo de WhatsApp o prefieres ver la simulación económica?`
+}
+
+function renderScalePatientsStrategy(): string {
+  return `### 🚀 Plan de Crecimiento: 4 Palancas para Duplicar Pacientes en Consultorio
 
 Para duplicar el número de pacientes atendidos en **Óptica Johanna** en Guayaquil, activamos las 4 palancas del embudo:
 
@@ -452,22 +751,21 @@ Para duplicar el número de pacientes atendidos en **Óptica Johanna** en Guayaq
    - Concentrar el 75% del presupuesto en **Quiz 2 (VisiónCheck)**, que tiene un CTR de **8.19%** y un costo por clic de solo **$0.0149** (la mitad que el Quiz 1).
 3. **Palanca 3 · Redirección Instantánea a WhatsApp:** *(Implementada hoy)*
    - El paciente ya no espera ni llena formularios largos; toca el botón y abre el chat directamente con: *"Hola! deseo agendar un examen visual gratuito"*.
-4. **Palanca 4 · Protocolo de Secretaría (< 5 minutos):**
+4. **Palanca 4 · Protocolo de Secretaría (< 3 minutos):**
    - Responder al instante ofreciendo **dos opciones fijas de horario** (ej: *"¿Te queda mejor 11:30 o 16:00?"*) en lugar de preguntas abiertas. Enviar ubicación de Google Maps 2 horas antes de la cita.
 
 Con estas 4 palancas sincronizadas, el costo por cita médica confirmada se reduce a la mitad, permitiéndote duplicar pacientes con la misma inversión publicitaria.
 
-¿Deseas que simulemos el retorno financiero en ventas de lentes o prefieres revisar la configuración de Meta Ads?`
-  }
+¿Deseas que simulemos el retorno financiero en ventas de lentes o prefieres revisar la segmentación de Meta Ads?`
+}
 
-  // ── CASO 5: POR QUÉ QUIZ 2 FUNCIONA MEJOR QUE QUIZ 1 ───────────────────────
-  if (isAskingQuizComparison) {
-    const q1Ctr = quiz1?.metaCtr || 5.54
-    const q2Ctr = quiz2?.metaCtr || 8.19
-    const q1Cpc = quiz1?.metaCpc || 0.028
-    const q2Cpc = quiz2?.metaCpc || 0.0149
+function renderQuizComparison(quiz1: any, quiz2: any): string {
+  const q1Ctr = quiz1?.metaCtr || 5.54
+  const q2Ctr = quiz2?.metaCtr || 8.19
+  const q1Cpc = quiz1?.metaCpc || 0.028
+  const q2Cpc = quiz2?.metaCpc || 0.0149
 
-    return `### 🔬 Comparativa Forense: ¿Por qué Quiz 2 supera a Quiz 1?
+  return `### 🔬 Comparativa Forense: ¿Por qué Quiz 2 supera a Quiz 1?
 
 Analizando los datos reales de ambos quizzes en Guayaquil:
 
@@ -476,6 +774,8 @@ Analizando los datos reales de ambos quizzes en Guayaquil:
 | **CTR de Anuncio (Enganche)** | ${q1Ctr}% | **${q2Ctr}%** | **+47.8% mayor interés** |
 | **CPC (Costo por Clic)** | $${q1Cpc} | **$${q2Cpc}** | **46.8% más económico** |
 | **Costo por Visita Web** | $${quiz1?.metaCostPerLanding || 0.028} | **$${quiz2?.metaCostPerLanding || 0.0173}** | **38.2% de ahorro por visitante** |
+
+---
 
 #### ¿Cuál es la Causa Psicológica del Éxito de Quiz 2?
 1. **Curiosidad Interactiva (Gamificación):**
@@ -487,52 +787,19 @@ Analizando los datos reales de ambos quizzes en Guayaquil:
    - Mantener Quiz 1 con el 25% porque atrae pacientes con problemas complejos que terminan adquiriendo monturas de mayor valor.
 
 ¿Deseas ver la configuración recomendada para Meta Ads o prefieres simular el impacto de presupuesto?`
-  }
+}
 
-  // ── CASO 6: CÁLCULO EXACTO DE DINERO PERDIDO ──────────────────────────────
-  if (isAskingMoneyLoss) {
-    const totalLostPreFriction = Math.round((totalClicks * 0.12) * 0.02 * 100) / 100
-    const totalLostWelcome = Math.round((totalLandingViews * 0.35) * 0.02 * 100) / 100
-
-    return `### 💸 Auditoría de Fuga de Dinero en tus Campañas
-
-Cruzando tu costo por clic real (~$0.018 a $0.028) con el volumen de sesiones:
-
-1. **Pérdida por Latencia de Red 4G (12% - 14% de clics):**
-   - De cada $20 invertidos en Meta, aproximadamente **$2.50 a $2.80** se perdían porque el usuario cerraba Facebook antes de descargar la web.
-   - *Solución:* Con el **Preconnect DNS** activo, esta fuga se reduce a menos del 6%.
-2. **Pérdida por la Pantalla de Bienvenida (El Freno del 35%):**
-   - De cada $20 invertidos, **$7.00 completos se evaporaban** porque la persona llegaba a la web pero abandonaba frente al botón *"Comenzar"*.
-   - *Solución:* Al implementar la **Entrada Directa a Síntomas**, recuperas ese 35% de presupuesto sin gastar más dinero.
-
-> **Resumen Financiero:** Cada ciclo de $20 de pauta ahora rinde como si estuvieras invirtiendo **$32.00**, duplicando el volumen de pacientes potenciales evaluados.
-
-¿Deseas ver la simulación de citas generadas o prefieres revisar las audiencias en Meta Ads?`
-  }
-
-  // ── CASO 7: SOLUCIONES Y PLAN DE ACCIÓN ────────────────────────────────────
-  if (isAskingSolutions) {
-    return `### 🛠️ Hoja de Ruta Táctica: 3 Acciones Inmediatas para tu Embudo
-
-Para consolidar la captación en Guayaquil, sigue este orden de ejecución:
-
-1. **Paso 1 · Front-End (Completado Hoy en Producción):**
-   - ✅ Eliminada la pantalla intermedia de bienvenida en ambos quizzes.
-   - ✅ Pre-conexión DNS y SSL a Supabase en el \`<head>\` HTML (ahorro de 300ms en 4G).
-   - ✅ Redirección inmediata a WhatsApp al tocar agendar cita gratuita.
-2. **Paso 2 · Administrador de Anuncios de Meta Ads (Hacer Hoy):**
-   - Excluir **Audience Network** y ubicar solo en **Facebook Móvil Feed** e **Instagram Feed**.
-   - Optimizar por **Visitas a la Página de Destino** (*Landing Page Views*), nunca por simples clics en el enlace.
-3. **Paso 3 · Operación en WhatsApp (Diario):**
-   - Responder al lead en menos de **5 minutos** con mensaje cerrado de doble opción:
-     > *"¡Hola [Nombre]! Recibimos tu auto-chequeo. ¿Te queda más cómodo hoy a las 11:30 o a las 16:00 para tu examen gratuito?"*
-
-¿Deseas que revisemos el guion completo de WhatsApp o prefieres ver la simulación económica?`
-  }
-
-  // ── CASO 8: AUDITORÍA EXHAUSTIVA DE FUGA (SOLO SI PIDE "MÁS A DETALLE" O "A FONDO") ──
-  if (isAskingTrafficLoss && isAskingDeepDive) {
-    return `### 🔬 Evaluación Forense Exhaustiva: Fuga de Tráfico Meta Ads ➔ Web
+function renderDeepDiveTrafficLoss(
+  totalClicks: number,
+  totalLandingViews: number,
+  totalStarts: number,
+  totalCompletes: number,
+  totalAppointments: number,
+  clickToViewGapPct: number,
+  viewToStartGapPct: number,
+  netLostClicks: number
+): string {
+  return `### 🔬 Evaluación Forense Exhaustiva: Fuga de Tráfico Meta Ads ➔ Web
 
 Cruzando las tablas de **Meta Marketing API** con la **Telemetría en Vivo de Pulso** y los registros de Supabase, hemos reconstruido el recorrido exacto de los usuarios en Guayaquil:
 
@@ -575,11 +842,16 @@ Cruzando las tablas de **Meta Marketing API** con la **Telemetría en Vivo de Pu
 3. **Exclusión de Audience Network:** Para eliminar clics basura accidentales.
 
 ¿Deseas que simulemos el impacto económico de este cambio o prefieres revisar la configuración de Meta Ads?`
-  }
+}
 
-  // ── CASO 9: DIAGNÓSTICO INICIAL GENERAL DE FUGA (PREGUNTA "¿POR QUÉ SE PIERDEN...?") ──
-  if (isAskingTrafficLoss) {
-    return `### 🔍 Diagnóstico Forense: Pérdida de Tráfico entre Meta Ads y la Web
+function renderGeneralTrafficLoss(
+  totalClicks: number,
+  totalLandingViews: number,
+  totalStarts: number,
+  clickToViewGapPct: number,
+  netLostClicks: number
+): string {
+  return `### 🔍 Diagnóstico Forense: Pérdida de Tráfico entre Meta Ads y la Web
 
 Existe una brecha documentada entre lo que Meta cobra y lo que llega a tu sistema:
 
@@ -587,97 +859,109 @@ Existe una brecha documentada entre lo que Meta cobra y lo que llega a tu sistem
 * **Llegadas efectivas con página cargada:** **${totalLandingViews || 137} visitas**
 * **Brecha Inicial:** **${clickToViewGapPct}% de pérdida** (${netLostClicks || 22} personas que hicieron clic pero cerraron antes de que el sitio cargara).
 
+---
+
 #### ¿Por qué se produce esta pérdida?
 1. **Redes Móviles en Guayaquil:** Más del 90% navega con datos móviles 4G (Claro/Movistar). Si la página tarda más de 2 segundos en cargar en el navegador interno de Facebook, el usuario abandona de inmediato.
 2. **Adultos Mayores de 50 Años (61.6% del público):** En Facebook móvil ocurren muchos clics accidentales mientras hacen scroll con el pulgar. Si no ven respuesta instantánea, cierran la ventana.
-3. **Fricción en la Pantalla de Bienvenida:** De las ${totalLandingViews || 137} personas que sí cargaron la web, solo **${totalStarts || 60}** iniciaron el quiz (otro 35% de abandono en la pantalla de bienvenida previa).
+3. **Fricción en la Pantalla de Bienvenida:** De las ${totalLandingViews || 137} personas que sí cargaron la web, solo **${totalStarts || 60}** iniciaban el quiz (otro 35% de abandono en la pantalla de bienvenida previa).
 
 💡 **Lo que acabamos de resolver:** Hoy dejamos activa la **Entrada Directa a Síntomas** y la **Pre-conexión DNS**. Con esto eliminamos el freno y aceleramos la carga.
 
 ¿Deseas ver la simulación de cuántos pacientes adicionales generará este cambio o prefieres profundizar en los detalles técnicos?`
-  }
+}
 
-  // ── CASO 10: CONFIGURACIÓN DE META ADS ────────────────────────────────────
-  if (isAskingMetaConfig) {
-    return renderMetaConfigResponse()
-  }
+function renderMoneyLossResponse(totalClicks: number, totalLandingViews: number): string {
+  return `### 💸 Auditoría de Fuga de Dinero en tus Campañas
 
-  // ── CASO 11: DISTRIBUCIÓN DE PRESUPUESTO & ESCALAMIENTO ───────────────────
-  if (isAskingBudget) {
-    const q1Ctr = quiz1?.metaCtr || 5.54
-    const q2Ctr = quiz2?.metaCtr || 8.19
-    const q1Cpc = quiz1?.metaCpc || 0.028
-    const q2Cpc = quiz2?.metaCpc || 0.0149
+Cruzando tu costo por clic real (~$0.018 a $0.028) con el volumen de sesiones:
 
-    return `### 💰 Estrategia Forense de Presupuesto & Pauta Publicitaria
+1. **Pérdida por Latencia de Red 4G (12% - 14% de clics):**
+   - De cada $20 invertidos en Meta, aproximadamente **$2.50 a $2.80** se perdían porque el usuario cerraba Facebook antes de descargar la web.
+   - *Solución:* Con el **Preconnect DNS** activo, esta fuga se reduce a menos del 6%.
+2. **Pérdida por la Pantalla de Bienvenida (El Freno del 35%):**
+   - De cada $20 invertidos, **$7.00 completos se evaporaban** porque la persona llegaba a la web pero abandonaba frente al botón *"Comenzar"*.
+   - *Solución:* Al implementar la **Entrada Directa a Síntomas**, recuperas ese 35% de presupuesto sin gastar más dinero.
 
-Comparando el rendimiento en vivo de tus campañas:
+> **Resumen Financiero:** Cada ciclo de $20 de pauta ahora rinde como si estuvieras invirtiendo **$32.00**, duplicando el volumen de pacientes potenciales evaluados.
 
-| Métrica | Quiz 1 (Chequeo General) | Quiz 2 (VisiónCheck / Presbicia) | Ganador |
-| :--- | :--- | :--- | :--- |
-| **CTR (Enganche)** | ${q1Ctr}% | **${q2Ctr}%** | 🏆 **Quiz 2 (+48% mayor)** |
-| **CPC (Costo/Clic)** | $${q1Cpc} | **$${q2Cpc}** | 🏆 **Quiz 2 (47% más barato)** |
-| **Costo por Visita** | $${quiz1?.metaCostPerLanding || 0.028} | **$${quiz2?.metaCostPerLanding || 0.0173}** | 🏆 **Quiz 2 (Casi el doble de visitas/dólar)** |
+¿Deseas ver la simulación de citas generadas o prefieres revisar las audiencias en Meta Ads?`
+}
 
-#### Recomendación de Inversión Ejecutiva:
-1. **Distribución Óptima:** Asignar **75% del presupuesto a Quiz 2** y **25% a Quiz 1**.
-2. **Por qué mantener Quiz 1:** Aunque Quiz 2 es más barato en clics, Quiz 1 atrae casos integrales con mayor ticket promedio si compran lentes de alta gama.
-3. **Regla de Escalamiento:** Si decides aumentar presupuesto de $3 a $10/día, hazlo en incrementos de **máximo 20% cada 48 horas** para que el algoritmo de Meta no pierda la optimización de público.`
-  }
+function renderCertaintyResponse(): string {
+  return `### 🎯 Fundamento Técnico y Certeza de la Recomendación
 
-  // ── CASO 12: CITAS, WHATSAPP & SHOW-UP RATE ───────────────────────────────
-  if (isAskingAppointments) {
-    return `### 🏥 Protocolo de Conversión de Citas Médicas (WhatsApp & Consultorio)
+En optimización de tasa de conversión digital (CRO), **ningún especialista serio garantiza un 100% absoluto**, pero esta decisión se sustenta en tres pilares empíricos irrefutables:
 
-En servicios de salud visual en Guayaquil, el mayor cuello de botella económico **no está en Facebook, sino en los primeros 15 minutos tras el test**:
+1. **La Ley de Fricción Móvil (Validada en millones de sesiones):**
+   - En dispositivos móviles, cada pantalla intermedia que no aporta valor inmediato genera una deserción promedio del **25% al 40%**.
+   - Al remover la pantalla de bienvenida y mostrar directamente la pregunta clínica, eliminamos el 100% de esa fricción innecesaria. El usuario vino a evaluarse, no a leer introducciones.
+2. **La Demografía de tus Pacientes (+61.6% mayores de 50 años):**
+   - Un adulto mayor navegando en Facebook en un teléfono Android no quiere leer párrafos explicativos pequeños; responde inmediatamente a botones táctiles grandes como los de 24px que configuramos.
+3. **Comprobación Científica en Tiempo Real:**
+   - No necesitas creerme a ciegas: en los próximos **50 a 100 clics** que registre tu campaña, observarás en el tablero de Pulso Analytics que la métrica **Inicios de Quiz (start_rate)** subirá notablemente respecto al 44% histórico.
 
-1. **La Redirección Directa a WhatsApp (Implementada hoy):**
-   - Al tocar *"Agendar mi cita gratuita"*, el usuario ahora es enviado de inmediato a WhatsApp con el mensaje:
-     > *"Hola! deseo agendar un examen visual gratuito"*
-   - Esto reduce el tiempo de contacto a **0 segundos** y evita que el lead se enfríe.
+¿Deseas ver la simulación de números o prefieres revisar las exclusiones en Meta Ads?`
+}
 
-2. **Guion de Confirmación Inmediata de Secretaría (< 5 minutos):**
-   > *"¡Hola! 👋 Qué gusto saludarte de Óptica Johanna (Matriz Guayaquil). Recibimos tu solicitud para tu Examen Visual Gratuito. Tenemos disponibilidad hoy a las 11:30 o a las 16:00. ¿Qué horario te queda más cómodo para apartar tu turno sin espera?"*
+function renderSimpleExplanation(): string {
+  return `### 💡 Explicación Sencilla de este Diagnóstico
 
-3. **Garantía Anti-Inasistencia (Show-Up Rate):**
-   - Enviar 2 horas antes de la cita la ubicación exacta por Google Maps y recordar: *"Tienes reservado tu turno con examen computarizado sin costo y prueba de monturas."*`
-  }
+Te lo explico en términos prácticos y cotidianos de cómo funciona tu embudo comercial en Guayaquil:
 
-  // ── CASO 13: AUDIENCIA, DEMOGRAFÍA Y SEGMENTACIÓN ────────────────────────
-  if (isAskingDemographics) {
-    return `### 👥 Radiografía Demográfica Real de tu Pauta (Guayaquil)
+1. **El Anuncio en Facebook/Instagram:**
+   - Las personas ven tu publicidad sobre chequeo visual o agudeza. Tocan el anuncio y Meta te cobra una pequeña fracción (unos $0.015 a $0.028 por clic).
+2. **La Fuga Técnica Inicial:**
+   - De cada 100 personas que tocan el anuncio en su celular con datos móviles 4G (Claro/Movistar), unas 10 a 14 personas cierran la pantalla antes de que cargue la web porque se impacientan.
+3. **El Freno de la Pantalla de Bienvenida (El Gran Problema):**
+   - De las personas que sí esperaban a que cargara, se encontraban con una portada estática que decía *"Bienvenido... toma 2 minutos... presiona Comenzar"*. Cerca del **35% abandonaba en ese botón sin haber contestado nada**.
+4. **La Solución Implementada:**
+   - **Entrada Directa:** Al tocar el anuncio, la persona ve directamente: *"¿Cuál es tu molestia principal en los ojos?"* con botones grandes y claros.
+   - **Aceleración Preconnect:** Conectamos el servidor con el celular en segundo plano para que la web cargue casi instantáneamente.
 
-Analizando los datos reales sincronizados desde Meta Ads:
+En resumen: **Es el plan para que ninguna persona que haga clic en tu anuncio se pierda antes de ver la primera pregunta médica.**
 
-* **Concentración Etaria:** **61.6% de la audiencia tiene 50 años o más** (40.0% de 50 a 64 años, y 21.6% de 65+ años).
-* **Sesgo de Género:** **58.8% Mujeres**, 41.2% Hombres.
-* **Ubicación Geográfica:** Concentración en Guayaquil metropolitano (parroquias urbanas), Durán y Samborondón.
+¿Te gustaría que simulemos el impacto económico de este cambio o prefieres ver cómo configurar Meta Ads?`
+}
 
-#### Implicaciones Estratégicas:
-1. **Producto Ideal a Promover:** Este perfil demográfico es el cliente perfecto para **Lentes Progresivos Digitales (Presbicia)** y lunas con filtro para descanso visual.
-2. **Diseño Visual:** Todo el quiz mantiene botones grandes, tipografía legible (20px a 24px) y contraste alto.
-3. **Decisión de Compra:** Las mujeres de este rango etario suelen ser las gestoras de la salud de toda la familia (esposo, hijos y padres). La oferta debe incluir beneficio familiar.`
-  }
+function renderMetaConfigResponse(): string {
+  return `### ⚙️ Configuración Óptima en Meta Ads Manager para Matriz Guayaquil
 
-  // ── CASO 14: COPYWRITING Y HEADLINES PARA ANUNCIOS ───────────────────────
-  if (isAskingCopy) {
-    return `### ✍️ Copywriting Forense de Alto Rendimiento (Guayaquil)
+Para maximizar el rendimiento del tráfico y blindar el presupuesto contra clics accidentales:
 
-Para conectar con el público femenino mayor de 50 años en Guayaquil:
+1. **Excluir Ubicaciones de Baja Calidad (Audience Network):**
+   - En el conjunto de anuncios, cambia de *Ubicaciones Advantage+* a **Ubicaciones Manuales**.
+   - **Desmarca inmediatamente:** *Audience Network*, *Mensajes* y *Artículos Instantáneos*.
+   - **Mantén activo únicamente:** *Feed de Facebook Móvil*, *Feed de Instagram* y *Reels*.
+   - *Por qué:* Audience Network coloca anuncios dentro de juegos móviles y apps donde los niños o adultos tocan por accidente.
+2. **Dispositivos y Conexión:**
+   - Segmentar solo para dispositivos móviles con conexión a internet estable.
+   - Radio geográfico: **Guayaquil urbano, Durán y Samborondón** (radio de 15 km a 20 km alrededor de la matriz).
+3. **Objetivo de Campaña:**
+   - Asegúrate de que el objetivo de optimización de la entrega sea **Visitas a la página de destino (Landing Page Views)** y no simples clics en el enlace (*Link Clicks*).
 
-1. **Titular Ganador para Quiz 2 (VisiónCheck):**
-   > *"¿Alejas el celular con el brazo para poder leer mensajes de WhatsApp?"*
-   > *Texto del anuncio:* "Haz este test visual de 1 minuto desde tu celular y descubre si tus ojos necesitan graduación o lentes de descanso. Citas gratuitas en Matriz Guayaquil."
-2. **Titular Ganador para Quiz 1 (Chequeo General):**
-   > *"¿Terminas el día con dolor de cabeza, ardor o fatiga en los ojos?"*
-   > *Texto del anuncio:* "Responde 3 preguntas rápidas y agenda tu examen visual computarizado sin costo en Óptica Johanna."
-3. **Llamado a la Acción (CTA):**
-   > Usar botón: **[Realizar Chequeo Visual Gratis]**`
-  }
+¿Deseas revisar también la distribución de presupuesto o el guion de WhatsApp?`
+}
 
-  // ── CASO 15: EXPERIMENTOS A/B RECOMENDADOS ───────────────────────────────
-  if (isAskingExperiments) {
-    return `### 🧪 Matriz de Experimentos A/B Priorizados
+function renderStatsResponse(
+  cmd: any,
+  totalClicks: number,
+  totalLandingViews: number,
+  totalStarts: number,
+  totalAppointments: number,
+  quiz2: any
+): string {
+  return `### 📊 Evaluación de Madurez Estadística de los Datos
+
+* **Nivel de Confianza Actual:** **${cmd?.globalConfidence ?? 68}%** (${(cmd?.globalConfidence ?? 68) >= 75 ? '🟢 Alta' : (cmd?.globalConfidence ?? 68) >= 45 ? '🟡 Moderada' : '🔴 Inicial'}).
+* **Muestra Analizada:** ${totalClicks} clics en Meta Ads, ${totalLandingViews} visitas, ${totalStarts} inicios de quiz, ${totalAppointments} citas registradas.
+* **Veredicto Técnico:**
+  - Las métricas de **anuncio (CTR ${quiz2?.metaCtr || 8.19}% y CPC $${quiz2?.metaCpc || 0.0149})** son estadísticamente concluyentes (muestra suficiente para asegurar que el creativo amarillo de Presbicia es ganador).
+  - La métrica de **CPL real y retorno de ventas** aún tiene varianza moderada; se recomienda acumular entre **200 y 300 sesiones totales** antes de hacer conclusiones definitivas sobre ticket promedio.`
+}
+
+function renderExperimentsResponse(): string {
+  return `### 🧪 Matriz de Experimentos A/B Priorizados
 
 Basado en las brechas observadas en tus datos reales:
 
@@ -689,37 +973,47 @@ Basado en las brechas observadas en tus datos reales:
 #### Experimento 2 (P2 - Impacto Medio / Esfuerzo Bajo):
 * **Hipótesis:** *"Ofrecer 'Chequeo Computarizado Gratuito + 30% en Monturas' en el copy del anuncio aumentará la tasa de agendamiento en WhatsApp."*
 * **Métrica de éxito:** Citas agendadas por dólar invertido.`
-  }
+}
 
-  // ── CASO 16: EVALUACIÓN DE MADUREZ ESTADÍSTICA ────────────────────────────
-  if (isAskingStats) {
-    return `### 📊 Evaluación de Madurez Estadística de los Datos
+function renderDynamicCognitiveResponse(
+  q: string,
+  cmd: OptimizationCommandData | undefined,
+  reconciliations: any[],
+  totalClicks: number,
+  totalSpend: number,
+  totalStarts: number,
+  totalAppointments: number
+): string {
+  const topQuiz = [...reconciliations].sort((a, b) => (b.metaCtr || 0) - (a.metaCtr || 0))[0] || { quizName: 'Quiz 2', metaCtr: 8.19, metaCpc: 0.0149 }
 
-* **Nivel de Confianza Actual:** **${cmd?.globalConfidence ?? 68}%** (${(cmd?.globalConfidence ?? 68) >= 75 ? '🟢 Alta' : (cmd?.globalConfidence ?? 68) >= 45 ? '🟡 Moderada' : '🔴 Inicial'}).
-* **Muestra Analizada:** ${totalClicks} clics en Meta Ads, ${totalLandingViews} visitas, ${totalStarts} inicios de quiz, ${totalAppointments} citas registradas.
-* **Veredicto Técnico:**
-  - Las métricas de **anuncio (CTR ${quiz2?.metaCtr || 8.19}% y CPC $${quiz2?.metaCpc || 0.0149})** son estadísticamente concluyentes (muestra suficiente para asegurar que el creativo amarillo de Presbicia es ganador).
-  - La métrica de **CPL real y retorno de ventas** aún tiene varianza alta; se recomienda acumular entre **200 y 300 sesiones totales** antes de hacer conclusiones definitivas sobre ticket promedio.`
-  }
+  return `### 💡 Asesoría Estratégica Adaptativa para: "${q}"
 
-  // ── CASO DINÁMICO CONTEXTUAL (SINTETIZA DATOS REALES PARA CUALQUIER PREGUNTA ABIERTA) ──
-  const topQuiz = [...reconciliations].sort((a, b) => b.metaCtr - a.metaCtr)[0]
-  const worstGap = cmd?.gaps?.[0]
+Analizando tu consulta bajo el contexto operativo de **Óptica Johanna** en Guayaquil:
 
-  return `### 🤖 Análisis Estratégico Contextual con Datos en Vivo:
+---
 
-Analizando tu consulta en relación a los números actuales de **Óptica Johanna** en Guayaquil:
+#### 1. Diagnóstico Estratégico Aplicado a tu Pregunta:
+* Tu inquietud sobre **"${q}"** incide directamente en la capacidad de convertir visitas frías de Facebook en citas confirmadas en consultorio.
+* **Contexto de tu Audiencia:** Recuerda que el **61.6% de tus pacientes en Guayaquil son personas mayores de 50 años** (con alta presencia femenina del 58.8%), navegando principalmente desde teléfonos móviles Android.
+* **Comportamiento Comercial:** Este perfil valora la cercanía humana, la claridad en los precios y la rapidez para responder en WhatsApp.
 
-1. **Estado General:** Salud de embudo **${cmd?.healthScore ?? 88}/100** | Confianza estadística **${cmd?.globalConfidence ?? 68}%**.
-2. **Tráfico y Campañas:**
-   - Se han registrado **${totalClicks} clics** en Meta Ads con una inversión de **$${totalSpend.toFixed(2)}**.
-   - El canal con mejor rendimiento es **${topQuiz?.quizName || 'Quiz 2'}** (CTR ${topQuiz?.metaCtr || 8.19}%, CPC $${topQuiz?.metaCpc || 0.0149}).
-3. **Punto Clave a Considerar:**
-   - El mayor apalancamiento actual está en **convertir visitas en inicios de evaluación** (brecha histórica del ${worstGap?.gapPct || viewToStartGapPct}%).
-4. **Recomendación para tu inquietud:**
-   - Con la entrada directa y la pre-conexión DNS activas hoy, te recomiendo verificar en las próximas 48 horas cómo sube la tasa de inicio en el tablero.
+---
 
-¿Deseas que simulemos el impacto económico de este cambio, revisemos la distribución de presupuesto o analicemos el guion de WhatsApp?`
+#### 2. Palancas Operativas para Resolverlo:
+1. **En la Pauta Publicitaria:**
+   - Mantener el foco en **${topQuiz.quizName}** (CTR líder de ${topQuiz.metaCtr}% a solo $${topQuiz.metaCpc}/clic), que ya ha demostrado captar el mayor volumen de personas interesadas.
+2. **En la Experiencia Digital (Quiz):**
+   - Con la entrada directa a síntomas y preguntas en 20px-24px, el usuario siente avance inmediato sin tener que llenar datos tediosos.
+3. **En el Cierre por WhatsApp:**
+   - El contacto debe hacerse en menos de 3 minutos ofreciendo dos horarios concretos (ej: *"¿Prefieres a las 11:30 o a las 16:00?"*) para asegurar el agendamiento.
+
+---
+
+#### 3. Siguiente Paso Táctico:
+Si deseas profundizar en este tema, indícame si nos enfocamos en:
+* 🎯 **Ajustar la segmentación y edades en Meta Ads**
+* 💎 **Armar una oferta o paquete comercial (Progresivos / Antirreflejo)**
+* 💬 **Perfeccionar los guiones de secretaría en WhatsApp**`
 }
 
 function renderSimulationResponse(
@@ -759,25 +1053,6 @@ Hemos proyectado el impacto financiero y de captación de pacientes para **Ópti
    - **Ingreso Estimado:** ~$480 a $520 sobre una pauta de apenas $20.00 (**ROAS > 24x**).
 
 ¿Deseas que revisemos los ajustes técnicos recomendados en el Administrador de Anuncios de Meta Ads o prefieres examinar el guion de respuesta en WhatsApp?`
-}
-
-function renderMetaConfigResponse(): string {
-  return `### ⚙️ Configuración Óptima en Meta Ads Manager para Matriz Guayaquil
-
-Para maximizar el rendimiento del tráfico y blindar el presupuesto contra clics accidentales:
-
-1. **Excluir Ubicaciones de Baja Calidad (Audience Network):**
-   - En el conjunto de anuncios, cambia de *Ubicaciones Advantage+* a **Ubicaciones Manuales**.
-   - **Desmarca inmediatamente:** *Audience Network*, *Mensajes* y *Artículos Instantáneos*.
-   - **Mantén activo únicamente:** *Feed de Facebook Móvil*, *Feed de Instagram* y *Reels*.
-   - *Por qué:* Audience Network coloca anuncios dentro de juegos móviles y apps donde los niños o adultos tocan por accidente.
-2. **Dispositivos y Conexión:**
-   - Segmentar solo para dispositivos móviles con conexión a internet estable.
-   - Radio geográfico: **Guayaquil urbano, Durán y Samborondón** (radio de 15 km a 20 km alrededor de la matriz).
-3. **Objetivo de Campaña:**
-   - Asegúrate de que el objetivo de optimización de la entrega sea **Visitas a la página de destino (Landing Page Views)** y no simples clics en el enlace (*Link Clicks*).
-
-¿Deseas revisar también la distribución de presupuesto o el guion de WhatsApp?`
 }
 
 // ============================================================================

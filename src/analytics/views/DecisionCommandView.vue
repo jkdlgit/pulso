@@ -562,29 +562,39 @@
       </div>
 
       <!-- Panel de Configuración de API Key de IA -->
-      <div v-if="showApiKeyModal" class="mb-3 p-3 rounded-xl bg-violet-500/5 border border-violet-500/30">
+      <div v-if="showApiKeyModal" class="mb-3 p-3.5 rounded-xl bg-violet-500/5 border border-violet-500/30">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-[9px] font-mono font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+          <span class="text-[10px] font-mono font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
             <span>🔑</span> Conectar Modelo de IA en la Nube (Google Gemini)
           </span>
           <button @click="showApiKeyModal = false" class="text-slate-500 hover:text-slate-300 text-[10px]">✕</button>
         </div>
-        <p class="text-[8px] font-mono text-slate-400 mb-2 leading-relaxed">
-          Ingresa tu <strong>Google Gemini API Key</strong> (gratuita en aistudio.google.com). Si la conectas, el Agente responderá usando Gemini 1.5 con todos los datos en tiempo real. Si la dejas vacía, el Agente funciona con el <strong>Motor Forense Analítico Local</strong>.
+        <p class="text-[9px] font-mono text-slate-400 mb-2.5 leading-relaxed">
+          Ingresa tu <strong>Google Gemini API Key</strong> (gratuita en <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-cyan-400 underline hover:text-cyan-300 font-bold">Google AI Studio</a> en 30 segundos). Si la conectas, el Agente responderá con Gemini 1.5 en tiempo real. Si no tienes una, el sistema responde con el <strong>Motor Forense Analítico Local</strong>.
         </p>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2 mb-2">
           <input
             v-model="apiKeyInput"
             type="password"
             placeholder="Pega tu Gemini API Key (ej: AIzaSy...)"
-            class="flex-1 bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-400"
+            class="flex-1 min-w-[200px] bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-400"
           />
+          <button
+            @click="handleTestKey"
+            :disabled="testLoading || !apiKeyInput.trim()"
+            class="px-2.5 py-1 rounded bg-pulso-void border border-pulso-border hover:border-violet-400 text-slate-300 hover:text-violet-200 text-[9px] font-mono transition-colors disabled:opacity-40"
+          >
+            {{ testLoading ? 'PROBANDO...' : 'PROBAR CONEXIÓN' }}
+          </button>
           <button @click="saveApiKey" class="btn-hud text-[9px] py-1.5 px-3">
             GUARDAR
           </button>
           <button v-if="hasCustomApiKey" @click="clearApiKey" class="text-[9px] font-mono px-2 py-1 text-rose-400 hover:text-rose-200">
             DESCONECTAR
           </button>
+        </div>
+        <div v-if="testResultMsg" class="text-[9px] font-mono p-2 rounded" :class="testSuccess ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'">
+          {{ testResultMsg }}
         </div>
       </div>
 
@@ -652,6 +662,7 @@ import { computeOptimizationCommandCenter, currency, number } from '../engine'
 import {
   askDecisionAdvisor,
   generateProductStrategyPlan,
+  testGeminiApiKey,
   type ChatMessage,
   type ProductStrategyConfig,
   type StrategicAuditResult,
@@ -762,6 +773,23 @@ const chatScrollRef = ref<HTMLElement | null>(null)
 const showApiKeyModal = ref(false)
 const apiKeyInput = ref(typeof window !== 'undefined' ? (localStorage.getItem('pulso_gemini_api_key') || localStorage.getItem('pulso_ai_api_key') || '') : '')
 const hasCustomApiKey = computed(() => !!apiKeyInput.value.trim())
+const testLoading = ref(false)
+const testResultMsg = ref('')
+const testSuccess = ref<boolean | null>(null)
+
+async function handleTestKey() {
+  if (!apiKeyInput.value.trim()) return
+  testLoading.value = true
+  testResultMsg.value = ''
+  testSuccess.value = null
+  try {
+    const res = await testGeminiApiKey(apiKeyInput.value)
+    testSuccess.value = res.ok
+    testResultMsg.value = res.message
+  } finally {
+    testLoading.value = false
+  }
+}
 
 function saveApiKey() {
   if (apiKeyInput.value.trim()) {
@@ -777,15 +805,17 @@ function clearApiKey() {
   apiKeyInput.value = ''
   localStorage.removeItem('pulso_gemini_api_key')
   localStorage.removeItem('pulso_ai_api_key')
+  testResultMsg.value = ''
+  testSuccess.value = null
   showApiKeyModal.value = false
 }
 
 const suggestedPrompts = [
-  '¿Por qué se pierden personas entre Meta y la web?',
-  'Simular el impacto económico de eliminar la pantalla de bienvenida',
-  '¿Cómo duplicar pacientes en consultorio?',
-  '¿En qué quiz debo invertir más presupuesto hoy?',
+  '¿Cuál sería el mejor público para ajustar la campaña?',
+  '¿Qué oferta o paquete comercial ofrecer para lentes progresivos?',
   '¿Cómo aumentar la asistencia de citas de WhatsApp al consultorio?',
+  '¿Por qué se pierden personas entre Meta y la web?',
+  '¿En qué quiz debo invertir más presupuesto hoy?',
   '¿Qué cambios hacer para el público mayor de 50 años en Guayaquil?',
 ]
 
