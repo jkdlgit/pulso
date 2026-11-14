@@ -548,7 +548,44 @@
             Pregunta al agente sobre distribución de presupuesto, experimentos A/B o cómo duplicar pacientes
           </p>
         </div>
-        <span class="badge badge-violet text-[9px]">ONLINE</span>
+        <div class="flex items-center gap-2">
+          <button
+            @click="showApiKeyModal = !showApiKeyModal"
+            class="px-2.5 py-1 rounded border border-pulso-border/70 hover:border-violet-400 text-[8px] font-mono text-slate-300 hover:text-violet-200 flex items-center gap-1.5 transition-colors bg-pulso-void"
+            title="Conectar API Key de Gemini o modelo de IA externa"
+          >
+            <span>⚙️</span>
+            <span>{{ hasCustomApiKey ? 'GEMINI 1.5 (CLOUD)' : 'MOTOR FORENSE (LOCAL)' }}</span>
+          </button>
+          <span class="badge badge-violet text-[9px]">ONLINE</span>
+        </div>
+      </div>
+
+      <!-- Panel de Configuración de API Key de IA -->
+      <div v-if="showApiKeyModal" class="mb-3 p-3 rounded-xl bg-violet-500/5 border border-violet-500/30">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[9px] font-mono font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🔑</span> Conectar Modelo de IA en la Nube (Google Gemini)
+          </span>
+          <button @click="showApiKeyModal = false" class="text-slate-500 hover:text-slate-300 text-[10px]">✕</button>
+        </div>
+        <p class="text-[8px] font-mono text-slate-400 mb-2 leading-relaxed">
+          Ingresa tu <strong>Google Gemini API Key</strong> (gratuita en aistudio.google.com). Si la conectas, el Agente responderá usando Gemini 1.5 con todos los datos en tiempo real. Si la dejas vacía, el Agente funciona con el <strong>Motor Forense Analítico Local</strong>.
+        </p>
+        <div class="flex gap-2">
+          <input
+            v-model="apiKeyInput"
+            type="password"
+            placeholder="Pega tu Gemini API Key (ej: AIzaSy...)"
+            class="flex-1 bg-pulso-void border border-pulso-border rounded px-2.5 py-1.5 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-400"
+          />
+          <button @click="saveApiKey" class="btn-hud text-[9px] py-1.5 px-3">
+            GUARDAR
+          </button>
+          <button v-if="hasCustomApiKey" @click="clearApiKey" class="text-[9px] font-mono px-2 py-1 text-rose-400 hover:text-rose-200">
+            DESCONECTAR
+          </button>
+        </div>
       </div>
 
       <!-- Historial de Conversación -->
@@ -720,11 +757,34 @@ const aiLoading = ref(false)
 const chatMessages = ref<ChatMessage[]>([])
 const chatScrollRef = ref<HTMLElement | null>(null)
 
+// --- API Key de IA (Gemini / Cloud) ---
+const showApiKeyModal = ref(false)
+const apiKeyInput = ref(typeof window !== 'undefined' ? (localStorage.getItem('pulso_gemini_api_key') || localStorage.getItem('pulso_ai_api_key') || '') : '')
+const hasCustomApiKey = computed(() => !!apiKeyInput.value.trim())
+
+function saveApiKey() {
+  if (apiKeyInput.value.trim()) {
+    localStorage.setItem('pulso_gemini_api_key', apiKeyInput.value.trim())
+  } else {
+    localStorage.removeItem('pulso_gemini_api_key')
+    localStorage.removeItem('pulso_ai_api_key')
+  }
+  showApiKeyModal.value = false
+}
+
+function clearApiKey() {
+  apiKeyInput.value = ''
+  localStorage.removeItem('pulso_gemini_api_key')
+  localStorage.removeItem('pulso_ai_api_key')
+  showApiKeyModal.value = false
+}
+
 const suggestedPrompts = [
-  '¿En qué quiz debo invertir más presupuesto hoy?',
   '¿Por qué se pierden personas entre Meta y la web?',
-  '¿Cómo duplico las citas agendadas en Guayaquil?',
-  '¿La muestra de datos ya es confiable o hay ruido?',
+  'Revisa más a detalle por qué se pierden personas entre Meta y la web',
+  '¿En qué quiz debo invertir más presupuesto hoy?',
+  '¿Cómo aumentar la asistencia de citas de WhatsApp al consultorio?',
+  '¿Qué cambios hacer para el público mayor de 50 años en Guayaquil?',
 ]
 
 function askQuick(p: string) {
