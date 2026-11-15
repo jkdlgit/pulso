@@ -214,6 +214,7 @@ ${q}`
       })
     } finally {
       aiLoading.value = false
+      activeFindingContext.value = null
     }
   }
 

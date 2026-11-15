@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <!-- SELECTOR DE ROL -->
-    <div class="shrink-0 flex gap-1.5 flex-wrap px-3 py-2 border-b border-pulso-border bg-pulso-void/60">
+    <!-- SELECTOR DE ROL Y CONEXIÓN GEMINI -->
+    <div class="shrink-0 flex items-center gap-1.5 flex-wrap px-3 py-2 border-b border-pulso-border bg-pulso-void/60">
       <button
         v-for="role in COPILOT_ROLES"
         :key="role.id"
@@ -17,6 +17,48 @@
         <span class="text-[11px]">{{ role.icon }}</span>
         <span>{{ role.badge }}</span>
       </button>
+
+      <!-- Botón Configurar API Key -->
+      <button
+        @click="showKeyModal = !showKeyModal"
+        class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-tech font-semibold border transition-all duration-150"
+        :class="hasCustomApiKey ? 'border-emerald-500/50 text-emerald-300 bg-emerald-500/10' : 'border-violet-500/40 text-violet-300 bg-violet-500/10'"
+        :title="hasCustomApiKey ? 'Gemini Cloud Activo' : 'Conectar API Key de Gemini para IA libre e ilimitada'"
+      >
+        <span>{{ hasCustomApiKey ? '🟢' : '🔑' }}</span>
+        <span>{{ hasCustomApiKey ? 'Gemini IA' : 'Configurar IA' }}</span>
+      </button>
+    </div>
+
+    <!-- DRAWER CONFIGURACIÓN GEMINI API KEY -->
+    <div v-if="showKeyModal" class="shrink-0 px-3 py-2 bg-violet-950/40 border-b border-pulso-border flex flex-col gap-1.5 animate-fadeIn">
+      <div class="flex items-center justify-between text-[11px] font-tech">
+        <span class="text-white font-bold flex items-center gap-1">
+          <span>🔑</span> Google Gemini Cloud (Conversación 100% Libre y Abierta)
+        </span>
+        <button @click="showKeyModal = false" class="text-pulso-muted hover:text-white text-xs">✕</button>
+      </div>
+      <p class="text-[9px] text-slate-400 font-mono leading-tight">
+        Pega tu API Key de Google Gemini (gratuita en aistudio.google.com). Se guarda en tu navegador y permite responder cualquier pregunta con todos los datos del sistema.
+      </p>
+      <div class="flex gap-1.5">
+        <input
+          v-model="apiKeyInput"
+          type="password"
+          placeholder="AIzaSy..."
+          class="flex-1 bg-pulso-surface border border-pulso-border rounded px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-violet-400"
+        />
+        <button
+          @click="saveAndTestKey"
+          :disabled="keyTesting"
+          class="px-2.5 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-tech font-bold disabled:opacity-50"
+        >
+          {{ keyTesting ? 'Probando...' : 'Guardar y Activar' }}
+        </button>
+      </div>
+      <div v-if="keyStatusMsg" class="text-[9px] font-mono" :class="keyStatusOk ? 'text-emerald-400' : 'text-rose-400'">
+        {{ keyStatusMsg }}
+      </div>
     </div>
 
     <!-- LISTA DE MENSAJES -->
@@ -137,6 +179,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { COPILOT_ROLES } from './rolesCatalog'
+import { testGeminiApiKey } from '../aiAdvisor'
 import {
   useCopilotStore,
   chatMessages,
@@ -158,6 +201,42 @@ const { selectRole, clearChatPreservingMemory, sendMessage } = useCopilotStore()
 const inputText = ref('')
 const chatScrollRef = ref<HTMLElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+
+// --- Configuración de API Key Gemini en Copilot ---
+const showKeyModal = ref(false)
+const apiKeyInput = ref(typeof window !== 'undefined' ? (localStorage.getItem('pulso_gemini_api_key') || localStorage.getItem('pulso_ai_api_key') || '') : '')
+const hasCustomApiKey = computed(() => !!apiKeyInput.value.trim())
+const keyTesting = ref(false)
+const keyStatusMsg = ref('')
+const keyStatusOk = ref<boolean | null>(null)
+
+async function saveAndTestKey() {
+  const k = apiKeyInput.value.trim()
+  if (!k) {
+    localStorage.removeItem('pulso_gemini_api_key')
+    localStorage.removeItem('pulso_ai_api_key')
+    keyStatusMsg.value = 'API Key eliminada. Modo cognitivo local activo.'
+    keyStatusOk.value = null
+    return
+  }
+  keyTesting.value = true
+  keyStatusMsg.value = ''
+  keyStatusOk.value = null
+  try {
+    const res = await testGeminiApiKey(k)
+    keyStatusOk.value = res.ok
+    keyStatusMsg.value = res.message
+    if (res.ok) {
+      localStorage.setItem('pulso_gemini_api_key', k)
+      setTimeout(() => { showKeyModal.value = false }, 1400)
+    }
+  } catch (err: any) {
+    keyStatusOk.value = false
+    keyStatusMsg.value = err?.message || 'Error de conexión'
+  } finally {
+    keyTesting.value = false
+  }
+}
 
 const activeRole = computed(() => COPILOT_ROLES.find(r => r.id === activeRoleId.value) ?? COPILOT_ROLES[0])
 
