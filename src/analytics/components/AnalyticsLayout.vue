@@ -9,6 +9,8 @@
       </main>
     </div>
   </div>
+  <!-- Consejo Asesor Estratégico — Ventana Flotante (overlay, no afecta el layout) -->
+  <FloatingCopilotWindow />
 </template>
 
 <script setup lang="ts">
@@ -18,6 +20,7 @@ import AnalyticsSidebar from './AnalyticsSidebar.vue'
 import AnalyticsTopbar from './AnalyticsTopbar.vue'
 import GlobalFilterBar from './GlobalFilterBar.vue'
 import { useAnalytics } from '../store'
+import FloatingCopilotWindow from '../copilot/FloatingCopilotWindow.vue'
 
 const { init } = useAnalytics()
 onMounted(() => { init() })
