@@ -77,7 +77,7 @@
               <span class="w-2 h-2 rounded-full bg-amber-500/70"></span>
               <span class="w-2 h-2 rounded-full bg-emerald-500/70"></span>
               <div class="flex-1 mx-2 h-5 rounded bg-pulso-void border border-pulso-border/50 flex items-center px-2 text-[8px] font-mono text-slate-400 truncate">
-                https://{{ business?.website || 'sitio-cliente.ec' }}{{ currentPage }}
+                https://{{ business?.website || 'opticajohanna.ec' }}{{ currentPage }}
               </div>
             </div>
 
@@ -90,7 +90,7 @@
                   <div class="flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
                     <span class="font-tech text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                      {{ session.landing_page.includes('quiz2') ? 'Quiz 2 · VisiónCheck' : 'Quiz 1 · Chequeo Visual' }}
+                      {{ isQuiz2 ? 'Quiz 2 · VisiónCheck Agudeza' : 'Quiz 1 · Chequeo Síntomas' }}
                     </span>
                   </div>
                   <span class="text-[8px] font-mono text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full font-bold">
@@ -107,7 +107,7 @@
                     {{ session.quiz_completed ? 'Evaluación Visual Completada' : 'Resultado Diagnóstico' }}
                   </h4>
                   <p class="text-[9px] text-slate-600 leading-relaxed px-2">
-                    {{ session.booked ? 'Cita médica agendada en Óptica Johanna (Matriz Guayaquil).' : 'Tus síntomas indican necesidad de examen visual computarizado.' }}
+                    {{ session.booked ? 'Cita médica agendada en Óptica Johanna (Matriz Guayaquil).' : 'Tus respuestas indican necesidad de examen visual computarizado.' }}
                   </p>
                   <div class="pt-1">
                     <button class="w-full py-2 px-3 rounded-xl bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-md">
@@ -117,7 +117,40 @@
                   </div>
                 </div>
 
-                <!-- Caso B: Pregunta Clínica Activa del Quiz -->
+                <!-- Caso B1: Quiz 2 (VisiónCheck - Test Interactivo de Agudeza Snellen) -->
+                <div v-else-if="isQuiz2" class="space-y-3 text-center">
+                  <div class="flex items-center justify-between text-[9px] font-mono text-slate-500 mb-0.5">
+                    <span>TEST AGUDEZA SNELLEN</span>
+                    <span class="text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full">
+                      ⭐ {{ activeQuizStep?.answer || 'Score 20/20' }}
+                    </span>
+                  </div>
+                  
+                  <h4 class="font-bold text-[11px] text-slate-900 leading-snug">
+                    ¿Puedes identificar la letra proyectada?
+                  </h4>
+
+                  <!-- Caja de la Letra de Snellen -->
+                  <div class="w-24 h-24 mx-auto rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center shadow-inner my-1">
+                    <span class="text-5xl font-black text-slate-900 font-mono tracking-tighter">E</span>
+                  </div>
+
+                  <p class="text-[9px] text-slate-400 font-medium">Selecciona la dirección o letra que logras ver:</p>
+
+                  <!-- Botones de dirección / letras -->
+                  <div class="grid grid-cols-4 gap-1.5 pt-0.5">
+                    <div
+                      v-for="letter in ['E', 'C', 'O', 'P']"
+                      :key="letter"
+                      class="py-1.5 rounded-xl border text-center font-bold text-xs transition-all"
+                      :class="letter === 'E' ? 'bg-cyan-50 border-cyan-400 text-cyan-900 shadow-sm ring-1 ring-cyan-300' : 'bg-slate-50 border-slate-200 text-slate-600'"
+                    >
+                      {{ letter }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Caso B2: Quiz 1 (Chequeo de Síntomas Visuales) -->
                 <div v-else class="space-y-2">
                   <h4 class="font-bold text-[11px] text-slate-900 leading-snug">
                     {{ activeQuizStep?.question || '¿Cuál es tu molestia principal en los ojos?' }}
@@ -316,6 +349,11 @@ const scrollDepth = computed(() => {
   return Math.min(100, Math.round((index.value / Math.max(1, frames.value.length)) * 100))
 })
 
+const isQuiz2 = computed(() => {
+  const lp = (session.value?.landing_page || '').toLowerCase()
+  return lp.includes('quiz2') || lp.includes('visioncheck')
+})
+
 const isResultStage = computed(() => {
   const p = currentPage.value.toLowerCase()
   const ev = currentEvent.value?.type || ''
@@ -342,16 +380,16 @@ const mockOptionsForStep = computed(() => {
 
   if (step === 1) {
     return [
-      { icon: '👓', text: 'Cansancio o fatiga visual', isSelected: ans.includes('fatiga') || ans.includes('cansancio') || true },
-      { icon: '🔍', text: 'Visión borrosa de cerca', isSelected: ans.includes('cerca') || ans.includes('borrosa') },
-      { icon: '🚗', text: 'Visión borrosa de lejos', isSelected: ans.includes('lejos') },
-      { icon: '✨', text: 'Dolor de cabeza frecuente', isSelected: ans.includes('cabeza') || ans.includes('dolor') },
+      { icon: '😩', text: 'Fatiga visual o cansancio en los ojos', isSelected: ans.includes('fatiga') || ans.includes('cansancio') || true },
+      { icon: '🤕', text: 'Dolores de cabeza frecuentes', isSelected: ans.includes('cabeza') || ans.includes('dolor') },
+      { icon: '🔥', text: 'Ardor o picazón en los ojos', isSelected: ans.includes('ardor') },
+      { icon: '💧', text: 'Ojos secos', isSelected: ans.includes('seco') },
     ]
   } else if (step === 2) {
     return [
-      { icon: '📱', text: 'Más de 5 horas frente a pantallas', isSelected: true },
-      { icon: '💼', text: 'De 2 a 4 horas al día', isSelected: false },
-      { icon: '🌿', text: 'Menos de 2 horas al día', isSelected: false },
+      { icon: '🔍', text: 'Veo borroso de cerca (lectura/celular)', isSelected: true },
+      { icon: '🚗', text: 'Veo borroso de lejos (conducir/carteles)', isSelected: false },
+      { icon: '👁️', text: 'Veo borroso en ambas distancias', isSelected: false },
     ]
   } else {
     return [
