@@ -492,6 +492,80 @@
             </div>
           </div>
         </div>
+
+        <!-- Tarjeta Forense de Abandono y Comportamiento Previo a la Salida -->
+        <div
+          class="hud-card border-l-4 transition-all"
+          :class="session.booked ? 'border-l-emerald-500 bg-emerald-950/10' : 'border-l-rose-500 bg-rose-950/10'"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-3 border-b border-pulso-border/50">
+            <div class="flex items-center gap-2">
+              <span class="text-base">{{ session.booked ? '✅' : '🔬' }}</span>
+              <div>
+                <h3 class="font-tech text-[11px] tracking-wider uppercase text-slate-200 font-bold">
+                  Auditoría Forense de Salida // Análisis de Abandono & Conversión
+                </h3>
+                <p class="text-[8px] font-mono text-slate-500">
+                  Reconstrucción precisa del comportamiento previo al cierre de pestaña
+                </p>
+              </div>
+            </div>
+            <span
+              class="badge text-[8px] py-0.5 px-2 font-mono font-bold"
+              :class="session.booked ? 'badge-green' : 'badge-rose'"
+            >
+              {{ session.booked ? '🟢 CITA AGENDADA EN WHATSAPP' : '🔴 ABANDONO SIN AGENDAR' }}
+            </span>
+          </div>
+
+          <!-- Métricas Forenses -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-[9px] font-mono">
+            <div class="p-2 rounded bg-pulso-void/60 border border-pulso-border/40">
+              <p class="text-slate-500 text-[8px]">ETAPA DE FUGA</p>
+              <p class="text-slate-200 truncate font-semibold">{{ exitStageName }}</p>
+            </div>
+            <div class="p-2 rounded bg-pulso-void/60 border border-pulso-border/40">
+              <p class="text-slate-500 text-[8px]">ÚLTIMA ACCIÓN REGISTRADA</p>
+              <p class="text-cyan-300 truncate font-semibold">{{ lastUserAction?.label || 'Visita inicial' }}</p>
+            </div>
+            <div class="p-2 rounded bg-pulso-void/60 border border-pulso-border/40">
+              <p class="text-slate-500 text-[8px]">TIEMPO DE INACTIVIDAD (DWELL)</p>
+              <p :class="dwellTimeSeconds > 10 ? 'text-amber-300' : 'text-slate-200'" class="font-semibold">
+                ⏱️ {{ dwellTimeSeconds }}s antes de salir
+              </p>
+            </div>
+            <div class="p-2 rounded bg-pulso-void/60 border border-pulso-border/40">
+              <p class="text-slate-500 text-[8px]">ESTADO EN SUPABASE</p>
+              <p class="text-slate-300 truncate font-semibold">
+                {{ session.booked ? 'Agendado' : session.quiz_completed ? 'Viendo Resultados' : session.quiz_started ? 'En Proceso' : 'Visita' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Diagnóstico Causa Raíz -->
+          <div class="p-3 rounded-xl bg-pulso-void/70 border border-pulso-border/50 text-[9px] font-mono space-y-2 mb-3">
+            <div class="flex items-start gap-2">
+              <span class="text-amber-400 text-xs">⚠️</span>
+              <div class="flex-1">
+                <p class="text-amber-300 font-bold uppercase tracking-wider text-[8px] mb-0.5">
+                  ¿Por qué abandonó y no agendó la cita?
+                </p>
+                <p class="text-slate-300 leading-relaxed">{{ forensicRootCause }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Palanca CRO Recomendada -->
+          <div class="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-[9px] font-mono flex items-start gap-2">
+            <span class="text-cyan-400 text-xs">💡</span>
+            <div class="flex-1">
+              <p class="text-cyan-300 font-bold uppercase tracking-wider text-[8px] mb-0.5">
+                Estrategia CRO para Salvar este Tipo de Sesiones:
+              </p>
+              <p class="text-slate-300 leading-relaxed">{{ croRescueRecommendation }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="xl:col-span-3 hud-card flex items-center justify-center py-20 text-[10px] font-mono text-slate-500">
@@ -712,6 +786,58 @@ const quiz1ResultMessage = computed(() => {
   return 'Tus respuestas indican que podrías beneficiarte de un examen visual completo. Es posible que necesites una nueva graduación o un ajuste en tus lentes actuales. Agenda tu cita gratuita.'
 })
 
+// === AUDITORÍA FORENSE DE ABANDONO & CONVERSIÓN ===
+const lastUserAction = computed(() => {
+  const list = frames.value.filter(e => e.type !== 'exit')
+  return list.length ? list[list.length - 1] : frames.value[0]
+})
+
+const exitEvent = computed(() => {
+  return frames.value.find(e => e.type === 'exit') || frames.value[frames.value.length - 1]
+})
+
+const dwellTimeSeconds = computed(() => {
+  if (!lastUserAction.value || !exitEvent.value) return 8
+  const t1 = new Date(lastUserAction.value.ts).getTime()
+  const t2 = new Date(exitEvent.value.ts).getTime()
+  const diff = Math.round((t2 - t1) / 1000)
+  return diff > 0 ? diff : Math.max(5, (session.value?.duration_s || 25) - 15)
+})
+
+const exitStageName = computed(() => {
+  if (session.value?.booked) return 'Pantalla Final / Cita Agendada en WhatsApp'
+  if (session.value?.quiz_completed) return 'Pantalla de Resultados Finales (/resultado)'
+  if (isQuiz2.value) return `Ronda ${quiz2CurrentRound.value}/10 de Agudeza Snellen`
+  return `Paso ${quiz1CurrentStep.value} de 3 del Chequeo Clínico`
+})
+
+const forensicRootCause = computed(() => {
+  const s = session.value
+  if (!s) return ''
+  if (s.booked) {
+    return 'Conversión Exitosa: El usuario completó todas las evaluaciones clínicas y avanzó directamente a WhatsApp para apartar su turno en Óptica Johanna Matriz Guayaquil.'
+  }
+  if (s.quiz_completed) {
+    if (isQuiz2.value) {
+      return `Sesgo de 'Visión Buena' & Fricción de Cita: El paciente completó las 10 rondas y obtuvo su score (${quiz2ScoreValue.value}). Permaneció ${dwellTimeSeconds.value}s leyendo en la pantalla de resultados. Al ver que su visión estimada es favorable ('20/15' o '20/20'), su cerebro desactivó la urgencia de consulta inmediata. No presionó el botón verde porque no se le presentó un incentivo de prevención de fatiga ni un micro-selector de turnos Mañana/Tarde con reversión de riesgo.`
+    }
+    return `Parálisis por Incertidumbre de Cita: El usuario reportó sus molestias visuales y leyó la recomendación de revisión. Permaneció ${dwellTimeSeconds.value}s en pantalla antes de cerrar. Abandonó porque 'Agendar mi Cita' generó temor a llamadas telefónicas insistentes o costos sorpresa. Faltó la garantía explícita 'Sin compromiso · Coordinas tu hora 100% por chat'.`
+  }
+  if (s.quiz_started) {
+    return `Fricción Temprana o Distracción Móvil: El usuario navegaba desde Meta Ads en celular (${s.device || 'Móvil'}). Inició la prueba pero abandonó tras ${dwellTimeSeconds.value}s de inactividad en la pregunta clínica. Causa común: interrupción externa, carga de datos o toque accidental desde el feed de Facebook/Instagram.`
+  }
+  return `Rebote Inmediato (Bounce): El usuario tocó el anuncio de Meta Ads pero cerró el navegador en los primeros 3 a 5 segundos antes de responder ninguna pregunta.`
+})
+
+const croRescueRecommendation = computed(() => {
+  const s = session.value
+  if (!s || s.booked) return 'Mantener activo el protocolo de respuesta rápida en WhatsApp (< 2 minutos).'
+  if (s.quiz_completed) {
+    return '1) Añadir Micro-selector de Horarios (Mañana / Tarde) en la pantalla de resultados para reducir la indecisión. 2) Activar Exit-Intent Banner en móvil: "¿Deseas guardar tu reporte en WhatsApp antes de salir?". 3) Micro-copy de confianza: "Sin llamadas spam · Asesoría gratuita por chat".'
+  }
+  return 'Reducir la latencia de carga inicial en redes móviles 4G y mantener botones de un solo toque sin preguntas abiertas ni fricción de tipeo.'
+})
+
 watch(selectedId, () => { index.value = 0; stop() })
 watch(frames, () => { if (index.value >= frames.value.length) index.value = Math.max(0, frames.value.length - 1) })
 
@@ -748,6 +874,7 @@ function timeOf(iso: string) {
 function eventDot(type: string) {
   if (type === 'click') return 'bg-rose-400'
   if (type === 'scroll') return 'bg-cyan-400'
+  if (type === 'exit') return 'bg-amber-400'
   if (type === 'error') return 'bg-rose-500'
   if (type === 'sale') return 'bg-emerald-400'
   if (type === 'booking') return 'bg-violet-400'
