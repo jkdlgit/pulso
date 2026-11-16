@@ -76,57 +76,50 @@
         <div class="w-full max-w-[420px] h-full relative px-4 py-3 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black pointer-events-none select-none">
           
           <!-- ========================================================= -->
-          <!-- CASO 1: QUIZ 2 · VISIÓNCHECK SNELLEN                      -->
+          <!-- CASO 1: QUIZ 2 · VISIÓNCHECK TEST DE LETRAS (2 RONDAS)       -->
           <!-- ========================================================= -->
           <template v-if="isQuiz2">
-            <!-- Header Snellen -->
+            <!-- Header VisiónCheck -->
             <div class="space-y-1.5">
               <div class="flex items-center justify-between text-[10px] font-bold text-slate-300">
-                <span class="flex items-center gap-1 text-cyan-400">👁️ Óptica Johanna · Snellen</span>
-                <span class="text-amber-400">Ronda 5/10</span>
+                <span class="flex items-center gap-1 text-violet-400">🔍 Óptica Johanna · VisiónCheck</span>
+                <span class="text-amber-400 font-mono">Ronda 1 de 2</span>
               </div>
               <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div class="w-1/2 h-full bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+                <div class="w-1/2 h-full bg-gradient-to-r from-violet-500 to-purple-400"></div>
               </div>
             </div>
 
-            <!-- Caja Central de Letra Optométrica -->
+            <!-- Caja Central de Letras Snellen Reducidas (Sin Slider) -->
             <div class="my-auto text-center space-y-2">
-              <div class="w-28 h-28 mx-auto rounded-2xl bg-white border-2 border-slate-200 shadow-xl flex items-center justify-center">
-                <span class="text-5xl font-black text-slate-900 tracking-tight font-serif">E</span>
+              <div class="py-5 px-4 mx-auto rounded-2xl bg-black border border-slate-800 shadow-xl flex flex-col items-center justify-center">
+                <span class="font-mono font-bold text-white tracking-[0.4em] select-none" style="font-size: 16px;">
+                  E &nbsp; P &nbsp; T &nbsp; O
+                </span>
+                <span class="text-[8px] font-mono text-slate-500 mt-2 uppercase tracking-wider">Cartilla Digital Snellen (40 cm)</span>
               </div>
               <p class="text-[9px] text-slate-400 max-w-[240px] mx-auto leading-tight">
-                ¿Hacia qué dirección apuntan las líneas o ves con nitidez la letra?
+                ¿Puedes leer con claridad estas letras a 40 cm sin entrecerrar los ojos?
               </p>
             </div>
 
-            <!-- Slider de Calibración de Tamaño (y ~ 72%) -->
-            <div class="space-y-1 px-2 mb-2">
-              <div class="flex justify-between text-[8px] text-slate-500">
-                <span>Ajuste de tamaño</span>
-                <span class="text-cyan-400">36px (20/30)</span>
-              </div>
-              <div class="h-2 rounded-full bg-slate-800 border border-slate-700 relative flex items-center px-1">
-                <div class="w-2/5 h-full bg-cyan-500/60 rounded-full"></div>
-                <div class="w-3.5 h-3.5 rounded-full bg-white shadow-md border border-cyan-400 -ml-1"></div>
-              </div>
-            </div>
-
-            <!-- Botones de Acción (y ~ 88%) -->
+            <!-- Botones de Acción (Verde continúa / Rojo activa oferta) -->
             <div class="grid grid-cols-2 gap-2 pb-1">
               <div
-                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-rose-500/40 bg-rose-950/40 text-rose-200 shadow-lg text-center"
+                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-rose-500/50 bg-rose-950/40 text-rose-200 shadow-lg text-center"
                 :class="{ 'ring-2 ring-rose-400': mode === 'zones' }"
               >
-                <span class="text-base leading-none">👎</span>
-                <span class="text-[9px] font-bold uppercase tracking-wide">No veo bien</span>
+                <span class="text-base leading-none">🔴</span>
+                <span class="text-[9px] font-bold uppercase tracking-wide">No las veo bien</span>
+                <span class="text-[7px] text-slate-400">Activa oferta de cita</span>
               </div>
               <div
-                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-emerald-500/40 bg-emerald-950/40 text-emerald-200 shadow-lg text-center"
+                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-emerald-500/50 bg-emerald-950/40 text-emerald-200 shadow-lg text-center"
                 :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
               >
-                <span class="text-base leading-none">👍</span>
-                <span class="text-[9px] font-bold uppercase tracking-wide">Sí, la veo clara</span>
+                <span class="text-base leading-none">🟢</span>
+                <span class="text-[9px] font-bold uppercase tracking-wide">Las veo bien</span>
+                <span class="text-[7px] text-slate-400">Avanzar siguiente nivel</span>
               </div>
             </div>
           </template>
@@ -171,39 +164,60 @@
           </template>
 
           <!-- ========================================================= -->
-          <!-- CASO 3: PANTALLA DE RESULTADOS & AGENDAMIENTO            -->
+          <!-- CASO 3: PANTALLA DE RESULTADOS & MICRO-SELECTOR CRO        -->
           <!-- ========================================================= -->
           <template v-else-if="isResult">
-            <div class="text-center space-y-1 pt-2">
-              <span class="text-2xl">🩺</span>
-              <h4 class="text-[11px] font-bold text-white">Tu Reporte de Agudeza Visual</h4>
-              <p class="text-[8px] text-slate-400">Evaluación completada para Óptica Johanna</p>
+            <div class="text-center space-y-1 pt-1">
+              <span class="text-xl block">🎯</span>
+              <h4 class="text-[9px] font-extrabold text-white leading-tight">
+                Tu resultado califica para 1 Examen Computarizado con Optómetra (Sin Costo)
+              </h4>
+              <p class="text-[7.5px] text-emerald-400 font-mono">
+                🔒 Sin compromiso de compra. Coordinas 100% por chat sin llamadas.
+              </p>
             </div>
 
-            <!-- Tarjeta de Score Clínico (y ~ 44%) -->
+            <!-- Tarjeta de Score Clínico -->
             <div
-              class="my-auto p-3 rounded-xl border border-pulso-border/80 bg-slate-900/90 shadow-xl space-y-1.5 text-center"
+              class="my-auto p-2 rounded-xl border border-pulso-border/80 bg-slate-900/90 shadow-xl space-y-1 text-center"
               :class="{ 'ring-2 ring-cyan-400': mode === 'zones' }"
             >
-              <div class="text-amber-300 text-lg font-black font-tech">20 / 15</div>
-              <p class="text-[9px] text-emerald-400 font-semibold">Agudeza Visual Estimada: ÓPTIMA</p>
-              <p class="text-[8px] text-slate-400 leading-tight">
-                Tus respuestas indican buena nitidez. Se recomienda chequeo preventivo para descartar fatiga por luz azul o sobreesfuerzo de acomodación.
+              <div class="text-amber-300 text-base font-black font-tech">Score Estimado: 20/40</div>
+              <p class="text-[7.5px] text-slate-300 leading-tight">
+                Disminución de nitidez detectada en visión cercana. Requiere calibración con equipo computarizado.
               </p>
             </div>
 
-            <!-- Botón CTA WhatsApp (y ~ 78%) -->
-            <div class="pb-2 space-y-1">
+            <!-- Micro-selector de Horarios de 1 Toque (Mañana / Tarde) -->
+            <div class="space-y-1.5 pb-1">
+              <div class="text-[8px] font-mono text-slate-400 text-center font-bold">ELIGE TU TURNO DE PREFERENCIA:</div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <div
+                  class="rounded-lg p-1.5 text-center border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 shadow"
+                  :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
+                >
+                  <span class="text-xs block">🌅</span>
+                  <span class="text-[8px] font-bold block">Turno Mañana</span>
+                  <span class="text-[7px] text-slate-400">10:30 a 12:30</span>
+                </div>
+                <div
+                  class="rounded-lg p-1.5 text-center border border-violet-500/50 bg-violet-950/40 text-violet-300 shadow"
+                  :class="{ 'ring-2 ring-violet-400': mode === 'zones' }"
+                >
+                  <span class="text-xs block">🌙</span>
+                  <span class="text-[8px] font-bold block">Turno Tarde</span>
+                  <span class="text-[7px] text-slate-400">15:30 a 18:00</span>
+                </div>
+              </div>
+
+              <!-- Botón CTA WhatsApp -->
               <div
-                class="w-full py-3 rounded-xl bg-[#25D366]/90 hover:bg-[#25D366] text-slate-950 font-black text-center text-[10px] shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5"
+                class="w-full py-2 rounded-xl bg-[#25D366] text-slate-950 font-black text-center text-[9px] shadow-lg flex items-center justify-center gap-1 mt-1"
                 :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
               >
-                <span class="text-sm">💬</span>
-                <span>Agendar mi Cita Gratuita en WhatsApp</span>
+                <span>💬</span>
+                <span>Apartar mi Turno por WhatsApp</span>
               </div>
-              <p class="text-[7px] text-slate-500 text-center font-mono">
-                Matriz Guayaquil · Coordinación directa sin llamadas spam
-              </p>
             </div>
           </template>
 

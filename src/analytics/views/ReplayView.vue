@@ -99,7 +99,7 @@
                     </span>
                   </div>
                   <span class="text-[9px] font-mono font-bold text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200/60">
-                    {{ isResultStage ? 'RESULTADOS' : (isQuiz2 ? `RONDA ${quiz2CurrentRound}/10` : `PASO ${quiz1CurrentStep} DE 3`) }}
+                    {{ isResultStage ? 'RESULTADOS CRO' : (isQuiz2 ? `RONDA ${quiz2CurrentRound} DE 2` : `PASO ${quiz1CurrentStep} DE 3`) }}
                   </span>
                 </div>
 
@@ -107,138 +107,133 @@
                 <!-- CASO 1: QUIZ 2 (VISIÓNCHECK - VCPRUEBA 1:1) -->
                 <!-- ========================================== -->
                 <template v-if="isQuiz2">
-                  <!-- Pantalla de Resultados de VisiónCheck (VCResultado.vue) -->
+                  <!-- Pantalla de Resultados de VisiónCheck (VCResultado.vue CRO) -->
                   <div v-if="isResultStage" class="text-center py-2 space-y-3">
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 bg-emerald-100 text-emerald-600">
-                      <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-1 bg-emerald-100 text-emerald-600 text-2xl">
+                      🎯
                     </div>
                     
-                    <h4 class="text-lg font-extrabold text-slate-900 tracking-tight">Prueba Completada</h4>
-                    <p class="text-xs text-slate-500">Tu agudeza visual estimada es de:</p>
+                    <h4 class="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                      Tu resultado califica para 1 Examen Computarizado con Optómetra (Sin Costo)
+                    </h4>
+                    <p class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-200">
+                      🔒 Sin compromiso de compra. No te llamaremos; coordinas 100% por chat.
+                    </p>
                     
-                    <div class="inline-block bg-slate-100 rounded-2xl px-6 py-2.5 border border-slate-200 shadow-inner">
-                      <span class="text-3xl font-black text-blue-900 tracking-tight font-mono">{{ quiz2ScoreValue }}</span>
+                    <div class="inline-block bg-slate-100 rounded-2xl px-5 py-2 border border-slate-200 shadow-inner">
+                      <span class="text-xs text-slate-500 block">Agudeza Visual Estimada:</span>
+                      <span class="text-2xl font-black text-blue-900 tracking-tight font-mono">{{ quiz2ScoreValue }}</span>
                     </div>
 
-                    <div class="bg-blue-50 text-blue-800 p-3.5 rounded-xl text-left border border-blue-100 text-[11px] leading-relaxed">
-                      <p class="font-bold mb-1 flex items-center gap-1.5 text-xs text-blue-900">
-                        <span>💡</span> ¿Qué significa esto?
-                      </p>
-                      <p v-if="quiz2ScoreValue === '20/15' || quiz2ScoreValue === '20/20' || quiz2ScoreValue === '20/25'">
-                        Tienes una excelente visión estimada. Sin embargo, para prevenir fatiga visual o evaluar salud ocular completa, te recomendamos una revisión profesional.
-                      </p>
-                      <p v-else>
-                        Tus resultados indican que podrías beneficiarte del uso de lentes o una actualización de tu medida actual. Un examen profesional confirmará tu estado visual.
-                      </p>
+                    <!-- Micro-selector de Horarios de 1 Toque -->
+                    <div class="pt-1 text-left space-y-1.5">
+                      <span class="text-[10px] font-mono font-bold text-slate-500 uppercase">Elige tu turno preferido:</span>
+                      <div class="grid grid-cols-2 gap-2">
+                        <div
+                          class="p-2.5 rounded-xl border text-center transition-all"
+                          :class="bookedTurno === 'manana'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                        >
+                          <span class="text-base block">🌅</span>
+                          <span class="text-xs block">Turno Mañana</span>
+                          <span class="text-[10px] text-slate-500">10:30 a 12:30</span>
+                        </div>
+                        <div
+                          class="p-2.5 rounded-xl border text-center transition-all"
+                          :class="bookedTurno === 'tarde'
+                            ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                        >
+                          <span class="text-base block">🌙</span>
+                          <span class="text-xs block">Turno Tarde</span>
+                          <span class="text-[10px] text-slate-500">15:30 a 18:00</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div class="pt-1">
                       <button
-                        class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
-                        :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('Agendar') }"
+                        class="w-full bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
+                        :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('Apartar') || currentEvent?.label?.includes('WhatsApp') }"
                       >
-                        <span>Agendar Cita Gratuita</span>
-                        <span class="text-sm">📅</span>
+                        <span class="text-base">💬</span>
+                        <span>Apartar mi Turno por WhatsApp</span>
                       </button>
                     </div>
                   </div>
 
-                  <!-- Pantalla del Test de Snellen (VCPrueba.vue 1:1 Exact Replica) -->
+                  <!-- Pantalla del Test de Snellen (2 Rondas - Sin Slider) -->
                   <div v-else class="flex flex-col h-full">
-                    <!-- Indicador de Progreso y Gamificación -->
+                    <!-- Indicador de Progreso (2 Rondas) -->
                     <div class="mb-3">
                       <div class="flex items-center justify-between mb-2">
                         <span class="text-slate-600 font-bold text-xs tracking-wide">
-                          Progreso: {{ quiz2CurrentRound }}/10
+                          Ronda {{ quiz2CurrentRound }} de 2 · {{ quiz2CurrentRound === 1 ? 'Escala Base (16px)' : 'Escala Fina Mínima (9.5px)' }}
                         </span>
                         <div class="flex items-center gap-1.5">
-                          <span v-if="quiz2CurrentRound >= 3" class="text-orange-500 font-bold text-[10px] bg-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            🔥 Racha x{{ quiz2CurrentRound - 1 }}
-                          </span>
                           <span class="text-indigo-600 font-black text-xs bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                            ⭐ {{ quiz2ScorePts }} pts
+                            🎯 Snellen 40cm
                           </span>
                         </div>
                       </div>
 
-                      <!-- Barra de Progreso Visual con 10 Segmentos -->
-                      <div class="flex gap-1 h-2">
+                      <!-- Barra de Progreso Visual con 2 Segmentos -->
+                      <div class="flex gap-1.5 h-2">
                         <div
-                          v-for="i in 10"
+                          v-for="i in 2"
                           :key="i"
                           :class="[
                             'flex-1 rounded-full transition-colors duration-300',
-                            i < quiz2CurrentRound ? 'bg-emerald-500' : (i === quiz2CurrentRound ? 'bg-blue-500 animate-pulse' : 'bg-slate-200')
+                            i < quiz2CurrentRound ? 'bg-emerald-500' : (i === quiz2CurrentRound ? 'bg-violet-500 animate-pulse' : 'bg-slate-200')
                           ]"
                         ></div>
                       </div>
 
-                      <!-- Subtítulo de feedback dinámico -->
-                      <p class="text-center text-xs text-slate-400 font-medium mt-2 min-h-[18px]">
-                        <span v-if="quiz2Feedback === 'success'" class="text-emerald-600 font-bold">¡Excelente! Sigue así.</span>
-                        <span v-else-if="quiz2Feedback === 'error'" class="text-red-500 font-bold">No te preocupes, intentemos con otra.</span>
-                        <span v-else-if="quiz2CurrentRound >= 4" class="text-orange-500 font-bold">¡Vas invicto, visión de águila! 🦅</span>
-                        <span v-else>¿Puedes identificar la letra?</span>
+                      <!-- Subtítulo de feedback -->
+                      <p class="text-center text-xs text-slate-500 font-medium mt-2 min-h-[18px]">
+                        {{ quiz2CurrentRound === 1 ? '¿Puedes leer con claridad estas letras a 40 cm?' : '¿Y esta escala aún más pequeña sin entrecerrar los ojos?' }}
                       </p>
                     </div>
 
-                    <!-- Área de Visualización de Letra Snellen -->
-                    <div class="flex flex-col items-center justify-center min-h-[160px] max-h-[180px] bg-white rounded-2xl border-2 border-slate-200 mb-3 relative overflow-hidden shadow-sm">
+                    <!-- Área de Visualización de Letras Snellen Reducidas -->
+                    <div class="flex flex-col items-center justify-center min-h-[150px] max-h-[170px] bg-black rounded-2xl border-2 border-slate-800 mb-3 relative overflow-hidden shadow-sm p-4">
                       <div
-                        class="font-mono font-black text-black leading-none select-none transition-all duration-300 flex items-center justify-center"
-                        :style="{ fontSize: `${quiz2LetterSize}px`, height: '100px' }"
+                        class="font-mono font-bold text-white select-none transition-all duration-300 flex items-center justify-center tracking-[0.45em]"
+                        :style="{ fontSize: `${quiz2LetterSize}px` }"
                       >
                         <span>{{ quiz2CurrentLetter }}</span>
                       </div>
+                      <span class="text-[9px] font-mono text-slate-500 mt-3 uppercase tracking-wider">
+                        Cartilla Snellen Digital · 40 cm
+                      </span>
                     </div>
 
-                    <!-- Control de Tamaño (Slider Manual 1:1) -->
-                    <div class="mb-3 px-2 bg-slate-50 p-3.5 rounded-xl border border-slate-100 relative">
-                      <div class="flex justify-between text-xs text-slate-500 font-bold mb-2 uppercase tracking-wider">
-                        <span class="flex items-center gap-1">
-                          <span class="text-base leading-none font-black">A</span> Grande
-                        </span>
-                        <span class="flex items-center gap-1">
-                          Pequeña <span class="text-xs leading-none font-bold">A</span>
-                        </span>
-                      </div>
-                      
-                      <div class="w-full h-3 bg-slate-200 rounded-lg relative flex items-center">
-                        <div
-                          class="absolute h-full bg-blue-500 rounded-lg"
-                          :style="{ width: `${quiz2SliderPercent}%` }"
-                        ></div>
-                        <div
-                          class="absolute w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow -translate-x-1/2 transition-all duration-300"
-                          :style="{ left: `${quiz2SliderPercent}%` }"
-                        ></div>
-                      </div>
-                      <p class="text-center text-[10px] text-slate-400 mt-2">Puedes ajustar el tamaño manualmente</p>
-                    </div>
-
-                    <!-- Botones de Acción Grandes (1:1 Exactos) -->
+                    <!-- Botones de Acción (Verde continúa / Rojo activa oferta) -->
                     <div class="grid grid-cols-2 gap-3 mt-auto">
                       <div
                         :class="[
-                          'rounded-xl py-3.5 px-3 flex flex-col items-center justify-center gap-1 border-2 transition-all select-none',
+                          'rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-0.5 border-2 transition-all select-none',
                           isQuiz2LeftButtonClicked
-                            ? 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-400 scale-95 shadow-md'
-                            : 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                            ? 'bg-rose-100 border-rose-500 text-rose-900 ring-2 ring-rose-400 scale-95 shadow-md'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
                         ]"
                       >
-                        <span class="text-2xl leading-none">👎</span>
-                        <span class="text-xs uppercase font-bold tracking-wide">No veo bien</span>
+                        <span class="text-xl leading-none">🔴</span>
+                        <span class="text-xs uppercase font-bold tracking-wide">No las veo bien</span>
+                        <span class="text-[9px] text-slate-500">Activa oferta</span>
                       </div>
                       <div
                         :class="[
-                          'rounded-xl py-3.5 px-3 flex flex-col items-center justify-center gap-1 border-2 transition-all select-none shadow-lg',
+                          'rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-0.5 border-2 transition-all select-none shadow-md',
                           isQuiz2RightButtonClicked
                             ? 'bg-emerald-700 border-emerald-400 text-white ring-2 ring-emerald-300 scale-95 shadow-emerald-700/50'
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white border-transparent shadow-emerald-600/30'
+                            : 'bg-emerald-600 text-white border-transparent'
                         ]"
                       >
-                        <span class="text-2xl leading-none">👍</span>
-                        <span class="text-xs uppercase font-bold tracking-wide">Sí, la veo clara</span>
+                        <span class="text-xl leading-none">🟢</span>
+                        <span class="text-xs uppercase font-bold tracking-wide">Las veo bien</span>
+                        <span class="text-[9px] text-emerald-100">Siguiente ronda</span>
                       </div>
                     </div>
                   </div>
@@ -248,24 +243,56 @@
                 <!-- CASO 2: QUIZ 1 (CHEQUEO SÍNTOMAS - 1:1)    -->
                 <!-- ========================================== -->
                 <template v-else>
-                  <!-- Pantalla de Resultado de Quiz 1 (Step5Result.vue) -->
+                  <!-- Pantalla de Resultado de Quiz 1 (Step5Result.vue CRO) -->
                   <div v-if="isResultStage" class="text-center py-2 space-y-3">
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 bg-emerald-100 text-emerald-600 text-3xl">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-1 bg-teal-100 text-[#00897B] text-2xl">
                       🩺
                     </div>
-                    <h4 class="text-lg font-extrabold text-slate-900 tracking-tight">¡Listo! Este es tu resultado</h4>
+                    <h4 class="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                      Tu resultado califica para un Examen Computarizado con Optómetra — Sin Costo
+                    </h4>
+                    <p class="text-[11px] text-teal-800 font-semibold bg-teal-50 py-1.5 px-3 rounded-lg border border-teal-200">
+                      🔒 Sin compromiso de compra. No te llamaremos; coordinas 100% por chat.
+                    </p>
                     
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs text-slate-700 leading-relaxed shadow-sm">
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left text-xs text-slate-700 leading-relaxed shadow-sm">
                       {{ quiz1ResultMessage }}
+                    </div>
+
+                    <!-- Micro-selector de Horarios de 1 Toque -->
+                    <div class="pt-1 text-left space-y-1.5">
+                      <span class="text-[10px] font-mono font-bold text-slate-500 uppercase">Turno de preferencia:</span>
+                      <div class="grid grid-cols-2 gap-2">
+                        <div
+                          class="p-2.5 rounded-xl border text-center transition-all"
+                          :class="bookedTurno === 'manana'
+                            ? 'bg-teal-50 border-teal-500 text-teal-950 font-bold ring-2 ring-teal-300'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                        >
+                          <span class="text-base block">🌅</span>
+                          <span class="text-xs block">Turno Mañana</span>
+                          <span class="text-[10px] text-slate-500">10:30 a 12:30</span>
+                        </div>
+                        <div
+                          class="p-2.5 rounded-xl border text-center transition-all"
+                          :class="bookedTurno === 'tarde'
+                            ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                        >
+                          <span class="text-base block">🌙</span>
+                          <span class="text-xs block">Turno Tarde</span>
+                          <span class="text-[10px] text-slate-500">15:30 a 18:00</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div class="pt-1">
                       <button
-                        class="w-full bg-[#00897B] hover:bg-[#00796B] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-[#00897B]/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
-                        :class="{ 'ring-4 ring-teal-300 scale-95': currentEvent?.label?.includes('Agendar') }"
+                        class="w-full bg-[#00897B] hover:bg-[#00796B] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#00897B]/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
+                        :class="{ 'ring-4 ring-teal-300 scale-95': currentEvent?.label?.includes('Apartar') || currentEvent?.label?.includes('WhatsApp') }"
                       >
                         <span class="text-sm">💬</span>
-                        <span>{{ session.booked ? 'Turno Confirmado en WhatsApp' : 'Agendar mi Cita Gratuita' }}</span>
+                        <span>Apartar mi Turno por WhatsApp</span>
                       </button>
                     </div>
                   </div>
@@ -664,19 +691,19 @@ const currentBrowserUrl = computed(() => {
   return `${base}${path}`
 })
 
-// Optotipos típicos de Snellen y tamaños exactos de VCPrueba.vue
-const quiz2Letters = ['C', 'D', 'E', 'F', 'L', 'N', 'O', 'P', 'T', 'Z']
-const quiz2Sizes = [96, 84, 72, 60, 48, 36, 28, 20, 16, 12]
+// Letras reducidas del nuevo test de 2 rondas de Quiz 2
+const quiz2Letters = ['E   P   T   O', 'C   D   L   V']
+const quiz2Sizes = [16, 9.5]
 
 const quiz2CurrentRound = computed(() => {
   if (!isQuiz2.value) return 1
   if (frames.value.length === 0) return 1
   const evRound = currentEvent.value?.metadata?.round || currentEvent.value?.metadata?.step
-  if (typeof evRound === 'number' && evRound >= 1 && evRound <= 10) {
+  if (typeof evRound === 'number' && evRound >= 1 && evRound <= 2) {
     return evRound
   }
   const ratio = index.value / Math.max(1, frames.value.length - 1)
-  return Math.min(10, Math.max(1, Math.round(ratio * 9) + 1))
+  return Math.min(2, Math.max(1, Math.round(ratio * 1) + 1))
 })
 
 const quiz2CurrentLetter = computed(() => {
@@ -689,10 +716,7 @@ const quiz2LetterSize = computed(() => {
   return quiz2Sizes[(round - 1) % quiz2Sizes.length]
 })
 
-const quiz2SliderPercent = computed(() => {
-  const round = quiz2CurrentRound.value
-  return Math.min(100, Math.max(0, ((round - 1) / 9) * 100))
-})
+const quiz2SliderPercent = computed(() => 50)
 
 const quiz2ScorePts = computed(() => {
   const round = quiz2CurrentRound.value
@@ -714,6 +738,8 @@ const quiz2ScoreValue = computed(() => {
   }
   return '20/15'
 })
+
+const bookedTurno = computed(() => (session.value as any)?.metadata?.turno || 'manana')
 
 const isQuiz2LeftButtonClicked = computed(() => {
   const ev = currentEvent.value
@@ -819,7 +845,7 @@ const forensicRootCause = computed(() => {
   }
   if (s.quiz_completed) {
     if (isQuiz2.value) {
-      return `Sesgo de 'Visión Buena' & Fricción de Cita: El paciente completó las 10 rondas y obtuvo su score (${quiz2ScoreValue.value}). Permaneció ${dwellTimeSeconds.value}s leyendo en la pantalla de resultados. Al ver que su visión estimada es favorable ('20/15' o '20/20'), su cerebro desactivó la urgencia de consulta inmediata. No presionó el botón verde porque no se le presentó un incentivo de prevención de fatiga ni un micro-selector de turnos Mañana/Tarde con reversión de riesgo.`
+      return `Sesgo de 'Visión Buena' & Fricción de Cita: El paciente completó el test de agudeza visual y obtuvo su score (${quiz2ScoreValue.value}). Permaneció ${dwellTimeSeconds.value}s leyendo en la pantalla de resultados. Al ver que su visión estimada es favorable ('20/15' o '20/20'), su cerebro desactivó la urgencia de consulta inmediata. Con el nuevo Micro-selector de turnos Mañana/Tarde y el Exit-Intent activo, este usuario ahora es recuperado con 1 toque hacia WhatsApp.`
     }
     return `Parálisis por Incertidumbre de Cita: El usuario reportó sus molestias visuales y leyó la recomendación de revisión. Permaneció ${dwellTimeSeconds.value}s en pantalla antes de cerrar. Abandonó porque 'Agendar mi Cita' generó temor a llamadas telefónicas insistentes o costos sorpresa. Faltó la garantía explícita 'Sin compromiso · Coordinas tu hora 100% por chat'.`
   }
