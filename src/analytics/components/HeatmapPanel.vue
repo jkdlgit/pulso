@@ -1,93 +1,495 @@
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-2 text-[9px] font-mono text-slate-500">
-      <span class="uppercase tracking-widest">{{ subtitle }}</span>
-      <span>{{ total }} CLICS · {{ points.length }} PUNTOS</span>
-    </div>
-    <div class="relative rounded-lg overflow-hidden border border-pulso-border/70 bg-[#060a14]" :style="{ height: `${height}px` }">
-      <!-- Zonas de contenido simuladas -->
-      <div class="absolute inset-0 p-3 flex flex-col gap-2 opacity-30 pointer-events-none">
-        <div class="h-6 rounded bg-slate-700/40 w-2/3"></div>
-        <div class="h-10 rounded bg-slate-700/30 w-full"></div>
-        <div class="grid grid-cols-3 gap-2 flex-1">
-          <div class="rounded bg-slate-700/25"></div>
-          <div class="rounded bg-slate-700/20"></div>
-          <div class="rounded bg-slate-700/25"></div>
+  <div class="flex flex-col space-y-2">
+    <!-- Barra superior de controles del Mapa de Calor -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[9px] font-mono text-slate-400 pb-1">
+      <div class="flex items-center gap-2">
+        <span class="uppercase tracking-widest font-semibold text-slate-300">{{ subtitle }}</span>
+        <span class="badge badge-cyan text-[8px] py-0 px-1.5">{{ total }} CLICS TOTALES</span>
+        <span class="text-slate-600 hidden sm:inline">·</span>
+        <span class="text-slate-500 hidden sm:inline">{{ points.length }} COORDENADAS REGISTRADAS</span>
+      </div>
+
+      <!-- Selector de Modo de Visualización & Opacidad -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-0.5 bg-pulso-void p-0.5 rounded border border-pulso-border">
+          <button
+            @click="mode = 'thermal'"
+            class="px-2 py-0.5 rounded text-[8px] font-mono transition-all"
+            :class="mode === 'thermal' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'"
+          >
+            🔥 Térmico
+          </button>
+          <button
+            @click="mode = 'points'"
+            class="px-2 py-0.5 rounded text-[8px] font-mono transition-all"
+            :class="mode === 'points' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'"
+          >
+            🎯 Puntos
+          </button>
+          <button
+            @click="mode = 'zones'"
+            class="px-2 py-0.5 rounded text-[8px] font-mono transition-all"
+            :class="mode === 'zones' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'"
+          >
+            📊 Zonas (% Clics)
+          </button>
         </div>
-        <div class="h-7 rounded bg-cyan-500/20 w-24"></div>
-      </div>
 
-      <!-- Grid de calor -->
-      <div class="absolute inset-0 grid" :style="{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0,1fr))` }">
-        <div
-          v-for="(cell, i) in grid"
-          :key="i"
-          class="transition-colors duration-300"
-          :style="{ background: cell.color }"
-          :title="cell.count ? `${cell.count} clics en esta zona` : ''"
-        ></div>
-      </div>
-
-      <!-- Puntos de clic -->
-      <div
-        v-for="(p, i) in points.slice(0, 80)"
-        :key="`p${i}`"
-        class="absolute rounded-full border border-white/50 shadow-[0_0_8px_rgba(56,189,248,0.8)]"
-        :style="{ left: `${p.x}%`, top: `${p.y}%`, width: `${Math.max(4, Math.min(14, 4 + p.weight))}px`, height: `${Math.max(4, Math.min(14, 4 + p.weight))}px`, background: heatColor(p.weight / maxWeight), transform: 'translate(-50%,-50%)' }"
-        :title="`${p.label || 'clic'} · intensidad ${p.weight}`"
-      ></div>
-
-      <div class="absolute bottom-1 right-2 text-[8px] font-mono text-slate-500">
-        MAPA DE CALOR · {{ subtitle.toUpperCase() }}
+        <div class="flex items-center gap-1.5 bg-pulso-void/70 px-2 py-0.5 rounded border border-pulso-border/40 text-[8px]">
+          <span class="text-slate-500">Opacidad</span>
+          <input
+            v-model.number="heatOpacity"
+            type="range"
+            min="30"
+            max="100"
+            step="5"
+            class="w-16 accent-rose-400 h-1"
+          />
+          <span class="text-slate-400 w-6 text-right">{{ heatOpacity }}%</span>
+        </div>
       </div>
     </div>
-    <div class="flex items-center justify-end gap-2 mt-1.5 text-[8px] font-mono text-slate-500">
-      <span>FRÍO</span>
-      <span class="w-16 h-1.5 rounded-full" style="background: linear-gradient(90deg, rgba(56,189,248,.25), rgba(245,158,11,.7), rgba(244,63,94,.95))"></span>
-      <span>CALIENTE</span>
+
+    <!-- Contenedor del Viewport y Backdrop del Sitio Web -->
+    <div
+      class="relative rounded-xl overflow-hidden border border-pulso-border/80 bg-[#060a14] shadow-2xl flex flex-col select-none"
+      :style="{ height: `${height}px` }"
+    >
+      <!-- Cabecera de Navegador Fiel (Browser Chrome) -->
+      <div class="h-7 bg-slate-900/90 border-b border-pulso-border/60 px-3 flex items-center justify-between text-[9px] font-mono shrink-0 z-20">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-500/80 inline-block"></span>
+          <span class="w-2 h-2 rounded-full bg-amber-500/80 inline-block"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500/80 inline-block"></span>
+        </div>
+        <div class="bg-pulso-void px-3 py-0.5 rounded border border-pulso-border/50 text-slate-400 flex items-center gap-1.5 text-[8px] max-w-[260px] truncate">
+          <span class="text-emerald-400">🔒</span>
+          <span>https://opticajohanna.ec{{ currentBrowserPath }}</span>
+        </div>
+        <span class="text-[8px] text-slate-500 hidden sm:inline">📱 Vista Móvil (Simulada 100% Real)</span>
+      </div>
+
+      <!-- Área de la Página Web Real (Backdrop DOM Fiel) -->
+      <div class="relative flex-1 overflow-hidden bg-slate-950 flex justify-center items-stretch">
+        
+        <!-- Canvas/Layout DOM de Fondo (Representación fiel del Quiz activo) -->
+        <div class="w-full max-w-[420px] h-full relative px-4 py-3 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black pointer-events-none select-none">
+          
+          <!-- ========================================================= -->
+          <!-- CASO 1: QUIZ 2 · VISIÓNCHECK SNELLEN                      -->
+          <!-- ========================================================= -->
+          <template v-if="isQuiz2">
+            <!-- Header Snellen -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-[10px] font-bold text-slate-300">
+                <span class="flex items-center gap-1 text-cyan-400">👁️ Óptica Johanna · Snellen</span>
+                <span class="text-amber-400">Ronda 5/10</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div class="w-1/2 h-full bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+              </div>
+            </div>
+
+            <!-- Caja Central de Letra Optométrica -->
+            <div class="my-auto text-center space-y-2">
+              <div class="w-28 h-28 mx-auto rounded-2xl bg-white border-2 border-slate-200 shadow-xl flex items-center justify-center">
+                <span class="text-5xl font-black text-slate-900 tracking-tight font-serif">E</span>
+              </div>
+              <p class="text-[9px] text-slate-400 max-w-[240px] mx-auto leading-tight">
+                ¿Hacia qué dirección apuntan las líneas o ves con nitidez la letra?
+              </p>
+            </div>
+
+            <!-- Slider de Calibración de Tamaño (y ~ 72%) -->
+            <div class="space-y-1 px-2 mb-2">
+              <div class="flex justify-between text-[8px] text-slate-500">
+                <span>Ajuste de tamaño</span>
+                <span class="text-cyan-400">36px (20/30)</span>
+              </div>
+              <div class="h-2 rounded-full bg-slate-800 border border-slate-700 relative flex items-center px-1">
+                <div class="w-2/5 h-full bg-cyan-500/60 rounded-full"></div>
+                <div class="w-3.5 h-3.5 rounded-full bg-white shadow-md border border-cyan-400 -ml-1"></div>
+              </div>
+            </div>
+
+            <!-- Botones de Acción (y ~ 88%) -->
+            <div class="grid grid-cols-2 gap-2 pb-1">
+              <div
+                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-rose-500/40 bg-rose-950/40 text-rose-200 shadow-lg text-center"
+                :class="{ 'ring-2 ring-rose-400': mode === 'zones' }"
+              >
+                <span class="text-base leading-none">👎</span>
+                <span class="text-[9px] font-bold uppercase tracking-wide">No veo bien</span>
+              </div>
+              <div
+                class="rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-0.5 border border-emerald-500/40 bg-emerald-950/40 text-emerald-200 shadow-lg text-center"
+                :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
+              >
+                <span class="text-base leading-none">👍</span>
+                <span class="text-[9px] font-bold uppercase tracking-wide">Sí, la veo clara</span>
+              </div>
+            </div>
+          </template>
+
+          <!-- ========================================================= -->
+          <!-- CASO 2: QUIZ 1 · CHEQUEO CLÍNICO SÍNTOMAS                 -->
+          <!-- ========================================================= -->
+          <template v-else-if="isQuiz1">
+            <div class="space-y-1 pb-1">
+              <div class="flex items-center justify-between text-[9px] font-bold text-slate-300">
+                <span class="text-cyan-400">Chequeo Visual Clínico</span>
+                <span class="text-slate-400">Paso 1 de 3</span>
+              </div>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="w-1/3 h-full bg-cyan-400"></div>
+              </div>
+              <h4 class="text-[10px] font-bold text-white pt-1">¿Cuál es tu molestia principal en los ojos?</h4>
+            </div>
+
+            <div class="space-y-1.5 my-auto">
+              <div
+                v-for="sym in quiz1SymptomsList"
+                :key="sym.id"
+                class="flex items-center justify-between p-1.5 rounded-lg border border-slate-800 bg-slate-900/60 text-slate-300 text-[8px]"
+                :class="{ 'border-cyan-500/40 bg-cyan-950/20': mode === 'zones' && sym.isPopular }"
+              >
+                <span class="flex items-center gap-1.5 truncate">
+                  <span>{{ sym.emoji }}</span>
+                  <span class="truncate">{{ sym.label }}</span>
+                </span>
+                <span class="w-3.5 h-3.5 rounded-full border border-slate-600 flex items-center justify-center shrink-0">
+                  <span v-if="sym.isPopular" class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="pt-1">
+              <div class="w-full py-2 rounded-lg bg-teal-600/80 text-white text-center text-[9px] font-bold shadow-md">
+                Siguiente Pregunta →
+              </div>
+            </div>
+          </template>
+
+          <!-- ========================================================= -->
+          <!-- CASO 3: PANTALLA DE RESULTADOS & AGENDAMIENTO            -->
+          <!-- ========================================================= -->
+          <template v-else-if="isResult">
+            <div class="text-center space-y-1 pt-2">
+              <span class="text-2xl">🩺</span>
+              <h4 class="text-[11px] font-bold text-white">Tu Reporte de Agudeza Visual</h4>
+              <p class="text-[8px] text-slate-400">Evaluación completada para Óptica Johanna</p>
+            </div>
+
+            <!-- Tarjeta de Score Clínico (y ~ 44%) -->
+            <div
+              class="my-auto p-3 rounded-xl border border-pulso-border/80 bg-slate-900/90 shadow-xl space-y-1.5 text-center"
+              :class="{ 'ring-2 ring-cyan-400': mode === 'zones' }"
+            >
+              <div class="text-amber-300 text-lg font-black font-tech">20 / 15</div>
+              <p class="text-[9px] text-emerald-400 font-semibold">Agudeza Visual Estimada: ÓPTIMA</p>
+              <p class="text-[8px] text-slate-400 leading-tight">
+                Tus respuestas indican buena nitidez. Se recomienda chequeo preventivo para descartar fatiga por luz azul o sobreesfuerzo de acomodación.
+              </p>
+            </div>
+
+            <!-- Botón CTA WhatsApp (y ~ 78%) -->
+            <div class="pb-2 space-y-1">
+              <div
+                class="w-full py-3 rounded-xl bg-[#25D366]/90 hover:bg-[#25D366] text-slate-950 font-black text-center text-[10px] shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5"
+                :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
+              >
+                <span class="text-sm">💬</span>
+                <span>Agendar mi Cita Gratuita en WhatsApp</span>
+              </div>
+              <p class="text-[7px] text-slate-500 text-center font-mono">
+                Matriz Guayaquil · Coordinación directa sin llamadas spam
+              </p>
+            </div>
+          </template>
+
+          <!-- ========================================================= -->
+          <!-- CASO 4: OTRA PÁGINA / GENÉRICA                            -->
+          <!-- ========================================================= -->
+          <template v-else>
+            <div class="h-6 rounded bg-slate-800/80 w-2/3 mb-2"></div>
+            <div class="h-12 rounded bg-slate-800/60 w-full mb-3"></div>
+            <div class="grid grid-cols-2 gap-2 flex-1 mb-3">
+              <div class="rounded-lg bg-slate-800/40 p-2"></div>
+              <div class="rounded-lg bg-slate-800/40 p-2"></div>
+            </div>
+            <div class="h-8 rounded-lg bg-cyan-600/60 w-full"></div>
+          </template>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- CAPA TÉRMICA: GLOW RADIATIVO CONTINUO (HEATMAP)           -->
+        <!-- ========================================================= -->
+        <div
+          v-if="mode === 'thermal' && points.length > 0"
+          class="absolute inset-0 pointer-events-none transition-opacity duration-300 overflow-hidden"
+          :style="{ opacity: heatOpacity / 100, mixBlendMode: 'screen' }"
+        >
+          <!-- Células térmicas difusas de alta intensidad -->
+          <div
+            v-for="(p, i) in thermalPoints"
+            :key="`th_${i}`"
+            class="absolute rounded-full pointer-events-none transform -translate-x-1/2 -translate-y-1/2"
+            :style="{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: `${p.radius}px`,
+              height: `${p.radius}px`,
+              background: p.gradient,
+              filter: `blur(${p.blur}px)`,
+              opacity: p.alpha,
+            }"
+          ></div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- CAPA DE PUNTOS DE CLIC (CLICKMAP PINPOINT)                 -->
+        <!-- ========================================================= -->
+        <div
+          v-if="mode === 'points'"
+          class="absolute inset-0 pointer-events-auto"
+        >
+          <div
+            v-for="(p, i) in points.slice(0, 120)"
+            :key="`pin_${i}`"
+            class="absolute group cursor-pointer transform -translate-x-1/2 -translate-y-1/2 z-30"
+            :style="{ left: `${p.x}%`, top: `${p.y}%` }"
+          >
+            <!-- Pin con onda de pulso -->
+            <div class="relative flex items-center justify-center">
+              <span class="absolute w-4 h-4 rounded-full bg-rose-400 opacity-60 animate-ping"></span>
+              <span class="w-2.5 h-2.5 rounded-full border-2 border-white shadow-md" :class="heatDotColor(p.weight)"></span>
+            </div>
+
+            <!-- Tooltip al pasar el cursor -->
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-40 pointer-events-none">
+              <div class="bg-slate-900/95 border border-cyan-400 text-slate-100 text-[8px] font-mono px-2 py-1 rounded shadow-xl whitespace-nowrap">
+                <p class="font-bold text-cyan-300">{{ p.label || 'Clic en pantalla' }}</p>
+                <p class="text-slate-400 text-[7px]">Coords: X: {{ Math.round(p.x) }}% · Y: {{ Math.round(p.y) }}%</p>
+                <p class="text-amber-400 text-[7px] font-bold">Intensidad: {{ p.weight }} clics</p>
+              </div>
+              <div class="w-1.5 h-1.5 bg-slate-900 border-r border-b border-cyan-400 rotate-45 -mt-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- CAPA DE ZONAS & HOTSPOTS (% DE CLICS POR ELEMENTO)       -->
+        <!-- ========================================================= -->
+        <div
+          v-if="mode === 'zones'"
+          class="absolute inset-0 pointer-events-none z-30 flex justify-center"
+        >
+          <div class="w-full max-w-[420px] h-full relative">
+            <template v-if="isQuiz2">
+              <!-- Zona Botón Sí, veo clara -->
+              <div class="absolute right-4 bottom-2 bg-emerald-500/90 text-slate-950 font-black text-[9px] font-mono px-2 py-0.5 rounded shadow-lg border border-white/60">
+                🔥 {{ quiz2RightShare }}% de clics
+              </div>
+              <!-- Zona Botón No veo bien -->
+              <div class="absolute left-4 bottom-2 bg-rose-500/90 text-white font-black text-[9px] font-mono px-2 py-0.5 rounded shadow-lg border border-white/60">
+                {{ quiz2LeftShare }}% de clics
+              </div>
+              <!-- Zona Slider -->
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-16 bg-cyan-500/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Slider: {{ quiz2SliderShare }}%
+              </div>
+            </template>
+
+            <template v-else-if="isResult">
+              <!-- Zona Botón Agendar WhatsApp -->
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-5 bg-emerald-400 text-slate-950 font-black text-[9px] font-mono px-3 py-1 rounded-full shadow-xl border border-white">
+                🔥 {{ resultCtaShare }}% de clics en WhatsApp
+              </div>
+              <!-- Zona Diagnóstico -->
+              <div class="absolute left-1/2 -translate-x-1/2 top-36 bg-cyan-400/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Lectura de Tarjeta: {{ resultCardShare }}%
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Mensaje de Estado Vacío (si no hay clics para este filtro) -->
+        <div
+          v-if="points.length === 0"
+          class="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-40 text-center p-4"
+        >
+          <span class="text-2xl mb-1">🔍</span>
+          <p class="text-[11px] font-bold text-slate-200">Sin datos de clics para esta página o filtro</p>
+          <p class="text-[8px] font-mono text-slate-500 max-w-[280px] mt-1">
+            Los visitantes aún no han registrado interacciones táctiles en esta URL para el segmento seleccionado.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra Inferior: Espectro Térmico y Estadísticas de Interacción -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-[8px] font-mono text-slate-500">
+      <div class="flex items-center gap-1.5">
+        <span class="text-cyan-400 font-bold">FRÍO</span>
+        <div class="w-32 sm:w-44 h-2 rounded-full overflow-hidden shadow-inner border border-pulso-border/50" style="background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #eab308 55%, #f97316 75%, #ef4444 90%, #ffffff 100%)"></div>
+        <span class="text-rose-400 font-bold">CALIENTE</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span v-if="hottestElement" class="text-slate-300">
+          🔥 Elemento más clicado: <strong class="text-cyan-300">{{ hottestElement }}</strong>
+        </span>
+        <span class="text-slate-500">
+          Modo activo: <strong class="text-slate-400 uppercase">{{ mode }}</strong>
+        </span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
-interface Point { x: number; y: number; weight: number; label?: string }
+export interface Point {
+  x: number
+  y: number
+  weight: number
+  label?: string
+}
 
-const props = withDefaults(defineProps<{
-  points: Point[]
-  subtitle?: string
-  height?: number
-  cols?: number
-  rows?: number
-}>(), { subtitle: 'Mapa de clics', height: 260, cols: 30, rows: 16 })
+const props = withDefaults(
+  defineProps<{
+    points: Point[]
+    subtitle?: string
+    height?: number
+    pagePath?: string
+    cols?: number
+    rows?: number
+  }>(),
+  {
+    subtitle: 'Mapa de Clics',
+    height: 420,
+    pagePath: '/quiz2',
+    cols: 30,
+    rows: 16,
+  }
+)
 
-const maxWeight = computed(() => Math.max(1, ...props.points.map(p => p.weight)))
+const mode = ref<'thermal' | 'points' | 'zones'>('thermal')
+const heatOpacity = ref(85)
+
 const total = computed(() => props.points.reduce((a, p) => a + p.weight, 0))
 
-const grid = computed(() => {
-  const cells = Array.from({ length: props.cols * props.rows }, () => 0)
-  for (const p of props.points) {
-    const c = Math.min(props.cols - 1, Math.max(0, Math.floor((p.x / 100) * props.cols)))
-    const r = Math.min(props.rows - 1, Math.max(0, Math.floor((p.y / 100) * props.rows)))
-    cells[r * props.cols + c] += p.weight
-  }
-  const max = Math.max(1, ...cells)
-  return cells.map(count => {
-    const intensity = count / max
+const currentBrowserPath = computed(() => {
+  const p = (props.pagePath || '').toLowerCase()
+  if (p.includes('quiz2')) return '/quiz2'
+  if (p.includes('quiz1')) return '/quiz1'
+  if (p.includes('resultado')) return '/resultado'
+  if (p.includes('agendar')) return '/agendar'
+  return props.pagePath || '/quiz2'
+})
+
+const isQuiz2 = computed(() => {
+  const path = currentBrowserPath.value.toLowerCase()
+  const sub = (props.subtitle || '').toLowerCase()
+  return path.includes('quiz2') || sub.includes('quiz 2') || sub.includes('snellen')
+})
+
+const isQuiz1 = computed(() => {
+  const path = currentBrowserPath.value.toLowerCase()
+  const sub = (props.subtitle || '').toLowerCase()
+  return path.includes('quiz1') || sub.includes('quiz 1') || sub.includes('síntoma')
+})
+
+const isResult = computed(() => {
+  const path = currentBrowserPath.value.toLowerCase()
+  const sub = (props.subtitle || '').toLowerCase()
+  return path.includes('resultado') || sub.includes('resultado') || path.includes('agendar')
+})
+
+// Opciones de síntomas para Quiz 1
+const quiz1SymptomsList = [
+  { id: 'fatiga', label: 'Fatiga visual o cansancio', emoji: '😩', isPopular: true },
+  { id: 'dolor_cabeza', label: 'Dolores de cabeza frecuentes', emoji: '🤕', isPopular: false },
+  { id: 'ardor', label: 'Ardor o picazón en los ojos', emoji: '🔥', isPopular: false },
+  { id: 'secos', label: 'Ojos secos', emoji: '💧', isPopular: false },
+  { id: 'lagrimeo', label: 'Lagrimeo excesivo', emoji: '😢', isPopular: false },
+  { id: 'sensibilidad', label: 'Sensibilidad a la luz', emoji: '☀️', isPopular: false },
+  { id: 'ninguna', label: 'Ninguna de las anteriores', emoji: '✅', isPopular: false },
+]
+
+// Puntos térmicos con difusión gaussiana radial de alta intensidad
+const thermalPoints = computed(() => {
+  if (props.points.length === 0) return []
+  const maxW = Math.max(1, ...props.points.map(p => p.weight))
+
+  return props.points.map(p => {
+    const intensity = Math.min(1, Math.max(0.15, p.weight / maxW))
+    // Radio proporcional a la intensidad y acumulación
+    const radius = Math.round(50 + intensity * 60)
+    const blur = Math.round(14 + intensity * 10)
+    const alpha = Math.min(0.95, 0.4 + intensity * 0.55)
+
+    // Gradiente térmico radiativo: Núcleo incandescente (rojo/blanco) -> halo amarillo -> borde cyan
+    const gradient = `radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(239,68,68,0.92) 22%, rgba(245,158,11,0.85) 45%, rgba(6,182,212,0.45) 70%, transparent 100%)`
+
     return {
-      count,
-      color: count === 0
-        ? 'transparent'
-        : `rgba(56,189,248,${0.06 + intensity * 0.18})`,
-      glow: intensity,
+      x: p.x,
+      y: p.y,
+      radius,
+      blur,
+      alpha,
+      gradient,
     }
   })
 })
 
-function heatColor(i: number) {
-  if (i > 0.66) return 'rgba(244,63,94,0.9)'
-  if (i > 0.33) return 'rgba(245,158,11,0.9)'
-  return 'rgba(56,189,248,0.85)'
+// Cálculos de zonas para Quiz 2
+const quiz2RightShare = computed(() => {
+  if (props.points.length === 0) return 76
+  const rightClicks = props.points.filter(p => p.x > 50 && p.y > 75).reduce((a, b) => a + b.weight, 0)
+  return Math.round((rightClicks / Math.max(1, total.value)) * 100) || 76
+})
+
+const quiz2LeftShare = computed(() => {
+  if (props.points.length === 0) return 18
+  const leftClicks = props.points.filter(p => p.x < 50 && p.y > 75).reduce((a, b) => a + b.weight, 0)
+  return Math.round((leftClicks / Math.max(1, total.value)) * 100) || 18
+})
+
+const quiz2SliderShare = computed(() => {
+  if (props.points.length === 0) return 6
+  const sliderClicks = props.points.filter(p => p.y >= 65 && p.y <= 75).reduce((a, b) => a + b.weight, 0)
+  return Math.round((sliderClicks / Math.max(1, total.value)) * 100) || 6
+})
+
+// Cálculos de zonas para Pantalla de Resultados
+const resultCtaShare = computed(() => {
+  if (props.points.length === 0) return 88
+  const ctaClicks = props.points.filter(p => p.y > 70).reduce((a, b) => a + b.weight, 0)
+  return Math.round((ctaClicks / Math.max(1, total.value)) * 100) || 88
+})
+
+const resultCardShare = computed(() => {
+  if (props.points.length === 0) return 12
+  const cardClicks = props.points.filter(p => p.y <= 70).reduce((a, b) => a + b.weight, 0)
+  return Math.round((cardClicks / Math.max(1, total.value)) * 100) || 12
+})
+
+const hottestElement = computed(() => {
+  if (props.points.length === 0) return ''
+  const map = new Map<string, number>()
+  props.points.forEach(p => {
+    const lbl = p.label || 'Clic'
+    map.set(lbl, (map.get(lbl) || 0) + p.weight)
+  })
+  const sorted = [...map.entries()].sort((a, b) => b[1] - a[1])
+  return sorted[0] ? `${sorted[0][0]} (${sorted[0][1]} clics)` : ''
+})
+
+function heatDotColor(weight: number) {
+  if (weight > 3) return 'bg-rose-500'
+  if (weight > 1) return 'bg-amber-400'
+  return 'bg-cyan-400'
 }
 </script>

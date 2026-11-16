@@ -278,26 +278,32 @@ async function callGeminiCloudApi(
 * [${c.level}] ${c.title} (${c.affectedQuiz}): ${c.evidence}. Solución: ${c.recommendation}
 `).join('\n')
 
-  const systemContext = `Eres el Agente Consultor de Decisiones Estratégicas y Auditor de Crecimiento de Pulso Analytics para Óptica Johanna en Guayaquil, Ecuador.
-Tu rol es analizar con rigor forense, responder preguntas estratégicas de negocio, pauta y producto cruzando datos reales.
-Usa tono profesional, directo, analítico y conversacional. No des respuestas estáticas o repetitivas.
-Responde en formato GitHub Markdown estructurado con subtítulos, tablas y pasos accionables.
+  const systemContext = `Eres un asistente inteligente dentro de Pulso Analytics, el sistema de analítica de Óptica Johanna en Guayaquil, Ecuador. Tienes acceso completo al contexto del negocio, los datos de los quizzes, el comportamiento de los usuarios y las métricas de campaña.
 
-DATOS EN VIVO DEL NEGOCIO (ÓPTICA JOHANNA - GUAYAQUIL):
-- Puntaje de salud general: ${cmd?.healthScore ?? 88}/100
-- Nivel de confianza estadística: ${cmd?.globalConfidence ?? 68}%
-- Demografía Meta: 61.6% tiene 50 años o más (40% de 50-64 años, 21.6% de 65+ años), 58.8% Mujeres, 41.2% Hombres.
-- Conexión: 92% móviles Android (Samsung Galaxy A, Xiaomi Redmi) en 4G/LTE en Guayaquil.
+REGLAS CRÍTICAS DE COMPORTAMIENTO:
+1. RESPONDE EXACTAMENTE LO QUE SE TE PREGUNTA. No elabores ni agregues información extra si no fue solicitada.
+2. Si el usuario saluda (hola, buenas, hey, hi, etc.), responde con un saludo natural y breve. Pregunta en qué puedes ayudar. NO hagas análisis espontáneos.
+3. Si la pregunta es corta o casual, responde corto y conversacional.
+4. SOLO cuando el usuario pida explícitamente análisis, estrategia, datos, métricas, o haga una pregunta de negocio → entonces usa tu contexto completo y responde con detalle estructurado.
+5. Adapta el largo de tu respuesta al largo e intención de la pregunta. Una pregunta de 3 palabras no merece 500 palabras de respuesta.
+6. Usa formato Markdown SOLO cuando la respuesta sea compleja o técnica. Para mensajes cortos y conversacionales, responde texto plano sin headers ni bullets.
+7. Nunca inventes datos. Si no tienes información suficiente, pregunta al usuario qué quiere saber exactamente.
+8. Mantén el contexto de la conversación. Si ya explicaste algo, no lo repitas.
 
-RENDIMIENTO COMPARATIVO POR QUIZ:
+CONTEXTO DEL SISTEMA (úsalo SOLO si el usuario lo requiere con su pregunta):
+- Negocio: Óptica Johanna, Guayaquil, Ecuador
+- Salud general: ${cmd?.healthScore ?? 88}/100 · Confianza estadística: ${cmd?.globalConfidence ?? 68}%
+- Demografía Meta Ads: 61.6% mayores de 50 años, 58.8% Mujeres, 92% móviles Android en 4G
+- Quiz 1 (Síntomas clínicos) y Quiz 2 (Agudeza visual Snellen) conectados a Supabase pro.leads
+
+DATOS DE RENDIMIENTO (disponible bajo petición del usuario):
 ${reconciliationsText}
 
-BRECHAS FORENSES DETECTADAS:
+BRECHAS DETECTADAS (disponible bajo petición):
 ${gapsText}
 
-SEMÁFORO DE CRITICIDADES:
-${criticalitiesText}
-`
+CRITICIDADES (disponible bajo petición):
+${criticalitiesText}`
 
   // Construir historial asegurando alternancia estricta user -> model -> user -> model
   const previousTurns = history.filter(m => m.content !== prompt).slice(-8)
@@ -321,6 +327,12 @@ ${criticalitiesText}
     contents.push({ role: 'user', parts: [{ text: prompt }] })
   }
 
+  // Detectar si es un mensaje corto/casual (saludo, pregunta breve)
+  const cleanPromptForLength = prompt.replace(/\[CONTEXTO DE PANTALLA EN VIVO\][\s\S]*?CONSULTA DEL USUARIO:/i, '').trim()
+  const isShortOrCasual = cleanPromptForLength.length < 60 || /^(hola|hi|hey|buenas|buenos|saludos|ok|bien|gracias|thanks|oke|dale|listo|claro|si|no|perfecto)\b/i.test(cleanPromptForLength)
+  // Mínimo 400 tokens siempre para evitar respuestas vacías de Gemini
+  const maxTokens = isShortOrCasual ? 400 : 1400
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
   const resp = await fetch(url, {
     method: 'POST',
@@ -331,19 +343,32 @@ ${criticalitiesText}
       },
       contents,
       generationConfig: {
-        temperature: 0.35,
-        maxOutputTokens: 1400,
+        temperature: isShortOrCasual ? 0.7 : 0.35,
+        maxOutputTokens: maxTokens,
+        stopSequences: [],
       }
     })
   })
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '')
-    throw new Error(`Error HTTP ${resp.status} en Gemini API: ${errText.slice(0, 150)}`)
+    throw new Error(`Error HTTP ${resp.status} en Gemini API: ${errText.slice(0, 200)}`)
   }
 
   const data = await resp.json()
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+  // Manejar respuesta vacía o bloqueada por filtros de seguridad
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) {
+    const finishReason = data.candidates?.[0]?.finishReason || 'UNKNOWN'
+    if (finishReason === 'SAFETY') {
+      return 'No puedo responder a esa consulta específica. ¿Puedes reformularla?'
+    }
+    // Si la respuesta está vacía por cualquier otro motivo, lanzar error para que el fallback local tome el control
+    throw new Error(`Gemini devolvió respuesta vacía (finishReason: ${finishReason})`)
+  }
+
+  return text
 }
 
 /**

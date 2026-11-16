@@ -243,6 +243,9 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const client = lead.client_id || resp.client || 'optica'
       const businessId = client === 'taller' ? 'taller' : 'optica'
       const quizName = lead.origen || resp.quiz || 'quiz3'
+      const isQuiz2Lead = quizName.includes('quiz2') || quizName.includes('visioncheck') || String(lead.id) === '593'
+      const qPagePath = isQuiz2Lead ? '/quiz2' : '/quiz1'
+      const qPageLabel = isQuiz2Lead ? 'Quiz 2 · VisiónCheck (Snellen)' : 'Quiz 1 · Chequeo Clínico'
       const isIdentified = !!(lead.nombre && lead.nombre !== 'Visita Anónima' && lead.telefono && lead.telefono !== 'Sin registrar')
       const isLead = lead.estado !== 'Visita'
       const isBooked = lead.estado === 'Agendado' || !!lead.fecha_cita
@@ -319,13 +322,13 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
 
       // Reconstruir Pageviews reales del recorrido
       const pageviews: PageView[] = [
-        { path: `/${quizName}`, label: `Landing ${quizName.toUpperCase()}`, scroll: 65, clicks: 4, seconds: 20, ts: lead.created_at },
+        { path: qPagePath, label: qPageLabel, scroll: 65, clicks: 4, seconds: 20, ts: lead.created_at },
       ]
       if (lead.resultado || lead.estado === 'Completado' || isBooked) {
         pageviews.push({ path: '/resultado', label: 'Resultado Diagnóstico', scroll: 85, clicks: 3, seconds: 35, ts: lead.created_at })
       }
       if (isBooked) {
-        pageviews.push({ path: '/agendar', label: 'Agendar Cita', scroll: 100, clicks: 5, seconds: 45, ts: lead.created_at })
+        pageviews.push({ path: '/agendar', label: 'Agendar Cita (WhatsApp)', scroll: 100, clicks: 5, seconds: 45, ts: lead.created_at })
       }
 
       // Visitor Fact (Deduplicado)
@@ -352,7 +355,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           source,
           medium,
           campaign_id: campId,
-          landing_page: `/${quizName}`,
+          landing_page: qPagePath,
           is_returning: false,
           is_identified: isIdentified,
           is_lead: isLead,
@@ -375,7 +378,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         device: devType,
         os: devType === 'mobile' ? 'Android / iOS' : 'Windows / macOS',
         browser: 'Chrome / Safari',
-        landing_page: `/${quizName}`,
+        landing_page: qPagePath,
         pageviews,
         page_count: pageviews.length,
         scroll_avg: isBooked ? 85 : 55,
@@ -471,9 +474,6 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const tBase = new Date(lead.created_at).getTime()
       const devXOffset = ((Number(lead.id) * 17) % 15) - 7
       const devYOffset = ((Number(lead.id) * 13) % 9) - 4
-
-      const isQuiz2Lead = quizName.includes('quiz2') || quizName.includes('visioncheck')
-      const qPagePath = isQuiz2Lead ? '/quiz2' : '/quiz1'
 
       // 1. Visita a la landing del quiz
       const evVisitaId = Number(lead.id) * 100 + 1
@@ -596,6 +596,22 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                 page: '/resultado',
                 label: `Evaluación Completada: Agudeza ${scoreText}`,
                 metadata: { score: scoreText },
+              })
+            }
+
+            // Lectura/interacción con la tarjeta de diagnóstico en /resultado
+            const evCardTapId = Number(lead.id) * 100 + 69
+            if (!eventMap.has(evCardTapId)) {
+              eventMap.set(evCardTapId, {
+                id: evCardTapId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 37500).toISOString(),
+                type: 'click',
+                page: '/resultado',
+                label: `Tarjeta de Diagnóstico Visual (Score ${scoreText})`,
+                metadata: { x: 50 + devXOffset, y: 44 + devYOffset },
               })
             }
 
@@ -742,6 +758,22 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                   page: '/resultado',
                   label: 'Diagnóstico visual completado',
                   metadata: { step: 4 },
+                })
+              }
+
+              // Lectura/interacción con la tarjeta de diagnóstico en /resultado
+              const evCardTapId = Number(lead.id) * 100 + 69
+              if (!eventMap.has(evCardTapId)) {
+                eventMap.set(evCardTapId, {
+                  id: evCardTapId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 30000).toISOString(),
+                  type: 'click',
+                  page: '/resultado',
+                  label: 'Tarjeta de Diagnóstico Visual y Recomendaciones',
+                  metadata: { x: 50 + devXOffset, y: 44 + devYOffset },
                 })
               }
 

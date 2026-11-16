@@ -64,7 +64,7 @@
           </h3>
           <span class="text-[9px] font-mono text-slate-500">{{ clickPoints.length }} PUNTOS</span>
         </div>
-        <HeatmapPanel :points="clickPoints" :subtitle="`Clics agregados · ${pageLabel}`" :height="320" />
+        <HeatmapPanel :points="clickPoints" :page-path="page" :subtitle="`Clics agregados · ${pageLabel}`" :height="460" />
       </div>
 
       <div class="hud-card">
@@ -94,13 +94,13 @@
         <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold mb-3 pb-2 border-b border-pulso-border/50">
           Compradores · mapa de clics
         </h3>
-        <HeatmapPanel :points="buyerPoints" subtitle="Segmento compradores" :height="220" />
+        <HeatmapPanel :points="buyerPoints" :page-path="page" subtitle="Segmento compradores" :height="340" />
       </div>
       <div class="hud-card">
         <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold mb-3 pb-2 border-b border-pulso-border/50">
           No compradores · mapa de clics
         </h3>
-        <HeatmapPanel :points="nonBuyerPoints" subtitle="Segmento no compradores" :height="220" />
+        <HeatmapPanel :points="nonBuyerPoints" :page-path="page" subtitle="Segmento no compradores" :height="340" />
       </div>
     </div>
 
@@ -149,8 +149,36 @@ import { pathStats } from '../engine'
 
 const { filtered, dataset } = useAnalytics()
 
-const pages = computed(() => pathStats(filtered.value).map(p => ({ path: p.path, label: p.label })))
-const page = ref('/')
+function matchesPage(eventPage: string, targetPage: string): boolean {
+  if (!eventPage || !targetPage) return false
+  if (eventPage === targetPage) return true
+  const ep = eventPage.toLowerCase().replace(/^\//, '')
+  const tp = targetPage.toLowerCase().replace(/^\//, '')
+  if (ep.includes('quiz2') && tp.includes('quiz2')) return true
+  if (ep.includes('quiz1') && tp.includes('quiz1')) return true
+  if (ep.includes('resultado') && tp.includes('resultado')) return true
+  if (ep.includes('agendar') && tp.includes('agendar')) return true
+  return false
+}
+
+const pages = computed(() => {
+  const list = pathStats(filtered.value).map(p => {
+    let lbl = p.label
+    if (p.path.includes('quiz2')) lbl = 'Quiz 2 · VisiónCheck (Snellen)'
+    else if (p.path.includes('quiz1')) lbl = 'Quiz 1 · Chequeo Clínico'
+    else if (p.path.includes('resultado')) lbl = 'Pantalla de Resultados'
+    else if (p.path.includes('agendar')) lbl = 'Agendar Cita (WhatsApp)'
+    return { path: p.path, label: lbl }
+  })
+
+  // Garantizar presencia de las páginas clave del funnel
+  if (!list.some(p => p.path.includes('quiz2'))) list.unshift({ path: '/quiz2', label: 'Quiz 2 · VisiónCheck (Snellen)' })
+  if (!list.some(p => p.path.includes('quiz1'))) list.push({ path: '/quiz1', label: 'Quiz 1 · Chequeo Clínico' })
+  if (!list.some(p => p.path.includes('resultado'))) list.push({ path: '/resultado', label: 'Pantalla de Resultados' })
+  return list
+})
+
+const page = ref('/quiz2')
 watch(pages, val => {
   if (val.length && !val.some(p => p.path === page.value)) page.value = val[0].path
 }, { immediate: true })
@@ -167,7 +195,7 @@ const pageLabel = computed(() => pages.value.find(p => p.path === page.value)?.l
 const sessionMap = computed(() => new Map(filtered.value.sessions.map(s => [s.id, s])))
 
 const scopedEvents = computed(() => filtered.value.events.filter(e => {
-  if (e.page !== page.value) return false
+  if (!matchesPage(e.page, page.value)) return false
   const s = sessionMap.value.get(e.session_id)
   if (!s) return false
   if (device.value !== 'all' && s.device !== device.value) return false
@@ -187,14 +215,14 @@ const nonBuyerPoints = computed(() => clickPointsFor(false))
 
 function clickPointsFor(buyer: boolean) {
   return filtered.value.events
-    .filter(e => e.type === 'click' && e.page === page.value)
+    .filter(e => e.type === 'click' && matchesPage(e.page, page.value))
     .filter(e => sessionMap.value.get(e.session_id)?.purchased === buyer)
     .filter(e => device.value === 'all' || sessionMap.value.get(e.session_id)?.device === device.value)
     .map(e => ({ x: Number(e.metadata?.x ?? 50), y: Number(e.metadata?.y ?? 50), weight: 1, label: e.label }))
 }
 
 const pageSessions = computed(() => filtered.value.sessions.filter(s => {
-  if (!s.pageviews.some(p => p.path === page.value)) return false
+  if (!s.pageviews.some(p => matchesPage(p.path, page.value))) return false
   if (device.value !== 'all' && s.device !== device.value) return false
   if (segment.value === 'buyers' && !s.purchased) return false
   if (segment.value === 'nonbuyers' && s.purchased) return false
@@ -204,15 +232,15 @@ const pageSessions = computed(() => filtered.value.sessions.filter(s => {
 }))
 
 const clickRate = computed(() => pageSessions.value.length
-  ? Math.round((pageSessions.value.filter(s => s.pageviews.find(p => p.path === page.value)?.clicks || 0).length / pageSessions.value.length) * 100)
+  ? Math.round((pageSessions.value.filter(s => s.pageviews.find(p => matchesPage(p.path, page.value))?.clicks || 0).length / pageSessions.value.length) * 100)
   : 0)
 
 const avgScroll = computed(() => {
-  const vals = pageSessions.value.map(s => s.pageviews.find(p => p.path === page.value)?.scroll || 0)
+  const vals = pageSessions.value.map(s => s.pageviews.find(p => matchesPage(p.path, page.value))?.scroll || 0)
   return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 })
 const avgSeconds = computed(() => {
-  const vals = pageSessions.value.map(s => s.pageviews.find(p => p.path === page.value)?.seconds || 0)
+  const vals = pageSessions.value.map(s => s.pageviews.find(p => matchesPage(p.path, page.value))?.seconds || 0)
   return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 })
 
@@ -231,7 +259,7 @@ const scrollBuckets = computed(() => {
   const total = pageSessions.value.length || 1
   return ranges.map(([min, max]) => {
     const count = pageSessions.value.filter(s => {
-      const scroll = s.pageviews.find(p => p.path === page.value)?.scroll || 0
+      const scroll = s.pageviews.find(p => matchesPage(p.path, page.value))?.scroll || 0
       return scroll >= min && scroll <= max
     }).length
     return { label: `${min}–${max}%`, count, pct: Math.round((count / total) * 100) }
