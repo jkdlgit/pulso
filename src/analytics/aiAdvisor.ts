@@ -388,8 +388,8 @@ function runDeepForensicEngine(
 
   // ── DETECCIÓN TEMÁTICA PRECISA (ORDENADA POR ESPECIFICIDAD) ──
 
-  // 2. Audiencia, Público y Segmentación en Meta Ads
-  const isAskingAudience = /p[uú]blico|audiencia|segmenta|target|a qui[eé]n|para qui[eé]n|edad|edades|demograf|adulto|mayor|50 a[ñn]os|mujer|mujeres|cliente ideal|perfil|campa[ñn]a/i.test(q)
+  // 2. Audiencia, Público y Segmentación en Meta Ads (solo cuando el usuario pregunta ESPECÍFICAMENTE sobre público objetivo en anuncios)
+  const isAskingAudience = /\b(p[uú]blico objetivo|segmentaci[oó]n de (meta|anuncios|ads)|a qui[eé]n (apunt|dirij|direc)|para qu[eé] p[uú]blico|qu[eé] edad(es)? target|demograf[ií]a de (meta|los anuncios?)|intereses en meta|cliente ideal para (meta|anuncios?)|a qui[eé]n va dirigido el anuncio|qu[eé] segmento|segmento de (meta|ads))\b/i.test(q)
 
   // 3. Oferta, Precios, Combos, Lentes Progresivos y Ticket Alto (Estricto para no confundir con pauta/audiencia)
   const isAskingOfferPricing = /\b(combos?|paquetes?|ofertas? comerciales?|promoci[oó]n|descuentos?|precios? de lentes|cu[aá]nto cobrar|vender m[aá]s caro|ticket alto|garant[ií]a de adaptaci[oó]n|lunas progresivas)\b/i.test(q)
@@ -441,6 +441,12 @@ function runDeepForensicEngine(
   // 18. Experimentos A/B
   const isAskingExperiments = /a\/b|test|experiment|prueba|variante|control|hip[oó]tesis/i.test(q)
 
+  // 19. Eventos de tracking / booking no disparan / no se registran
+  const isAskingEventTracking = /evento|tracking|disparar?|se dispar[oó]|no se (registr[oó]|guard[oó]|cap?tur[oó])|bot[oó]n.*reserv|agendar.*evento|no aparece.*reserva|booking|supabase.*registro|lead.*no.*guard[oó]|no llega|no se ve|no funciona.*bot[oó]n|webhook|por qu[eé].*no (llega|registra|guarda|aparece)/i.test(q)
+
+  // 20. Datos del funnel / métricas de un quiz específico
+  const isAskingFunnelData = /cu[aá]ntos? (lead|usuario|paciente|persona|visit|inici|complet|agendar?|cita)|cu[aá]l es (el|la) (tasa|porcentaje|métrica|número|resultado)|cu[aá]nto (convert|complet|abandon|inicia|agenda)|dato(s)? (del|de) (quiz|funnel|embudo)|qu[eé] (muestr|dic[ei]|indica|arrojó|report[aó]) (el|los|la) (data|dato|tablero|dashboard|pulso)|promedio|resumen del (d[ií]a|per[ií]odo|semana)|cu[aá]l (quiz|funnel) (va|está|rinde) (mejor|peor|m[aá]s)/i.test(q)
+
   // ── ENRUTAMIENTO DE INTENCIONES ──
 
   // A. Respuesta a afirmación en multi-turno
@@ -449,6 +455,16 @@ function runDeepForensicEngine(
       return renderMetaConfigResponse()
     }
     return renderSimulationResponse(totalSpend, totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments)
+  }
+
+  // A2. Event tracking / booking que no dispara — ANTES de audiencia para evitar el hijack
+  if (isAskingEventTracking) {
+    return renderEventTrackingResponse(q, cmd, reconciliations, totalStarts, totalCompletes, totalAppointments)
+  }
+
+  // A3. Datos específicos del funnel — ANTES de audiencia
+  if (isAskingFunnelData) {
+    return renderFunnelDataResponse(cmd, reconciliations, totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments, totalSpend)
   }
 
   // B. Audiencia y Segmentación Meta Ads (PRIORIDAD ALTA)
@@ -1077,6 +1093,94 @@ Basado en las brechas observadas en tus datos reales:
 * **Métrica de éxito:** Citas agendadas por dólar invertido.`
 }
 
+// ─── RESPUESTA: Eventos de tracking / booking que no disparan ───────────────
+function renderEventTrackingResponse(
+  q: string,
+  _cmd: OptimizationCommandData | undefined,
+  reconciliations: any[],
+  totalStarts: number,
+  totalCompletes: number,
+  totalAppointments: number
+): string {
+  const q1 = reconciliations.find(r => r.quizKey === 'quiz1') || reconciliations[0]
+  const q2 = reconciliations.find(r => r.quizKey === 'quiz2') || reconciliations[1] || reconciliations[0]
+  const bookingRatio = totalCompletes > 0 ? ((totalAppointments / totalCompletes) * 100).toFixed(1) : '0'
+  const q1Apps = q1?.appointments ?? 0
+  const q2Apps = q2?.appointments ?? 0
+
+  return `### 🔧 Diagnóstico: Eventos de Booking / Tracking
+
+Revisando tu pregunta: **"${q}"**
+
+Pulso Analytics registra los eventos directamente desde Supabase (\`pro.leads\`). Aquí está lo que los datos muestran ahora mismo:
+
+---
+
+#### 📊 Estado Actual del Funnel de Booking:
+| Etapa | Quiz 1 | Quiz 2 | Total |
+| :--- | :--- | :--- | :--- |
+| **Completaron el quiz** | ${q1?.quizCompletes ?? 0} | ${q2?.quizCompletes ?? 0} | **${totalCompletes}** |
+| **Agendaron cita (booking)** | ${q1Apps} | ${q2Apps} | **${totalAppointments}** |
+| **Tasa de booking post-quiz** | ${q1?.quizCompletes > 0 ? ((q1Apps / q1.quizCompletes) * 100).toFixed(1) : '0'}% | ${q2?.quizCompletes > 0 ? ((q2Apps / q2.quizCompletes) * 100).toFixed(1) : '0'}% | **${bookingRatio}%** |
+
+---
+
+#### 🔍 Por qué puede no registrarse el evento de booking:
+1. **El evento se registra en Supabase cuando el usuario abre WhatsApp** (campo \`estado: 'Agendado'\`). Si el usuario toca el botón pero cierra antes de enviar el mensaje, el lead queda en estado \`'Visita'\` sin booking.
+2. **El botón de WhatsApp dispara la URL \`wa.me/...\`** — el evento se anota en Supabase *antes* de redirigir, así que si hay un error de red en ese instante, el click no se guarda.
+3. **Tiempo de procesamiento:** Los eventos nuevos en Supabase pueden tardar hasta **30 segundos en reflejarse** en el tablero de Pulso (el polling del store es cada ~15 segundos).
+
+---
+
+#### ✅ Cómo verificarlo en Supabase directamente:
+1. Ir a \`https://supabase.com/dashboard\` → tabla \`pro.leads\`
+2. Filtrar por \`created_at\` del día de hoy
+3. Verificar que los registros con \`estado = 'Agendado'\` tienen \`fecha_cita\` no nulo
+
+¿Deseas que revisemos el código del botón de booking en el quiz para confirmar que el INSERT de Supabase está bien configurado?`
+}
+
+// ─── RESPUESTA: Datos específicos del funnel ─────────────────────────────────
+function renderFunnelDataResponse(
+  _cmd: OptimizationCommandData | undefined,
+  reconciliations: any[],
+  totalClicks: number,
+  totalLandingViews: number,
+  totalStarts: number,
+  totalCompletes: number,
+  totalAppointments: number,
+  totalSpend: number
+): string {
+  const q1 = reconciliations.find(r => r.quizKey === 'quiz1') || reconciliations[0]
+  const q2 = reconciliations.find(r => r.quizKey === 'quiz2') || reconciliations[1] || reconciliations[0]
+  const startRate = totalLandingViews > 0 ? ((totalStarts / totalLandingViews) * 100).toFixed(1) : '—'
+  const completeRate = totalStarts > 0 ? ((totalCompletes / totalStarts) * 100).toFixed(1) : '—'
+  const bookingRate = totalCompletes > 0 ? ((totalAppointments / totalCompletes) * 100).toFixed(1) : '—'
+  const cplReal = totalAppointments > 0 ? (totalSpend / totalAppointments).toFixed(2) : '—'
+
+  return `### 📊 Resumen del Funnel — Datos en Vivo (Pulso Analytics)
+
+#### Embudo Completo:
+| Etapa | Quiz 1 (${q1?.quizName ?? 'General'}) | Quiz 2 (${q2?.quizName ?? 'VisiónCheck'}) | Total |
+| :--- | :--- | :--- | :--- |
+| **Clics en Meta** | ${q1?.metaClicks ?? '—'} | ${q2?.metaClicks ?? '—'} | ${totalClicks} |
+| **Visitas landing** | ${q1?.metaLandingViews ?? '—'} | ${q2?.metaLandingViews ?? '—'} | ${totalLandingViews} |
+| **Iniciaron quiz** | ${q1?.quizStarts ?? '—'} (${q1?.startRate?.toFixed(1) ?? '—'}%) | ${q2?.quizStarts ?? '—'} (${q2?.startRate?.toFixed(1) ?? '—'}%) | ${totalStarts} · avg ${startRate}% |
+| **Completaron quiz** | ${q1?.quizCompletes ?? '—'} (${q1?.completionRate?.toFixed(1) ?? '—'}%) | ${q2?.quizCompletes ?? '—'} (${q2?.completionRate?.toFixed(1) ?? '—'}%) | ${totalCompletes} · avg ${completeRate}% |
+| **Agendaron cita** | ${q1?.appointments ?? '—'} | ${q2?.appointments ?? '—'} | ${totalAppointments} · tasa ${bookingRate}% |
+
+---
+
+#### Métricas de Eficiencia:
+* **Gasto total en Meta:** \$${totalSpend.toFixed(2)}
+* **CPL Real (costo por lead/cita):** \$${cplReal}
+* **CTR por quiz:** Quiz 1 → ${q1?.metaCtr ?? '—'}% · Quiz 2 → ${q2?.metaCtr ?? '—'}%
+* **CPC por quiz:** Quiz 1 → \$${q1?.metaCpc ?? '—'} · Quiz 2 → \$${q2?.metaCpc ?? '—'}
+
+¿Quieres profundizar en alguna etapa específica del embudo, o ver la simulación de impacto si mejoramos la tasa de inicio?`
+}
+
+// ─── RESPUESTA DINÁMICA (fallback inteligente) ────────────────────────────────
 function renderDynamicCognitiveResponse(
   q: string,
   cmd: OptimizationCommandData | undefined,
@@ -1087,35 +1191,53 @@ function renderDynamicCognitiveResponse(
   totalAppointments: number
 ): string {
   const topQuiz = [...reconciliations].sort((a, b) => (b.metaCtr || 0) - (a.metaCtr || 0))[0] || { quizName: 'Quiz 2', metaCtr: 8.19, metaCpc: 0.0149 }
+  const healthScore = cmd?.healthScore ?? '—'
+  const confidence = cmd?.globalConfidence ?? '—'
 
-  return `### 💡 Asesoría Estratégica Adaptativa para: "${q}"
+  // Detectar palabras clave para dar contexto parcialmente relevante
+  const mentionsQuiz1 = /quiz\s*1|chequeo general|molestia/i.test(q)
+  const mentionsQuiz2 = /quiz\s*2|visi[oó]ncheck|agudeza|snellen|letra/i.test(q)
+  const mentionsLead = /lead|registro|supabase|paciente|contacto/i.test(q)
+  const mentionsCost = /costo|gasto|inversi[oó]n|plata|d[oó]lar/i.test(q)
 
-Analizando tu consulta bajo el contexto operativo de **Óptica Johanna** en Guayaquil:
+  let contextBlock = ''
+  if (mentionsQuiz1) {
+    const q1 = reconciliations.find(r => r.quizKey === 'quiz1') || reconciliations[0]
+    contextBlock = `\n**Quiz 1 (${q1?.quizName ?? 'Chequeo General'}):** ${q1?.quizStarts ?? '—'} inicios · ${q1?.quizCompletes ?? '—'} completados · ${q1?.appointments ?? '—'} citas · CTR ${q1?.metaCtr ?? '—'}%`
+  } else if (mentionsQuiz2) {
+    const q2 = reconciliations.find(r => r.quizKey === 'quiz2') || reconciliations[1] || reconciliations[0]
+    contextBlock = `\n**Quiz 2 (${q2?.quizName ?? 'VisiónCheck'}):** ${q2?.quizStarts ?? '—'} inicios · ${q2?.quizCompletes ?? '—'} completados · ${q2?.appointments ?? '—'} citas · CTR ${q2?.metaCtr ?? '—'}%`
+  } else if (mentionsLead) {
+    contextBlock = `\n**Leads totales registrados en Supabase:** ${totalAppointments} citas · ${totalStarts} sesiones iniciadas`
+  } else if (mentionsCost) {
+    contextBlock = `\n**Inversión registrada en Meta:** \$${totalSpend.toFixed(2)} · ${totalClicks} clics`
+  }
+
+  return `### 💬 Respuesta a tu Consulta
+
+Recibí tu pregunta: **"${q}"**
+${contextBlock}
 
 ---
 
-#### 1. Diagnóstico Estratégico Aplicado a tu Pregunta:
-* Tu inquietud sobre **"${q}"** incide directamente en la capacidad de convertir visitas frías de Facebook en citas confirmadas en consultorio.
-* **Contexto de tu Audiencia:** Recuerda que el **61.6% de tus pacientes en Guayaquil son personas mayores de 50 años** (con alta presencia femenina del 58.8%), navegando principalmente desde teléfonos móviles Android.
-* **Comportamiento Comercial:** Este perfil valora la cercanía humana, la claridad en los precios y la rapidez para responder en WhatsApp.
+> ℹ️ **Nota:** Esta respuesta es generada por el motor local de Pulso Analytics (sin clave de API Gemini configurada). Para obtener respuestas completamente precisas y conversacionales sobre cualquier tema, configura tu **API Key de Google Gemini** en Configuración → Integración IA.
 
 ---
 
-#### 2. Palancas Operativas para Resolverlo:
-1. **En la Pauta Publicitaria:**
-   - Mantener el foco en **${topQuiz.quizName}** (CTR líder de ${topQuiz.metaCtr}% a solo $${topQuiz.metaCpc}/clic), que ya ha demostrado captar el mayor volumen de personas interesadas.
-2. **En la Experiencia Digital (Quiz):**
-   - Con la entrada directa a síntomas y preguntas en 20px-24px, el usuario siente avance inmediato sin tener que llenar datos tediosos.
-3. **En el Cierre por WhatsApp:**
-   - El contacto debe hacerse en menos de 3 minutos ofreciendo dos horarios concretos (ej: *"¿Prefieres a las 11:30 o a las 16:00?"*) para asegurar el agendamiento.
+#### Contexto General del Sistema (Óptica Johanna):
+* **Puntaje de salud:** ${healthScore}/100 · Confianza estadística: ${confidence}%
+* **Quiz con mejor rendimiento actual:** **${topQuiz.quizName}** (CTR ${topQuiz.metaCtr}%, CPC \$${topQuiz.metaCpc})
+* **Total clics Meta:** ${totalClicks} · **Citas generadas:** ${totalAppointments}
 
 ---
 
-#### 3. Siguiente Paso Táctico:
-Si deseas profundizar en este tema, indícame si nos enfocamos en:
-* 🎯 **Ajustar la segmentación y edades en Meta Ads**
-* 💎 **Armar una oferta o paquete comercial (Progresivos / Antirreflejo)**
-* 💬 **Perfeccionar los guiones de secretaría en WhatsApp**`
+#### ¿En qué puedo ayudarte con más detalle?
+Dime si quieres información sobre alguna de estas áreas y la respondré con los datos reales:
+* 📊 **Datos del funnel** (leads, tasas, completados, citas)
+* 🔧 **Eventos de booking** (por qué no disparan o no se registran)
+* 💰 **Presupuesto y ROI** de las campañas actuales
+* 🎯 **Segmentación en Meta Ads** (edades, género, intereses)
+* 💬 **Protocolo WhatsApp** para cierre de citas`
 }
 
 function renderSimulationResponse(
