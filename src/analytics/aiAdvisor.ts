@@ -198,7 +198,7 @@ Actualmente la métrica de esta evaluación registra: **${metric}** sobre **${sa
 
 export async function testGeminiApiKey(apiKey: string): Promise<{ ok: boolean; message: string }> {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey.trim()}`
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -239,7 +239,7 @@ export async function askDecisionAdvisor(
   if (customApiKey) {
     try {
       const llmAnswer = await callGeminiCloudApi(customApiKey, userQuestion, cmd, history)
-      if (llmAnswer && llmAnswer.trim().length > 30) {
+      if (llmAnswer && llmAnswer.trim().length > 0) {
         return llmAnswer
       }
     } catch (err: any) {
@@ -333,42 +333,70 @@ ${criticalitiesText}`
   // Mínimo 400 tokens siempre para evitar respuestas vacías de Gemini
   const maxTokens = isShortOrCasual ? 400 : 1400
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: systemContext }]
-      },
-      contents,
-      generationConfig: {
-        temperature: isShortOrCasual ? 0.7 : 0.35,
-        maxOutputTokens: maxTokens,
-        stopSequences: [],
-      }
-    })
+  // Modelos activos (verificados). Se intenta en orden hasta obtener respuesta.
+  const GEMINI_MODELS = [
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-lite-latest',
+  ]
+
+  const requestBody = JSON.stringify({
+    system_instruction: {
+      parts: [{ text: systemContext }]
+    },
+    contents,
+    generationConfig: {
+      temperature: isShortOrCasual ? 0.7 : 0.35,
+      maxOutputTokens: maxTokens,
+      stopSequences: [],
+    }
   })
 
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '')
-    throw new Error(`Error HTTP ${resp.status} en Gemini API: ${errText.slice(0, 200)}`)
-  }
-
-  const data = await resp.json()
-
-  // Manejar respuesta vacía o bloqueada por filtros de seguridad
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) {
-    const finishReason = data.candidates?.[0]?.finishReason || 'UNKNOWN'
-    if (finishReason === 'SAFETY') {
-      return 'No puedo responder a esa consulta específica. ¿Puedes reformularla?'
+  let lastError = ''
+  for (const model of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+    let resp: Response
+    try {
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: requestBody
+      })
+    } catch (netErr: any) {
+      lastError = `Red: ${netErr?.message}`
+      continue
     }
-    // Si la respuesta está vacía por cualquier otro motivo, lanzar error para que el fallback local tome el control
-    throw new Error(`Gemini devolvió respuesta vacía (finishReason: ${finishReason})`)
+
+    if (resp.status === 503 || resp.status === 429) {
+      // Modelo sobrecargado o sin cuota — intentar siguiente
+      const errText = await resp.text().catch(() => '')
+      lastError = `HTTP ${resp.status} en ${model}: ${errText.slice(0, 100)}`
+      console.warn(`[AI-ADVISOR] ${lastError} — intentando siguiente modelo`)
+      continue
+    }
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '')
+      throw new Error(`Error HTTP ${resp.status} en Gemini API (${model}): ${errText.slice(0, 200)}`)
+    }
+
+    const data = await resp.json()
+    // Manejar respuesta vacía o bloqueada por filtros de seguridad
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!text) {
+      const finishReason = data.candidates?.[0]?.finishReason || 'UNKNOWN'
+      if (finishReason === 'SAFETY') {
+        return 'No puedo responder a esa consulta específica. ¿Puedes reformularla?'
+      }
+      lastError = `Gemini (${model}) devolvió respuesta vacía (finishReason: ${finishReason})`
+      continue
+    }
+
+    return text
   }
 
-  return text
+  // Todos los modelos fallaron
+  throw new Error(`Todos los modelos Gemini fallaron. Último error: ${lastError}`)
 }
 
 /**
@@ -382,6 +410,11 @@ function runDeepForensicEngine(
   history: ChatMessage[],
   fullPrompt: string = ''
 ): string {
+  // Guardia: si es un saludo simple, nunca mostrar el dictamen estratégico
+  if (/^(hola|hi|hey|buenas|buenos días|buenas tardes|buenas noches|saludos|qué tal|que tal|cómo estás|como estas|cómo están|como estan)\s*[!?.]*$/i.test(q.trim())) {
+    return '¡Hola! Soy tu Asistente y Consultor de Crecimiento en **Pulso Analytics** para Óptica Johanna. Tengo acceso a métricas en tiempo real, quizzes, embudos y comportamiento de usuarios. ¿En qué te puedo ayudar hoy?'
+  }
+
   const reconciliations = cmd?.reconciliations || []
   const quiz1 = reconciliations.find(r => r.quizKey === 'quiz1') || reconciliations[0]
   const quiz2 = reconciliations.find(r => r.quizKey === 'quiz2') || reconciliations[1] || reconciliations[0]
