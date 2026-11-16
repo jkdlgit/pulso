@@ -13,8 +13,8 @@
         <a href="/analytics/live" class="text-[10px] font-mono text-violet-400 border border-violet-400/30 rounded px-2 py-1 hover:bg-violet-400/10 transition">📊 Ver Analítica en Vivo →</a>
       </div>
       <!-- Barra de progreso -->
-      <div v-if="step > 0 && step <= 3" class="h-1 bg-slate-800">
-        <div class="h-full bg-gradient-to-r from-violet-500 via-purple-400 to-indigo-400 transition-all duration-500" :style="{ width: `${(step / 3) * 100}%` }"></div>
+      <div v-if="step > 0 && step <= 2" class="h-1 bg-slate-800">
+        <div class="h-full bg-gradient-to-r from-violet-500 via-purple-400 to-indigo-400 transition-all duration-500" :style="{ width: `${(step / 2) * 100}%` }"></div>
       </div>
     </header>
 
@@ -30,7 +30,7 @@
           Comprueba tu <span class="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-300">agudeza y nitidez</span> visual
         </h1>
         <p class="text-sm text-slate-400 leading-relaxed">
-          Calibra tu vista a 40 cm de la pantalla con optotipos optométricos interactivos y conoce tu agudeza estimada.
+          Mantén tu pantalla a 40 cm de tus ojos y lee las letras que aparecen. Dos rondas rápidas para conocer tu agudeza estimada.
         </p>
         <div class="grid grid-cols-3 gap-2.5 text-left pt-2">
           <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
@@ -40,8 +40,8 @@
           </div>
           <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
             <span class="text-xl block mb-1">🎯</span>
-            <p class="text-xs font-bold text-slate-200">Optotipos</p>
-            <p class="text-[10px] text-slate-500">Prueba Snellen / E</p>
+            <p class="text-xs font-bold text-slate-200">Letras Snellen</p>
+            <p class="text-[10px] text-slate-500">Escala optométrica</p>
           </div>
           <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
             <span class="text-xl block mb-1">🎁</span>
@@ -56,85 +56,76 @@
         <p class="text-[11px] font-mono text-slate-500">🔒 Prueba interactiva calibrada para pantallas por Óptica Johanna</p>
       </div>
 
-      <!-- =================== PASO 1: PRUEBA OPTOTIPO RONDA 1 =================== -->
+      <!-- =================== PASO 1: RONDA 1 — letras 28px =================== -->
       <div v-else-if="step === 1" class="space-y-6">
         <div>
-          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 1 DE 3 · AGUDEZA BASE</span>
-          <h2 class="text-xl font-bold text-white mt-1">¿Hacia qué dirección apuntan las tres barras del símbolo?</h2>
-          <p class="text-xs text-slate-400 mt-1">Mantén tu celular o pantalla a 40 cm de tus ojos.</p>
+          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 1 DE 2 · ESCALA BASE</span>
+          <h2 class="text-xl font-bold text-white mt-1">¿Puedes leer con claridad estas letras?</h2>
+          <p class="text-xs text-slate-400 mt-1">Mantén tu pantalla a 40 cm. No te acerques.</p>
         </div>
 
-        <!-- Símbolo Optotipo -->
-        <div class="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-center shadow-inner">
-          <div class="w-20 h-20 border-4 border-white flex flex-col justify-between p-2 transform rotate-90 rounded bg-slate-950">
-            <div class="h-2 bg-white rounded-full"></div>
-            <div class="h-2 bg-white w-2/3 rounded-full"></div>
-            <div class="h-2 bg-white rounded-full"></div>
-          </div>
+        <!-- Letras Ronda 1 -->
+        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex items-center justify-center shadow-inner min-h-[120px]">
+          <span style="font-size: 28px; font-family: 'Courier New', monospace; color: white; letter-spacing: 0.3em; font-weight: bold;">
+            {{ currentLetters.join('  ') }}
+          </span>
         </div>
+
+        <p class="text-center text-xs text-slate-500">¿Puedes distinguir las letras sin esfuerzo?</p>
 
         <div class="grid grid-cols-2 gap-3">
-          <button v-for="dir in optotypeDirections1" :key="dir.value"
-            @click="selectStep1(dir.value, $event)"
-            class="p-4 rounded-xl border text-center transition-all"
-            :class="answers.optotipo1 === dir.value
-              ? 'bg-violet-600/30 border-violet-500 text-white'
-              : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-slate-500'"
+          <button
+            @click="handleGreen(1, $event)"
+            class="p-4 rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-white text-center hover:bg-emerald-500/20 transition cursor-pointer"
           >
-            <span class="text-2xl block mb-1">{{ dir.icon }}</span>
-            <span class="font-semibold text-sm">{{ dir.label }}</span>
+            <span class="text-2xl block mb-1">🟢</span>
+            <span class="font-bold text-sm block">Las veo bien</span>
+            <span class="text-[11px] text-slate-400">Distingo todas con claridad</span>
+          </button>
+          <button
+            @click="handleRed(1, $event)"
+            class="p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-white text-center hover:bg-rose-500/20 transition cursor-pointer"
+          >
+            <span class="text-2xl block mb-1">🔴</span>
+            <span class="font-bold text-sm block">No las veo bien</span>
+            <span class="text-[11px] text-slate-400">Se ven borrosas o difusas</span>
           </button>
         </div>
       </div>
 
-      <!-- =================== PASO 2: PRUEBA OPTOTIPO RONDA 2 =================== -->
+      <!-- =================== PASO 2: RONDA 2 — letras 20px =================== -->
       <div v-else-if="step === 2" class="space-y-6">
         <div>
-          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 2 DE 3 · ENFOQUE FINO</span>
-          <h2 class="text-xl font-bold text-white mt-1">¿Hacia dónde apunta este optotipo más pequeño?</h2>
-          <p class="text-xs text-slate-400 mt-1">No te acerques a la pantalla. Evalúa tu nitidez natural.</p>
+          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 2 DE 2 · ESCALA FINA</span>
+          <h2 class="text-xl font-bold text-white mt-1">¿Y estas letras más pequeñas?</h2>
+          <p class="text-xs text-slate-400 mt-1">Esta escala es más exigente. No te acerques a la pantalla.</p>
         </div>
 
-        <!-- Símbolo Optotipo Reducido -->
-        <div class="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-center shadow-inner">
-          <div class="w-10 h-10 border-2 border-white flex flex-col justify-between p-1 transform rotate-180 rounded bg-slate-950">
-            <div class="h-1 bg-white rounded-full"></div>
-            <div class="h-1 bg-white w-2/3 rounded-full"></div>
-            <div class="h-1 bg-white rounded-full"></div>
-          </div>
+        <!-- Letras Ronda 2 -->
+        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex items-center justify-center shadow-inner min-h-[120px]">
+          <span style="font-size: 20px; font-family: 'Courier New', monospace; color: white; letter-spacing: 0.3em; font-weight: bold;">
+            {{ currentLetters.join('  ') }}
+          </span>
         </div>
+
+        <p class="text-center text-xs text-slate-500">¿Puedes leer las letras sin esfuerzo adicional?</p>
 
         <div class="grid grid-cols-2 gap-3">
-          <button v-for="dir in optotypeDirections2" :key="dir.value"
-            @click="selectStep2(dir.value, $event)"
-            class="p-4 rounded-xl border text-center transition-all"
-            :class="answers.optotipo2 === dir.value
-              ? 'bg-violet-600/30 border-violet-500 text-white'
-              : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-slate-500'"
+          <button
+            @click="handleGreen(2, $event)"
+            class="p-4 rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-white text-center hover:bg-emerald-500/20 transition cursor-pointer"
           >
-            <span class="text-2xl block mb-1">{{ dir.icon }}</span>
-            <span class="font-semibold text-sm">{{ dir.label }}</span>
+            <span class="text-2xl block mb-1">🟢</span>
+            <span class="font-bold text-sm block">Las veo bien</span>
+            <span class="text-[11px] text-slate-400">Distingo todas con claridad</span>
           </button>
-        </div>
-      </div>
-
-      <!-- =================== PASO 3: HISTORIAL & HÁBITOS =================== -->
-      <div v-else-if="step === 3" class="space-y-6">
-        <div>
-          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// PREGUNTA 3 DE 3 · ANTECEDENTES</span>
-          <h2 class="text-2xl font-bold text-white mt-1">¿Cuándo fue tu último examen visual completo?</h2>
-          <p class="text-xs text-slate-400 mt-1">Nos ayuda a contextualizar la precisión de tu fórmula actual.</p>
-        </div>
-        <div class="space-y-3">
-          <button v-for="opt in q3HistoryOptions" :key="opt.value"
-            @click="selectStep3(opt.value, $event)"
-            class="w-full text-left p-4 rounded-xl border transition-all"
-            :class="answers.ultimo_chequeo === opt.value
-              ? 'bg-purple-600/20 border-purple-500 text-white'
-              : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-slate-500'"
+          <button
+            @click="handleRed(2, $event)"
+            class="p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-white text-center hover:bg-rose-500/20 transition cursor-pointer"
           >
-            <span class="font-semibold">{{ opt.emoji }} {{ opt.label }}</span>
-            <span v-if="opt.note" class="block text-xs text-slate-500 mt-0.5">{{ opt.note }}</span>
+            <span class="text-2xl block mb-1">🔴</span>
+            <span class="font-bold text-sm block">No las veo bien</span>
+            <span class="text-[11px] text-slate-400">Se ven borrosas o difusas</span>
           </button>
         </div>
       </div>
@@ -156,10 +147,18 @@
           </div>
         </div>
 
-        <!-- FORMULARIO DE AGENDAMIENTO -->
+        <!-- FORMULARIO DE AGENDAMIENTO CRO -->
         <div class="hud-card space-y-4">
-          <h3 class="font-bold text-white text-base">📅 Confirma tu Examen Optométrico Sin Costo</h3>
-          <p class="text-xs text-slate-400">Verifica tu refracción exacta en consultorio con equipo computarizado.</p>
+          <!-- A) Titular persuasivo -->
+          <h3 class="font-extrabold text-white text-base leading-snug">
+            Tu resultado califica para un Examen Computarizado de Agudeza con Optómetra — Sin Costo — en Óptica Johanna Guayaquil.
+          </h3>
+
+          <!-- B) Reversión de riesgo -->
+          <div class="flex items-start gap-2 p-3 rounded-xl bg-emerald-500/8 border border-emerald-500/20 text-xs text-slate-400">
+            <span class="text-emerald-400 mt-0.5 flex-shrink-0">🔒</span>
+            <span>Sin compromiso de compra. No te llamaremos por teléfono; coordinas tu cupo <strong class="text-slate-200">100% por WhatsApp</strong>, sin costo y sin formularios adicionales.</span>
+          </div>
 
           <div class="space-y-3">
             <div>
@@ -177,33 +176,48 @@
               />
               <p v-if="phoneError" class="text-xs text-rose-400 mt-1">{{ phoneError }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Fecha preferida</label>
-                <input v-model="form.fecha_cita" type="date" :min="todayStr"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 focus:outline-none focus:border-violet-400 transition"
-                />
-              </div>
-              <div>
-                <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Hora preferida</label>
-                <select v-model="form.hora_cita" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 focus:outline-none focus:border-violet-400 transition">
-                  <option value="">Cualquier hora</option>
-                  <option v-for="h in horarios" :key="h" :value="h">{{ h }}</option>
-                </select>
+
+            <!-- C) Micro-selector de turnos -->
+            <div>
+              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-2">Elige tu turno</label>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  @click="selectTurno('manana', '10:30')"
+                  :class="form.turno === 'manana'
+                    ? 'bg-emerald-600/30 border-emerald-500 text-white'
+                    : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-emerald-500/50'"
+                  class="p-4 rounded-xl border text-center transition-all cursor-pointer"
+                >
+                  <span class="text-xl block mb-1">🌅</span>
+                  <span class="font-bold text-sm block">Turno Mañana</span>
+                  <span class="text-[11px] text-slate-400">10:30 a 12:30</span>
+                </button>
+                <button
+                  @click="selectTurno('tarde', '15:30')"
+                  :class="form.turno === 'tarde'
+                    ? 'bg-violet-600/30 border-violet-500 text-white'
+                    : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-violet-500/50'"
+                  class="p-4 rounded-xl border text-center transition-all cursor-pointer"
+                >
+                  <span class="text-xl block mb-1">🌙</span>
+                  <span class="font-bold text-sm block">Turno Tarde</span>
+                  <span class="text-[11px] text-slate-400">15:30 a 18:00</span>
+                </button>
               </div>
             </div>
           </div>
 
           <p v-if="submitError" class="text-xs text-rose-400">{{ submitError }}</p>
 
+          <!-- D) Botón submit → WhatsApp -->
           <button @click="submitForm"
-            :disabled="tracker.isSubmitting.value || !form.nombre || !form.telefono"
+            :disabled="tracker.isSubmitting.value || !form.nombre || !form.telefono || !form.turno"
             class="w-full py-4 rounded-2xl font-bold text-sm transition-all"
-            :class="tracker.isSubmitting.value || !form.nombre || !form.telefono
+            :class="tracker.isSubmitting.value || !form.nombre || !form.telefono || !form.turno
               ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 text-white shadow-lg shadow-violet-500/25 hover:-translate-y-0.5 cursor-pointer'"
           >
-            {{ tracker.isSubmitting.value ? 'Guardando turno...' : '📅 Confirmar Examen en Consultorio' }}
+            {{ tracker.isSubmitting.value ? 'Guardando turno...' : form.turno ? `📱 Apartar turno ${form.turno === 'manana' ? 'de mañana' : 'de tarde'} por WhatsApp` : '📅 Selecciona un turno para continuar' }}
           </button>
           <p class="text-[10px] text-slate-500 text-center">🔒 Tu información médica se guarda bajo estricta confidencialidad</p>
         </div>
@@ -213,12 +227,12 @@
       <div v-else-if="step === 5" class="text-center space-y-6">
         <div class="text-7xl animate-bounce">🎉</div>
         <h2 class="text-2xl font-extrabold text-white">¡Examen Confirmado!</h2>
-        <p class="text-sm text-slate-400">Te esperamos en Óptica Johanna para tu evaluación completa con autorrefractómetro.</p>
+        <p class="text-sm text-slate-400">Te enviamos la confirmación por WhatsApp. Te esperamos en Óptica Johanna para tu evaluación completa.</p>
         <div class="p-4 rounded-xl bg-violet-500/10 border border-violet-500/30 text-left space-y-2 text-sm text-slate-300">
           <p>📋 <strong class="text-white">Nombre:</strong> {{ form.nombre }}</p>
           <p>📱 <strong class="text-white">Celular:</strong> {{ form.telefono }}</p>
           <p>🎯 <strong class="text-white">Agudeza estimada:</strong> {{ acuityScore }}</p>
-          <p v-if="form.fecha_cita">📅 <strong class="text-white">Cita:</strong> {{ form.fecha_cita }} {{ form.hora_cita }}</p>
+          <p v-if="form.turno">📅 <strong class="text-white">Turno:</strong> {{ form.turno === 'manana' ? 'Mañana (10:30 – 12:30)' : 'Tarde (15:30 – 18:00)' }}</p>
           <p>📍 <strong class="text-white">Lugar:</strong> Óptica Johanna Matriz · Guayaquil</p>
         </div>
         <a href="/analytics/visitors" class="inline-block mt-4 px-6 py-3 rounded-xl bg-violet-500/15 border border-violet-500/40 text-violet-300 font-mono text-sm hover:bg-violet-500/25 transition">
@@ -229,10 +243,64 @@
 
     </main>
   </div>
+
+  <!-- RED OFFER MODAL — aparece al presionar botón rojo -->
+  <Teleport to="body">
+    <div v-if="showRedOfferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div class="max-w-sm w-full bg-slate-900 border border-rose-500/40 rounded-2xl p-6 space-y-4 shadow-2xl shadow-rose-500/10">
+        <div class="text-center">
+          <span class="text-4xl block mb-2">👁️</span>
+          <h3 class="text-lg font-extrabold text-white leading-tight">Tu visión podría estar afectando tu calidad de vida</h3>
+          <p class="text-sm text-slate-300 mt-3 leading-relaxed">
+            Detectamos una dificultad para distinguir esta escala. <strong class="text-white">Una corrección óptica adecuada</strong> puede devolverte el 100% de nitidez.
+          </p>
+          <div class="mt-4 p-3 rounded-xl bg-rose-500/8 border border-rose-500/20 text-left space-y-1.5 text-xs text-slate-300">
+            <p>🎯 <strong class="text-white">Examen Computarizado Sin Costo</strong> en Óptica Johanna</p>
+            <p>💬 <strong class="text-white">Coordinas 100% por WhatsApp</strong> — sin llamadas</p>
+            <p>⏱️ <strong class="text-white">Dura menos de 20 minutos</strong> y es completamente gratis</p>
+            <p>📍 <strong class="text-white">Matriz Guayaquil</strong> — elige tu horario ahora</p>
+          </div>
+        </div>
+        <div class="text-center text-xs text-slate-500 italic mt-2">
+          Planifica tu visita — no te va a costar nada y puedes ir cuando quieras
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button @click="bookFromRedOffer('manana')" class="p-3 rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-white text-xs font-bold text-center hover:bg-emerald-500/20 transition cursor-pointer">
+            🌅 Turno<br>Mañana<br><span class="text-slate-400 font-normal">10:30 – 12:30</span>
+          </button>
+          <button @click="bookFromRedOffer('tarde')" class="p-3 rounded-xl border border-violet-500/50 bg-violet-500/10 text-white text-xs font-bold text-center hover:bg-violet-500/20 transition cursor-pointer">
+            🌙 Turno<br>Tarde<br><span class="text-slate-400 font-normal">15:30 – 18:00</span>
+          </button>
+        </div>
+        <button @click="continueTest" class="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition cursor-pointer">
+          Continuar el test de todas formas
+        </button>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- EXIT-INTENT MODAL -->
+  <Teleport to="body">
+    <div v-if="showExitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" @click.self="showExitModal = false">
+      <div class="max-w-sm w-full bg-slate-900 border border-amber-500/40 rounded-2xl p-6 space-y-4 shadow-2xl shadow-amber-500/10">
+        <div class="text-center">
+          <span class="text-4xl block mb-2">⚠️</span>
+          <h3 class="text-lg font-extrabold text-white">¡Espera! Tu diagnóstico tiene un beneficio activo</h3>
+          <p class="text-sm text-slate-400 mt-2">¿Deseas que te enviemos tu reporte por WhatsApp para que no lo pierdas?</p>
+        </div>
+        <button @click="sendReportByWhatsApp" class="w-full py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:from-green-500 hover:to-emerald-400 transition cursor-pointer">
+          📱 Recibir mi reporte en WhatsApp
+        </button>
+        <button @click="showExitModal = false" class="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition cursor-pointer">
+          No, seguir revisando
+        </button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch, onUnmounted } from 'vue'
 import { usePulsoTracker } from '../composables/usePulsoTracker'
 import { normalizeEcuadorianPhone } from '../composables/usePulsoTracker'
 
@@ -245,9 +313,8 @@ const tracker = usePulsoTracker({
 
 const step = ref(0)
 const answers = reactive({
-  optotipo1: '',
-  optotipo2: '',
-  ultimo_chequeo: '',
+  ronda1: '',
+  ronda2: '',
 })
 
 const form = reactive({
@@ -255,44 +322,47 @@ const form = reactive({
   telefono: '',
   fecha_cita: '',
   hora_cita: '',
+  turno: '',
 })
 
 const phoneError = ref('')
 const submitError = ref('')
 const todayStr = new Date().toISOString().split('T')[0]
-const horarios = ['09:00', '10:00', '11:00', '12:00', '15:00', '16:00', '17:00', '18:00']
 
-// Opciones de dirección optotipo ronda 1
-const optotypeDirections1 = [
-  { value: 'derecha',   icon: '➡️', label: 'Hacia la derecha' },
-  { value: 'arriba',    icon: '⬆️', label: 'Hacia arriba' },
-  { value: 'izquierda', icon: '⬅️', label: 'Hacia la izquierda' },
-  { value: 'abajo',     icon: '⬇️', label: 'Hacia abajo' },
+// ===========================================================================
+// SETS DE LETRAS
+// ===========================================================================
+const letterSets = [
+  ['E', 'F', 'P', 'T', 'O', 'Z'], // ronda 1 — letras más reconocibles
+  ['C', 'D', 'L', 'N', 'V', 'R'], // ronda 2 — letras más difíciles
 ]
 
-// Opciones de dirección optotipo ronda 2
-const optotypeDirections2 = [
-  { value: 'izquierda', icon: '⬅️', label: 'Hacia la izquierda' },
-  { value: 'arriba',    icon: '⬆️', label: 'Hacia arriba' },
-  { value: 'derecha',   icon: '➡️', label: 'Hacia la derecha' },
-  { value: 'abajo',     icon: '⬇️', label: 'Hacia abajo' },
-]
+function pickRandomLetters(setIndex: number): string[] {
+  const pool = [...letterSets[setIndex]]
+  const result: string[] = []
+  for (let i = 0; i < 3; i++) {
+    const idx = Math.floor(Math.random() * pool.length)
+    result.push(pool.splice(idx, 1)[0])
+  }
+  return result
+}
 
-// Historial
-const q3HistoryOptions = [
-  { value: 'mas_1ano',   emoji: '⏳', label: 'Hace más de 1 año', note: 'Es momento de renovar o verificar graduación' },
-  { value: 'nunca',      emoji: '🆕', label: 'Nunca me he realizado un examen', note: 'Recomendable chequeo inicial completo' },
-  { value: 'uso_lentes', emoji: '🕶️', label: 'Uso lentes pero siento que ya no veo tan nítido', note: 'Posible cambio en dioptrías' },
-  { value: 'reciente',   emoji: '✅', label: 'Hace menos de 6 meses', note: 'Control de rutina al día' },
-]
+const currentLetters = ref<string[]>(pickRandomLetters(0))
+const currentRound = ref(1)
+
+// ===========================================================================
+// MODALES
+// ===========================================================================
+const showRedOfferModal = ref(false)
+const redResult = ref('')
 
 // ===========================================================================
 // DIAGNÓSTICO DE AGUDEZA
 // ===========================================================================
 const acuityScore = computed(() => {
-  if (answers.optotipo1 === 'derecha' && answers.optotipo2 === 'izquierda') return '20/20 (Excelente)'
-  if (answers.optotipo1 === 'derecha') return '20/40 (Leve Disminución)'
-  return '20/60 o menor (Requiere Evaluación)'
+  if (answers.ronda1 === 'no_vio') return '20/60 — Dificultad Visual Alta'
+  if (answers.ronda2 === 'no_vio') return '20/40 — Dificultad Visual Moderada'
+  return '20/20 — Agudeza Excelente'
 })
 
 const diagnosisEmoji = computed(() => {
@@ -309,12 +379,12 @@ const diagnosisTitle = computed(() => {
 
 const diagnosisText = computed(() => {
   if (acuityScore.value.includes('20/20')) {
-    return 'Tu capacidad de discriminación en optotipos estándar es adecuada. Un chequeo presencial confirmará si existe fatiga o esfuerzo muscular no manifiesto.'
+    return 'Tu capacidad de discriminación en letras de escala estándar es adecuada. Un chequeo presencial confirmará si existe fatiga o esfuerzo muscular no manifiesto.'
   }
   if (acuityScore.value.includes('20/40')) {
-    return 'Detectamos cierta dificultad en optotipos de escala fina. Es común cuando existe un leve astigmatismo o pérdida de acomodación. Una pequeña corrección óptica te devolverá el 100% de nitidez.'
+    return 'Detectamos cierta dificultad en letras de escala fina. Es común cuando existe un leve astigmatismo o pérdida de acomodación. Una pequeña corrección óptica te devolverá el 100% de nitidez.'
   }
-  return 'Se identificó dificultad para discernir la orientación de los optotipos a distancia de lectura. Se aconseja una refracción clínica prioritaria para prevenir mayor esfuerzo ocular.'
+  return 'Se identificó dificultad para distinguir las letras base a distancia de lectura. Se aconseja una refracción clínica prioritaria para prevenir mayor esfuerzo ocular.'
 })
 
 const recommendations = computed(() => [
@@ -324,39 +394,141 @@ const recommendations = computed(() => [
 ])
 
 // ===========================================================================
-// NAVEGACIÓN Y TELEMETRÍA
+// WHATSAPP
+// ===========================================================================
+function openWhatsApp(msg: string) {
+  const phone = '593999999999' // TODO: cambiar por número real de Óptica Johanna
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  window.open(url, '_blank')
+}
+
+function sendReportByWhatsApp() {
+  const phone = '593999999999' // TODO: cambiar por número real
+  const msg = `Hola, acabo de hacer el test visual de Óptica Johanna. Mi resultado: ${diagnosisTitle.value}. Me gustaría recibir mi reporte y conocer opciones sin compromiso.`
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  showExitModal.value = false
+}
+
+// ===========================================================================
+// EXIT-INTENT
+// ===========================================================================
+const showExitModal = ref(false)
+let exitTimer: ReturnType<typeof setTimeout> | null = null
+let exitIntentBound = false
+
+function onMouseMove(e: MouseEvent) {
+  if (e.clientY < 50 && !showExitModal.value) {
+    showExitModal.value = true
+    removeExitListeners()
+  }
+}
+function resetExitTimer() {
+  if (exitTimer) clearTimeout(exitTimer)
+  exitTimer = setTimeout(() => {
+    if (!showExitModal.value) showExitModal.value = true
+  }, 7000)
+}
+function addExitListeners() {
+  if (exitIntentBound) return
+  exitIntentBound = true
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('click', resetExitTimer)
+  document.addEventListener('keydown', resetExitTimer)
+  resetExitTimer()
+}
+function removeExitListeners() {
+  document.removeEventListener('mousemove', onMouseMove)
+  document.removeEventListener('click', resetExitTimer)
+  document.removeEventListener('keydown', resetExitTimer)
+  if (exitTimer) { clearTimeout(exitTimer); exitTimer = null }
+  exitIntentBound = false
+}
+
+watch(step, (val) => {
+  if (val === 4) addExitListeners()
+  else removeExitListeners()
+})
+onUnmounted(() => removeExitListeners())
+
+// ===========================================================================
+// NAVEGACIÓN — RONDA VERDE (el usuario VE bien)
+// ===========================================================================
+async function handleGreen(roundNum: number, event: MouseEvent) {
+  if (roundNum === 1) {
+    answers.ronda1 = 'vio'
+    await tracker.trackStep(1, { resultado: 'vio', ronda: 1 }, event)
+    // Pasar a ronda 2 con letras nuevas
+    currentRound.value = 2
+    currentLetters.value = pickRandomLetters(1)
+    setTimeout(() => { step.value = 2 }, 350)
+  } else {
+    answers.ronda2 = 'vio'
+    await tracker.trackStep(2, { resultado: 'vio', ronda: 2 }, event)
+    await tracker.trackCompleted({
+      score: 95,
+      diagnosis: diagnosisTitle.value,
+      answers: { ...answers, agudeza: acuityScore.value },
+    })
+    setTimeout(() => { step.value = 4 }, 350)
+  }
+}
+
+// ===========================================================================
+// NAVEGACIÓN — RONDA ROJA (el usuario NO ve bien)
+// ===========================================================================
+async function handleRed(roundNum: number, event: MouseEvent) {
+  redResult.value = roundNum === 1 ? '20/60 — Dificultad Visual Alta' : '20/40 — Dificultad Visual Moderada'
+  if (roundNum === 1) {
+    answers.ronda1 = 'no_vio'
+  } else {
+    answers.ronda2 = 'no_vio'
+  }
+  showRedOfferModal.value = true
+  await tracker.trackStep(roundNum, { resultado: 'no_vio', ronda: roundNum }, event)
+}
+
+function bookFromRedOffer(turno: string) {
+  form.turno = turno
+  form.hora_cita = turno === 'manana' ? '10:30' : '15:30'
+  showRedOfferModal.value = false
+  // Ir directamente al resultado con diagnóstico negativo
+  tracker.trackCompleted({
+    score: currentRound.value === 1 ? 30 : 60,
+    diagnosis: diagnosisTitle.value,
+    answers: { ...answers, agudeza: acuityScore.value },
+  })
+  step.value = 4
+}
+
+function continueTest() {
+  showRedOfferModal.value = false
+  // Si falló, ir al resultado directamente
+  tracker.trackCompleted({
+    score: currentRound.value === 1 ? 30 : 60,
+    diagnosis: diagnosisTitle.value,
+    answers: { ...answers, agudeza: acuityScore.value },
+  })
+  step.value = 4
+}
+
+// ===========================================================================
+// START
 // ===========================================================================
 async function startQuiz() {
+  currentLetters.value = pickRandomLetters(0)
+  currentRound.value = 1
   step.value = 1
   await tracker.trackQuizStart()
 }
 
-async function selectStep1(value: string, event: MouseEvent) {
-  answers.optotipo1 = value
-  await tracker.trackStep(1, { optotipo1: value }, event)
-  setTimeout(() => { step.value = 2 }, 350)
+function selectTurno(turno: string, hora: string) {
+  form.turno = turno
+  form.hora_cita = hora
 }
 
-async function selectStep2(value: string, event: MouseEvent) {
-  answers.optotipo2 = value
-  await tracker.trackStep(2, { optotipo2: value }, event)
-  setTimeout(() => { step.value = 3 }, 350)
-}
-
-async function selectStep3(value: string, event: MouseEvent) {
-  answers.ultimo_chequeo = value
-  await tracker.trackStep(3, { ultimo_chequeo: value }, event)
-
-  const diag = diagnosisTitle.value
-  await tracker.trackCompleted({
-    score: acuityScore.value.includes('20/20') ? 95 : acuityScore.value.includes('20/40') ? 60 : 30,
-    diagnosis: diag,
-    answers: { ...answers, agudeza: acuityScore.value },
-  })
-
-  setTimeout(() => { step.value = 4 }, 350)
-}
-
+// ===========================================================================
+// SUBMIT
+// ===========================================================================
 async function submitForm() {
   phoneError.value = ''
   submitError.value = ''
@@ -373,10 +545,12 @@ async function submitForm() {
     fecha_cita: form.fecha_cita || null,
     hora_cita: form.hora_cita || null,
     sucursal: 'Matriz Guayaquil',
-    metadata: { ...answers, agudeza_estimada: acuityScore.value, diagnostico: diagnosisTitle.value },
+    metadata: { ...answers, agudeza_estimada: acuityScore.value, diagnostico: diagnosisTitle.value, turno: form.turno },
   })
 
   if (success) {
+    const msg = `¡Hola! Terminé el test de agudeza visual (Score: ${acuityScore.value}). Aparté el turno ${form.turno === 'manana' ? 'de la mañana (10:30)' : 'de la tarde (15:30)'} para mi examen computarizado gratuito en Óptica Johanna Guayaquil. ¿Me confirmas la dirección?`
+    openWhatsApp(msg)
     step.value = 5
   } else {
     submitError.value = tracker.errorMsg.value || 'Error al guardar cita. Intenta de nuevo.'
