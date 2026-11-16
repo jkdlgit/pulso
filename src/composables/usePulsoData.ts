@@ -146,10 +146,11 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
               }
               const { data: proLeadsData } = await proQuery
               if (proLeadsData) {
-                const knownPhones = new Set(allLeadsRows.map(l => l.telefono))
+                const knownIds = new Set(allLeadsRows.map(l => l.id))
                 proLeadsData.forEach((pl: any) => {
-                  if (!knownPhones.has(pl.telefono)) {
+                  if (!knownIds.has(pl.id)) {
                     allLeadsRows.push(pl)
+                    knownIds.add(pl.id)
                   }
                 })
               }
@@ -217,18 +218,28 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
     }
 
     // A) VISITAS: Personas que cargaron la URL (solo con ingresar a la página)
-    const visitas = countUniqueSessions(events.value, 'visita')
+    let visitas = countUniqueSessions(events.value, 'visita')
 
     // B) PASOS ESTANDARIZADOS (1, 2, 3)
-    const paso1 = countUniqueSessions(events.value, 'paso_1')
-    const paso2 = countUniqueSessions(events.value, 'paso_2')
-    const paso3 = countUniqueSessions(events.value, 'paso_3')
+    let paso1 = countUniqueSessions(events.value, 'paso_1')
+    let paso2 = countUniqueSessions(events.value, 'paso_2')
+    let paso3 = countUniqueSessions(events.value, 'paso_3')
 
     // C) COMPLETADOS: Terminaron el quiz (llegaron a ver su diagnóstico/resultado)
-    const completados = countUniqueSessions(events.value, 'completado')
+    let completados = countUniqueSessions(events.value, 'completado')
 
     // D) RESERVAS: Presionaron "Agendar mi cita" O el botón de WhatsApp (estrictamente 1 por persona/sesión)
-    const reservas = countUniqueSessions(events.value, 'reserva')
+    let reservas = countUniqueSessions(events.value, 'reserva')
+
+    // Si no hay eventos locales, calcular con precisión matemática desde los leads de Supabase
+    if (visitas === 0 && leads.value.length > 0) {
+      visitas = leads.value.length
+      paso1 = leads.value.filter((l: any) => l.estado !== 'Visita' || (l.respuestas && Object.keys(l.respuestas).length > 3)).length
+      paso2 = leads.value.filter((l: any) => l.estado === 'Paso 2' || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.respuestas?.paso >= 2).length
+      paso3 = leads.value.filter((l: any) => l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.respuestas?.paso >= 3).length
+      completados = leads.value.filter((l: any) => l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || !!l.resultado || l.respuestas?.etapa === 'completado').length
+      reservas = leads.value.filter((l: any) => l.estado === 'Agendado' || !!l.fecha_cita).length
+    }
 
     // E) ETAPAS VINCULADAS AL SISTEMA LOCAL (/dashboard de Oculus)
     // Sincronizadas directamente con la base de datos compartida PulsoDB (Supabase dev)
@@ -297,8 +308,9 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
 
     // F) Fuentes UTM
     const sourceMap: Record<string, number> = {}
-    events.value.forEach(e => {
-      const s = (e.utm_source || 'directo').toLowerCase()
+    const listForSources = events.value.length > 0 ? events.value : leads.value
+    listForSources.forEach((e: any) => {
+      const s = (e.utm_source || 'organico').toLowerCase()
       sourceMap[s] = (sourceMap[s] || 0) + 1
     })
 
@@ -313,14 +325,29 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
 
     // G) Evolución Diaria (contabilizando sesiones únicas)
     const days: Record<string, { visitas: Set<string>; completados: Set<string>; reservas: Set<string> }> = {}
-    events.value.forEach(e => {
-      const d = new Date(e.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
-      if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
-      const sid = e.session_id || String(e.id)
-      if (e.event_type === 'visita') days[d].visitas.add(sid)
-      if (e.event_type === 'completado') days[d].completados.add(sid)
-      if (e.event_type === 'reserva') days[d].reservas.add(sid)
-    })
+    if (events.value.length > 0) {
+      events.value.forEach(e => {
+        const d = new Date(e.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+        if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
+        const sid = e.session_id || String(e.id)
+        if (e.event_type === 'visita') days[d].visitas.add(sid)
+        if (e.event_type === 'completado') days[d].completados.add(sid)
+        if (e.event_type === 'reserva') days[d].reservas.add(sid)
+      })
+    } else {
+      leads.value.forEach(l => {
+        const d = new Date(l.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+        if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
+        const sid = String(l.id)
+        days[d].visitas.add(sid)
+        if (l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.resultado) {
+          days[d].completados.add(sid)
+        }
+        if (l.estado === 'Agendado' || (l as any).fecha_cita) {
+          days[d].reservas.add(sid)
+        }
+      })
+    }
     dailyData.value = Object.entries(days).map(([date, sets]) => ({
       date,
       visitas: sets.visitas.size,

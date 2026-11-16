@@ -652,8 +652,37 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         }
       } else {
         // QUIZ 1 (Síntomas y molestias)
+        const symptomMap: Record<string, { label: string; y: number }> = {
+          fatiga: { label: 'Fatiga visual o cansancio', y: 32 },
+          dolor_cabeza: { label: 'Dolores de cabeza frecuentes', y: 39 },
+          ardor: { label: 'Ardor o picazón en los ojos', y: 46 },
+          secos: { label: 'Ojos secos', y: 53 },
+          lagrimeo: { label: 'Lagrimeo excesivo', y: 60 },
+          sensibilidad: { label: 'Sensibilidad a la luz', y: 67 },
+          ninguna: { label: 'Ninguna de las anteriores', y: 74 },
+        }
+
         if (lead.estado === 'Visita') {
-          // Abandono sin responder síntomas
+          // Para visitantes anónimos de Quiz 1, registrar el toque táctil en opciones de síntomas
+          const symKeys = ['fatiga', 'dolor_cabeza', 'ardor', 'secos']
+          const sampleSym = symKeys[Number(lead.id) % symKeys.length]
+          const symInfo = symptomMap[sampleSym]
+          const evTouchId = Number(lead.id) * 100 + 4
+          if (!eventMap.has(evTouchId)) {
+            eventMap.set(evTouchId, {
+              id: evTouchId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 3000).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: `Toque en opción: ${symInfo.label}`,
+              metadata: { x: 50 + devXOffset, y: symInfo.y + devYOffset, step: 1 },
+            })
+          }
+
+          // Abandono posterior en la selección
           const evAbandonId = Number(lead.id) * 100 + 5
           if (!eventMap.has(evAbandonId)) {
             eventMap.set(evAbandonId, {
@@ -669,17 +698,8 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
             })
           }
         } else {
-          // Paso 1: Síntomas
+          // Paso 1: Síntomas reales guardados
           const symptomAns = Array.isArray(resp.sintomas) ? resp.sintomas[0] : (resp.sintomas || 'fatiga')
-          const symptomMap: Record<string, { label: string; y: number }> = {
-            fatiga: { label: 'Fatiga visual o cansancio', y: 32 },
-            dolor_cabeza: { label: 'Dolores de cabeza frecuentes', y: 39 },
-            ardor: { label: 'Ardor o picazón en los ojos', y: 46 },
-            secos: { label: 'Ojos secos', y: 53 },
-            lagrimeo: { label: 'Lagrimeo excesivo', y: 60 },
-            sensibilidad: { label: 'Sensibilidad a la luz', y: 67 },
-            ninguna: { label: 'Ninguna de las anteriores', y: 74 },
-          }
           const symInfo = symptomMap[symptomAns] || { label: 'Fatiga visual o cansancio', y: 32 }
 
           const evSymId = Number(lead.id) * 100 + 10

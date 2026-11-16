@@ -300,6 +300,22 @@
               </div>
             </template>
 
+            <template v-else-if="isQuiz1">
+              <!-- Zonas de Síntomas Principales -->
+              <div class="absolute left-1/2 -translate-x-1/2 top-24 bg-rose-500/90 text-white font-black text-[9px] font-mono px-2 py-0.5 rounded shadow-lg border border-white/60">
+                🔥 Fatiga Visual: {{ quiz1FatigaShare }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 top-36 bg-amber-500/90 text-slate-950 font-black text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
+                Dolor de Cabeza: {{ quiz1DolorShare }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 top-48 bg-cyan-500/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Ardor / Sequedad: {{ quiz1ArdorShare }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-2 bg-teal-500 text-white font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Botón Siguiente: {{ quiz1NextShare }}%
+              </div>
+            </template>
+
             <template v-else-if="isResult">
               <!-- Zona Botón Agendar WhatsApp -->
               <div class="absolute left-1/2 -translate-x-1/2 bottom-5 bg-emerald-400 text-slate-950 font-black text-[9px] font-mono px-3 py-1 rounded-full shadow-xl border border-white">
@@ -461,6 +477,31 @@ const quiz2SliderShare = computed(() => {
   if (props.points.length === 0) return 6
   const sliderClicks = props.points.filter(p => p.y >= 65 && p.y <= 75).reduce((a, b) => a + b.weight, 0)
   return Math.round((sliderClicks / Math.max(1, total.value)) * 100) || 6
+})
+
+// Cálculos de zonas para Quiz 1
+const quiz1FatigaShare = computed(() => {
+  if (props.points.length === 0) return 48
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('fatiga') || p.y < 36).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 48
+})
+
+const quiz1DolorShare = computed(() => {
+  if (props.points.length === 0) return 26
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('dolor') || (p.y >= 36 && p.y < 44)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 26
+})
+
+const quiz1ArdorShare = computed(() => {
+  if (props.points.length === 0) return 18
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('ardor') || (p.label || '').toLowerCase().includes('seco') || (p.y >= 44 && p.y < 60)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 18
+})
+
+const quiz1NextShare = computed(() => {
+  if (props.points.length === 0) return 8
+  const c = props.points.filter(p => p.y >= 75).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 8
 })
 
 // Cálculos de zonas para Pantalla de Resultados
