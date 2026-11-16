@@ -508,8 +508,10 @@ import { useAnalytics } from '../store'
 import { currency, formatDate } from '../engine'
 import { sourceLabel } from '../demo'
 import type { AnalyticsEvent, Session } from '../types'
+import { useScreenContext } from '../copilot/useScreenContext'
 
 const { filtered, business } = useAnalytics()
+const { setFocusedItem } = useScreenContext()
 const search = ref('')
 const selectedId = ref('')
 const index = ref(0)
@@ -529,6 +531,30 @@ watch(filteredSessions, list => {
 }, { immediate: true })
 
 const session = computed<Session | undefined>(() => filtered.value.sessions.find(s => s.id === selectedId.value))
+
+watch(session, s => {
+  if (s) {
+    setFocusedItem({
+      type: 'session_replay',
+      id: s.visitor_id,
+      label: `Sesión ${s.visitor_id} (${s.visitor_id.slice(-8)})`,
+      metadata: {
+        visitor_id: s.visitor_id,
+        short_id: s.visitor_id.slice(-8),
+        device: s.device,
+        source: s.source,
+        booked: s.booked,
+        quiz_completed: s.quiz_completed,
+        had_error: s.had_error,
+        page_count: s.page_count,
+        duration_s: s.duration_s,
+        landing_page: s.landing_page,
+      }
+    })
+  } else {
+    setFocusedItem(null)
+  }
+}, { immediate: true })
 const frames = computed<AnalyticsEvent[]>(() =>
   session.value
     ? filtered.value.events.filter(e => e.session_id === session.value!.id).sort((a, b) => a.ts.localeCompare(b.ts))
@@ -711,7 +737,10 @@ function stop() {
   if (timer) { clearInterval(timer); timer = null }
 }
 watch(speed, () => { if (playing.value) { stop(); toggle() } })
-onUnmounted(stop)
+onUnmounted(() => {
+  stop()
+  setFocusedItem(null)
+})
 
 function timeOf(iso: string) {
   return new Date(iso).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' })

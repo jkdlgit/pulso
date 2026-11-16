@@ -599,19 +599,38 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
               })
             }
 
-            const evAgendarId = Number(lead.id) * 100 + 71
-            if (!eventMap.has(evAgendarId)) {
-              eventMap.set(evAgendarId, {
-                id: evAgendarId,
-                business_id: businessId,
-                session_id: sid,
-                visitor_id: vid,
-                ts: new Date(tBase + 39000).toISOString(),
-                type: 'click',
-                page: '/resultado',
-                label: 'Botón: Agendar Cita Gratuita',
-                metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
-              })
+            // SÓLO si el usuario realmente agendó la cita (estado = 'Agendado' o fecha_cita) se genera el clic
+            if (isBooked) {
+              const evAgendarId = Number(lead.id) * 100 + 71
+              if (!eventMap.has(evAgendarId)) {
+                eventMap.set(evAgendarId, {
+                  id: evAgendarId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 39000).toISOString(),
+                  type: 'click',
+                  page: '/resultado',
+                  label: 'Botón: Agendar Cita Gratuita (WhatsApp)',
+                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+                })
+              }
+            } else {
+              // Si no agendó, leyó su resultado y abandonó la página
+              const evExitResultId = Number(lead.id) * 100 + 72
+              if (!eventMap.has(evExitResultId)) {
+                eventMap.set(evExitResultId, {
+                  id: evExitResultId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 42000).toISOString(),
+                  type: 'exit',
+                  page: '/resultado',
+                  label: 'Lectura de resultado (sin agendar cita)',
+                  metadata: { x: 50 + devXOffset, y: 55 + devYOffset },
+                })
+              }
             }
           }
         }
@@ -726,19 +745,38 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                 })
               }
 
-              const evAgendarId = Number(lead.id) * 100 + 71
-              if (!eventMap.has(evAgendarId)) {
-                eventMap.set(evAgendarId, {
-                  id: evAgendarId,
-                  business_id: businessId,
-                  session_id: sid,
-                  visitor_id: vid,
-                  ts: new Date(tBase + 32000).toISOString(),
-                  type: 'click',
-                  page: '/resultado',
-                  label: 'Botón: Agendar Cita Gratuita',
-                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
-                })
+              // SÓLO si el usuario realmente agendó la cita se genera el clic
+              if (isBooked) {
+                const evAgendarId = Number(lead.id) * 100 + 71
+                if (!eventMap.has(evAgendarId)) {
+                  eventMap.set(evAgendarId, {
+                    id: evAgendarId,
+                    business_id: businessId,
+                    session_id: sid,
+                    visitor_id: vid,
+                    ts: new Date(tBase + 32000).toISOString(),
+                    type: 'click',
+                    page: '/resultado',
+                    label: 'Botón: Agendar Cita Gratuita (WhatsApp)',
+                    metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+                  })
+                }
+              } else {
+                // Si no agendó, leyó el diagnóstico y abandonó la página
+                const evExitResultId = Number(lead.id) * 100 + 72
+                if (!eventMap.has(evExitResultId)) {
+                  eventMap.set(evExitResultId, {
+                    id: evExitResultId,
+                    business_id: businessId,
+                    session_id: sid,
+                    visitor_id: vid,
+                    ts: new Date(tBase + 35000).toISOString(),
+                    type: 'exit',
+                    page: '/resultado',
+                    label: 'Lectura de diagnóstico (sin agendar cita)',
+                    metadata: { x: 50 + devXOffset, y: 55 + devYOffset },
+                  })
+                }
               }
             }
           }

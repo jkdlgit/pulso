@@ -181,6 +181,11 @@ ${decisionLedger.value.map(d => `- ${d}`).join('\n')}
 - Área: ${screenSnapshot.pageArea}
 - KPIs visibles: ${screenSnapshot.visibleKpis.sessions} sesiones, ${screenSnapshot.visibleKpis.appointments} citas, ${screenSnapshot.visibleKpis.sales} ventas
 - Filtro activo: últimos ${screenSnapshot.activeFilters.days} días
+${screenSnapshot.focusedItem ? `\n[ELEMENTO SELECCIONADO EN PANTALLA]:
+- Tipo: ${screenSnapshot.focusedItem.type}
+- ID: ${screenSnapshot.focusedItem.id}
+- Etiqueta: ${screenSnapshot.focusedItem.label}
+- Metadatos: ${JSON.stringify(screenSnapshot.focusedItem.metadata || {})}` : ''}
 ${activeFindingContext.value ? `\n[HALLAZGO SELECCIONADO]: ${activeFindingContext.value}` : ''}
 ${activeRoleId.value !== 'auto' ? `\n[ROL ASIGNADO]: Responde explícitamente desde tu función como "${activeRole.value.name}" (${activeRole.value.title}).` : ''}
 

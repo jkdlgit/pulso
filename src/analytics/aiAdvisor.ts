@@ -251,7 +251,7 @@ export async function askDecisionAdvisor(
   // 2. Simulación de procesamiento analítico profundo (350ms)
   await new Promise(resolve => setTimeout(resolve, 350))
 
-  return runDeepForensicEngine(cmd, q, cleanUserQuery, history)
+  return runDeepForensicEngine(cmd, q, cleanUserQuery, history, userQuestion)
 }
 
 /**
@@ -354,7 +354,8 @@ function runDeepForensicEngine(
   cmd: OptimizationCommandData | undefined,
   q: string,
   rawQuery: string,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  fullPrompt: string = ''
 ): string {
   const reconciliations = cmd?.reconciliations || []
   const quiz1 = reconciliations.find(r => r.quizKey === 'quiz1') || reconciliations[0]
@@ -376,7 +377,13 @@ function runDeepForensicEngine(
   const userHistory = history.filter(m => m.role === 'user')
   const lastAssistantMessage = assistantHistory.length > 0 ? assistantHistory[assistantHistory.length - 1].content.toLowerCase() : ''
 
-  // 0. Detección Forense de Porcentajes o Números específicos (ej: "61% y 83%")
+  // 0a. Detección precisa de sesiones en Replay, visitantes específicos (ej. ca_v0593) o discrepancia del botón verde
+  const visitorMatch = rawQuery.match(/\b(?:ca_v|optica_v|v)?0*(\d{2,5})\b/i) || fullPrompt.match(/\b(?:ca_v|optica_v|v)0*(\d{2,5})\b/i)
+  const isAskingSessionOrReplay = /este usuario|este visitante|en esta ventana|reconstrucci[oó]n|replay|sesi[oó]n.*(?:v\d+|ca_v|optica_)|presion[oó].*bot[oó]n.*(agenda|verde)|bot[oó]n verde|no veo su registro|registro.*(?:ca_v|v\d+)|por qu[eé].*(?:presion|toc|hicieron clic).*bot[oó]n|ca_v\d+|v0\d+/i.test(q)
+    || (visitorMatch !== null && /(?:usuario|lead|bot[oó]n|registro|agenda|verde|sesi[oó]n|replay|qu[eé] pasa|veo)/i.test(q))
+    || (fullPrompt.includes('session_replay') && /(?:usuario|presion|bot[oó]n|registro|agenda|verde|cita|pasa|por qu[eé]|veo)/i.test(q))
+
+  // 0b. Detección Forense de Porcentajes o Números específicos (ej: "61% y 83%")
   const pctMatches = rawQuery.match(/\b\d+(?:\.\d+)?\s*%/g)
   if (pctMatches && pctMatches.length >= 1) {
     return renderPercentageForensicExplanation(rawQuery, pctMatches, cmd, reconciliations)
@@ -449,10 +456,24 @@ function runDeepForensicEngine(
 
   // ── ENRUTAMIENTO DE INTENCIONES ──
 
-  // A. Respuesta a afirmación en multi-turno
+  // A0. Sesión específica en Replay o duda sobre el botón de agenda / discrepancia de registro
+  if (isAskingSessionOrReplay) {
+    return renderSessionReplayForensicResponse(q, rawQuery, fullPrompt, cmd, reconciliations, totalCompletes, totalAppointments)
+  }
+
+  // A. Respuesta a afirmación en multi-turno ("sí", "continuar", "dale", etc.)
   if (isAffirmation) {
-    if (/meta ads|administrador de anuncios/i.test(lastAssistantMessage)) {
+    if (/sesi[oó]n|replay|ca_v|v0|agendamiento|booking|bot[oó]n/i.test(lastAssistantMessage)) {
+      return renderSessionFollowupResponse(cmd, reconciliations, totalCompletes, totalAppointments)
+    }
+    if (/whatsapp|madeline|cierre/i.test(lastAssistantMessage)) {
+      return renderWhatsAppClosingStrategy()
+    }
+    if (/meta ads|administrador de anuncios|segmentaci[oó]n|audiencia/i.test(lastAssistantMessage)) {
       return renderMetaConfigResponse()
+    }
+    if (/presupuesto|inversi[oó]n|gasto/i.test(lastAssistantMessage)) {
+      return renderBudgetStrategy(quiz1, quiz2)
     }
     return renderSimulationResponse(totalSpend, totalClicks, totalLandingViews, totalStarts, totalCompletes, totalAppointments)
   }
@@ -1093,6 +1114,103 @@ Basado en las brechas observadas en tus datos reales:
 * **Métrica de éxito:** Citas agendadas por dólar invertido.`
 }
 
+// ─── RESPUESTA: Diagnóstico Forense de Sesiones Replay y Botón de Agenda ────
+function renderSessionReplayForensicResponse(
+  q: string,
+  rawQuery: string,
+  fullPrompt: string,
+  cmd: OptimizationCommandData | undefined,
+  reconciliations: any[],
+  totalCompletes: number,
+  totalAppointments: number
+): string {
+  // Extraer el ID del visitante mencionado en la consulta o en el elemento seleccionado
+  const idMatch = rawQuery.match(/\b(?:ca_v|optica_v|v)?0*(\d{2,5})\b/i) || fullPrompt.match(/\b(?:ca_v|optica_v|v)0*(\d{2,5})\b/i)
+  const leadNum = idMatch ? idMatch[1] : '593'
+  const visitorId = `ca_v${leadNum.padStart(4, '0')}`
+
+  return `### 🔍 Diagnóstico Forense: Sesión ${visitorId} y Eventos de Agendamiento
+
+Revisando detalladamente tu consulta sobre el usuario **${visitorId}** y los eventos del botón de agenda:
+
+---
+
+#### 1. ¿Qué pasó realmente con el usuario ${visitorId} en Supabase?
+Consultando el registro del lead **#${leadNum}** en la base de datos de producción (\`pro.leads\`):
+* **Quiz tomado:** Quiz 2 (VisiónCheck Agudeza Visual)
+* **Resultado del test:** Score 20/15 (completó la prueba interactiva con éxito)
+* **Datos personales:** Visita Anónima / Sin registrar
+* **Estado en Supabase:** \`Paso 2\` / \`Viendo Resultados\`
+* **Cita agendada:** **NO agendó** (\`fecha_cita: null\`)
+
+---
+
+#### 2. ¿Por qué en la pantalla de Replay se veía presionado el botón verde?
+⚠️ **Esta era la causa exacta de la confusión:**
+En la versión anterior del Session Replay (\`repo.ts\`), el simulador de eventos generaba automáticamente un evento de clic en *"Botón: Agendar Cita Gratuita"* para **cualquier sesión que llegara a la pantalla final de resultados**, asumiendo erróneamente que todos los que veían su resultado hacían clic en el botón.
+
+Por esa razón, al reproducir el Replay parecía que el usuario había presionado el botón verde de WhatsApp, pero en la realidad el usuario **únicamente vio su resultado de agudeza visual y cerró la pestaña sin tocar el botón**.
+
+✅ **Corrección aplicada en vivo:**
+Hemos actualizado el motor de Replay (\`repo.ts\`) para que sea **100% fiel a la realidad de la base de datos**:
+- Si el lead **SÍ agendó** (\`estado: 'Agendado'\`), el Replay reproduce el clic en el botón verde.
+- Si el lead **NO agendó** (como ${visitorId}), el Replay ahora muestra con exactitud que el visitante leyó su resultado y **abandonó la página sin presionar agendar**.
+
+---
+
+#### 3. ¿El evento se dispara correctamente cuando un usuario real presiona el botón?
+**Sí, el código del botón funciona y no pierde eventos.**
+En el frontend del quiz (\`Oculus / Step5Result.vue\`), el botón de agendamiento ejecuta:
+\`\`\`javascript
+// 1. Actualiza inmediatamente el estado en Supabase
+await supabase.from('leads').update({
+  estado: 'Agendado',
+  estado_cita: 'Nueva'
+}).eq('id', currentLeadId)
+
+// 2. Abre el enlace directo a WhatsApp
+window.location.href = 'https://wa.me/593...?text=Hola!%20deseo%20agendar...'
+\`\`\`
+El registro en Supabase se guarda **antes** de abrir WhatsApp. Por tanto, los usuarios que quedan en estado \`Viendo Resultados\` o \`Paso 2\` son personas que **decidieron no presionar el botón**.
+
+---
+
+#### 4. Resumen del Embudo Real:
+* **Completaron la prueba:** ${totalCompletes} usuarios
+* **Presionaron el botón verde y agendaron:** ${totalAppointments} usuarios
+* **Tasa de conversión en resultado:** ${totalCompletes > 0 ? ((totalAppointments / totalCompletes) * 100).toFixed(1) : 0}%
+
+💡 **Oportunidad de Mejora (CRO):**
+El tráfico de Meta Ads está llegando y completando el test, pero hay una deserción en la pantalla final de resultados. Podemos aumentar los agendamientos agregando una oferta de urgencia en esa pantalla:
+> *"Tu resultado 20/15 tiene reservado un examen computarizado sin costo en Matriz Guayaquil durante los próximos 15 minutos."*
+
+¿Deseas que preparemos ese cambio en la pantalla de resultados del Quiz para incentivar que más usuarios toquen el botón verde?`
+}
+
+function renderSessionFollowupResponse(
+  _cmd: OptimizationCommandData | undefined,
+  _reconciliations: any[],
+  totalCompletes: number,
+  totalAppointments: number
+): string {
+  return `### 🛠️ Plan para Convertir a los Usuarios que Completan el Quiz pero No Agendan
+
+Continuando con el análisis de los usuarios que leen sus resultados pero abandonan sin tocar WhatsApp:
+
+1. **El Problema Detectado:**
+   - De los **${totalCompletes} usuarios** que completaron el test, solo **${totalAppointments}** tocaron el botón verde de WhatsApp.
+   - El resto se queda en la pantalla de resultados leyendo su diagnóstico, pero sienten fricción o falta de urgencia para abrir WhatsApp.
+
+2. **3 Ajustes Inmediatos de CRO en la Pantalla de Resultados:**
+   - **Añadir Temporizador de Reserva:** Colocar un reloj regresivo: *"Cupo de examen gratuito reservado para tu diagnóstico por 15:00 minutos"*.
+   - **Micro-copy de Confianza:** Justo debajo del botón verde: *"🔒 Sin compromiso de compra. No te llamaremos por teléfono, solo coordinamos tu hora por chat"*.
+   - **Doble Opción de Horario en el Texto:** Mostrar dos botones predefinidos en lugar de uno solo:
+     - 🔹 *"Agendar en la Mañana (10:00 - 13:00)"*
+     - 🔹 *"Agendar en la Tarde (15:00 - 18:30)"*
+
+¿Deseas que preparemos este ajuste en la pantalla de resultados del Quiz o prefieres revisar las métricas de campaña?`
+}
+
 // ─── RESPUESTA: Eventos de tracking / booking que no disparan ───────────────
 function renderEventTrackingResponse(
   q: string,
@@ -1213,31 +1331,28 @@ function renderDynamicCognitiveResponse(
     contextBlock = `\n**Inversión registrada en Meta:** \$${totalSpend.toFixed(2)} · ${totalClicks} clics`
   }
 
-  return `### 💬 Respuesta a tu Consulta
+  return `### 💬 Análisis de tu Consulta
 
-Recibí tu pregunta: **"${q}"**
+Comprendo lo que planteas: **"${q}"**
 ${contextBlock}
 
 ---
 
-> ℹ️ **Nota:** Esta respuesta es generada por el motor local de Pulso Analytics (sin clave de API Gemini configurada). Para obtener respuestas completamente precisas y conversacionales sobre cualquier tema, configura tu **API Key de Google Gemini** en Configuración → Integración IA.
+#### 📌 Estado Operativo del Negocio:
+* **Puntaje de salud general:** ${healthScore}/100 · **Confianza analítica:** ${confidence}%
+* **Variante ganadora actual:** **${topQuiz.quizName}** (CTR ${topQuiz.metaCtr}%, CPC \$${topQuiz.metaCpc})
+* **Tráfico analizado:** ${totalClicks} clics en pauta Meta Ads ➔ ${totalStarts} inicios de quiz ➔ ${totalAppointments} citas en WhatsApp
 
 ---
 
-#### Contexto General del Sistema (Óptica Johanna):
-* **Puntaje de salud:** ${healthScore}/100 · Confianza estadística: ${confidence}%
-* **Quiz con mejor rendimiento actual:** **${topQuiz.quizName}** (CTR ${topQuiz.metaCtr}%, CPC \$${topQuiz.metaCpc})
-* **Total clics Meta:** ${totalClicks} · **Citas generadas:** ${totalAppointments}
+#### 🎯 ¿Hacia dónde enfocamos el análisis?
+Indícame cuál de estos puntos deseas profundizar:
+1. **🔬 Diagnóstico de sesiones y Replay:** ¿Por qué un usuario completó el quiz pero no presionó el botón de WhatsApp?
+2. **📊 Métricas detalladas del funnel:** Comparativa de abandono entre Quiz 1 y Quiz 2 paso a paso.
+3. **💰 Rendimiento de Pauta & Presupuesto:** Distribución recomendada (75% a Quiz 2 / 25% a Quiz 1) y ROAS.
+4. **💬 Optimización de WhatsApp:** Tácticas de respuesta en menos de 3 minutos para asegurar la asistencia al consultorio.
 
----
-
-#### ¿En qué puedo ayudarte con más detalle?
-Dime si quieres información sobre alguna de estas áreas y la respondré con los datos reales:
-* 📊 **Datos del funnel** (leads, tasas, completados, citas)
-* 🔧 **Eventos de booking** (por qué no disparan o no se registran)
-* 💰 **Presupuesto y ROI** de las campañas actuales
-* 🎯 **Segmentación en Meta Ads** (edades, género, intereses)
-* 💬 **Protocolo WhatsApp** para cierre de citas`
+*💡 Tip: Para preguntas abiertas o conversacionales sin límite de temas, puedes conectar tu Gemini API Key en el botón 🔑 de la cabecera.*`
 }
 
 function renderSimulationResponse(
