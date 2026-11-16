@@ -56,22 +56,23 @@
         <p class="text-[11px] font-mono text-slate-500">🔒 Prueba interactiva calibrada para pantallas por Óptica Johanna</p>
       </div>
 
-      <!-- =================== PASO 1: RONDA 1 — letras 28px =================== -->
+      <!-- =================== PASO 1: RONDA 1 — letras reducidas (16px) =================== -->
       <div v-else-if="step === 1" class="space-y-6">
         <div>
-          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 1 DE 2 · ESCALA BASE</span>
+          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 1 DE 2 · ESCALA BASE REDUCIDA</span>
           <h2 class="text-xl font-bold text-white mt-1">¿Puedes leer con claridad estas letras?</h2>
-          <p class="text-xs text-slate-400 mt-1">Mantén tu pantalla a 40 cm. No te acerques.</p>
+          <p class="text-xs text-slate-400 mt-1">Mantén tu celular o pantalla a 40 cm de distancia. No te acerques.</p>
         </div>
 
-        <!-- Letras Ronda 1 -->
-        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex items-center justify-center shadow-inner min-h-[120px]">
-          <span style="font-size: 28px; font-family: 'Courier New', monospace; color: white; letter-spacing: 0.3em; font-weight: bold;">
+        <!-- Letras Ronda 1 (Tamaño reducido considerablemente: 16px) -->
+        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex flex-col items-center justify-center shadow-inner min-h-[140px]">
+          <span class="select-none tracking-[0.4em] font-bold text-white transition-all" style="font-size: 16px; font-family: 'Courier New', monospace;">
             {{ currentLetters.join('  ') }}
           </span>
+          <span class="text-[10px] font-mono text-slate-500 mt-4 tracking-wider uppercase">Cartilla Digital · Escala 20/40 (Distancia 40 cm)</span>
         </div>
 
-        <p class="text-center text-xs text-slate-500">¿Puedes distinguir las letras sin esfuerzo?</p>
+        <p class="text-center text-xs text-slate-500">Evalúa si las distingues con nitidez inmediata sin entrecerrar los ojos.</p>
 
         <div class="grid grid-cols-2 gap-3">
           <button
@@ -93,22 +94,23 @@
         </div>
       </div>
 
-      <!-- =================== PASO 2: RONDA 2 — letras 20px =================== -->
+      <!-- =================== PASO 2: RONDA 2 — letras mínimas (9.5px) =================== -->
       <div v-else-if="step === 2" class="space-y-6">
         <div>
-          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 2 DE 2 · ESCALA FINA</span>
-          <h2 class="text-xl font-bold text-white mt-1">¿Y estas letras más pequeñas?</h2>
-          <p class="text-xs text-slate-400 mt-1">Esta escala es más exigente. No te acerques a la pantalla.</p>
+          <span class="text-xs font-mono text-violet-400 font-semibold uppercase">// RONDA 2 DE 2 · ESCALA FINA MÍNIMA</span>
+          <h2 class="text-xl font-bold text-white mt-1">¿Y esta escala aún más pequeña?</h2>
+          <p class="text-xs text-slate-400 mt-1">Escala de alta exigencia óptica a 40 cm. Mantén la misma distancia.</p>
         </div>
 
-        <!-- Letras Ronda 2 -->
-        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex items-center justify-center shadow-inner min-h-[120px]">
-          <span style="font-size: 20px; font-family: 'Courier New', monospace; color: white; letter-spacing: 0.3em; font-weight: bold;">
+        <!-- Letras Ronda 2 (Tamaño mínimo: 9.5px, casi no se ve para mayores de 50 años) -->
+        <div class="p-8 rounded-2xl bg-black border border-slate-800 flex flex-col items-center justify-center shadow-inner min-h-[140px]">
+          <span class="select-none tracking-[0.45em] font-bold text-white transition-all" style="font-size: 9.5px; font-family: 'Courier New', monospace;">
             {{ currentLetters.join('  ') }}
           </span>
+          <span class="text-[10px] font-mono text-slate-500 mt-4 tracking-wider uppercase">Cartilla Digital · Escala 20/20 Fina (Distancia 40 cm)</span>
         </div>
 
-        <p class="text-center text-xs text-slate-500">¿Puedes leer las letras sin esfuerzo adicional?</p>
+        <p class="text-center text-xs text-slate-500">¿Logras leer todas las letras o se difuminan los bordes?</p>
 
         <div class="grid grid-cols-2 gap-3">
           <button
@@ -125,7 +127,7 @@
           >
             <span class="text-2xl block mb-1">🔴</span>
             <span class="font-bold text-sm block">No las veo bien</span>
-            <span class="text-[11px] text-slate-400">Se ven borrosas o difusas</span>
+            <span class="text-[11px] text-slate-400">Se ven borrosas o no distingo</span>
           </button>
         </div>
       </div>
@@ -340,7 +342,7 @@ const letterSets = [
 function pickRandomLetters(setIndex: number): string[] {
   const pool = [...letterSets[setIndex]]
   const result: string[] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const idx = Math.floor(Math.random() * pool.length)
     result.push(pool.splice(idx, 1)[0])
   }
@@ -502,13 +504,20 @@ function bookFromRedOffer(turno: string) {
 
 function continueTest() {
   showRedOfferModal.value = false
-  // Si falló, ir al resultado directamente
-  tracker.trackCompleted({
-    score: currentRound.value === 1 ? 30 : 60,
-    diagnosis: diagnosisTitle.value,
-    answers: { ...answers, agudeza: acuityScore.value },
-  })
-  step.value = 4
+  if (currentRound.value === 1) {
+    // Si estaba en ronda 1, permitirle intentar la ronda 2
+    currentRound.value = 2
+    currentLetters.value = pickRandomLetters(1)
+    step.value = 2
+  } else {
+    // Si ya falló en ronda 2, ir al resultado
+    tracker.trackCompleted({
+      score: answers.ronda1 === 'no_vio' ? 30 : 60,
+      diagnosis: diagnosisTitle.value,
+      answers: { ...answers, agudeza: acuityScore.value },
+    })
+    step.value = 4
+  }
 }
 
 // ===========================================================================

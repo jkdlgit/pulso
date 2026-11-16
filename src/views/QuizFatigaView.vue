@@ -133,56 +133,79 @@
           </div>
         </div>
 
-        <!-- FORMULARIO DE AGENDAMIENTO -->
+        <!-- FORMULARIO DE AGENDAMIENTO CRO -->
         <div class="hud-card space-y-4">
-          <h3 class="font-bold text-white text-base">📅 Agenda tu Evaluación Visual Gratis</h3>
-          <p class="text-xs text-slate-400">Un especialista revisará tu caso personalmente.</p>
+          <!-- A) Titular persuasivo -->
+          <h3 class="font-extrabold text-white text-base leading-snug">
+            Tu resultado califica para una Evaluación de Fatiga y Filtro de Luz Azul — Sin Costo — en Óptica Johanna Guayaquil.
+          </h3>
+
+          <!-- B) Reversión de riesgo -->
+          <div class="flex items-start gap-2 p-3 rounded-xl bg-cyan-500/8 border border-cyan-500/20 text-xs text-slate-400">
+            <span class="text-cyan-400 mt-0.5 flex-shrink-0">🔒</span>
+            <span>Sin compromiso de compra. No te llamaremos por teléfono; coordinas tu cupo <strong class="text-slate-200">100% por WhatsApp</strong>, sin costo y sin trámites extras.</span>
+          </div>
 
           <div class="space-y-3">
             <div>
-              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Tu nombre</label>
+              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Tu nombre completo</label>
               <input v-model="form.nombre" @focus="tracker.trackField('nombre', 'focus')" @input="tracker.trackField('nombre', 'fill')"
-                type="text" placeholder="Nombre completo"
+                type="text" placeholder="Ej. Ana Pérez"
                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
               />
             </div>
             <div>
-              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Celular (Ecuador)</label>
+              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Celular de contacto (Ecuador)</label>
               <input v-model="form.telefono" @focus="tracker.trackField('telefono', 'focus')" @input="tracker.trackField('telefono', 'fill')"
                 type="tel" placeholder="09XXXXXXXX"
                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
               />
               <p v-if="phoneError" class="text-xs text-rose-400 mt-1">{{ phoneError }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Fecha preferida</label>
-                <input v-model="form.fecha_cita" type="date" :min="todayStr"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-              <div>
-                <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">Hora preferida</label>
-                <select v-model="form.hora_cita" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-400 transition">
-                  <option value="">Cualquier hora</option>
-                  <option v-for="h in horarios" :key="h" :value="h">{{ h }}</option>
-                </select>
+
+            <!-- C) Micro-selector de turnos -->
+            <div>
+              <label class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-2">Elige tu turno</label>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  @click="selectTurno('manana', '10:30')"
+                  :class="form.turno === 'manana'
+                    ? 'bg-cyan-600/30 border-cyan-500 text-white'
+                    : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-cyan-500/50'"
+                  class="p-4 rounded-xl border text-center transition-all cursor-pointer"
+                >
+                  <span class="text-xl block mb-1">🌅</span>
+                  <span class="font-bold text-sm block">Turno Mañana</span>
+                  <span class="text-[11px] text-slate-400">10:30 a 12:30</span>
+                </button>
+                <button
+                  @click="selectTurno('tarde', '15:30')"
+                  :class="form.turno === 'tarde'
+                    ? 'bg-blue-600/30 border-blue-500 text-white'
+                    : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-blue-500/50'"
+                  class="p-4 rounded-xl border text-center transition-all cursor-pointer"
+                >
+                  <span class="text-xl block mb-1">🌙</span>
+                  <span class="font-bold text-sm block">Turno Tarde</span>
+                  <span class="text-[11px] text-slate-400">15:30 a 18:00</span>
+                </button>
               </div>
             </div>
           </div>
 
           <p v-if="submitError" class="text-xs text-rose-400">{{ submitError }}</p>
 
+          <!-- D) Botón submit → WhatsApp -->
           <button @click="submitForm"
-            :disabled="tracker.isSubmitting.value || !form.nombre || !form.telefono"
+            :disabled="tracker.isSubmitting.value || !form.nombre || !form.telefono || !form.turno"
             class="w-full py-4 rounded-2xl font-bold text-sm transition-all"
-            :class="tracker.isSubmitting.value || !form.nombre || !form.telefono
+            :class="tracker.isSubmitting.value || !form.nombre || !form.telefono || !form.turno
               ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 cursor-pointer'"
           >
-            {{ tracker.isSubmitting.value ? 'Guardando...' : '📅 Confirmar Cita Gratis' }}
+            {{ tracker.isSubmitting.value ? 'Guardando turno...' : form.turno ? `📱 Apartar turno ${form.turno === 'manana' ? 'de mañana' : 'de tarde'} por WhatsApp` : '📅 Selecciona un turno para continuar' }}
           </button>
-          <p class="text-[10px] text-slate-500 text-center">🔒 Datos protegidos · Solo usados para tu cita médica</p>
+          <p class="text-[10px] text-slate-500 text-center">🔒 Tu información está protegida y se usa exclusivamente para tu cita</p>
         </div>
       </div>
 
@@ -190,11 +213,11 @@
       <div v-else-if="step === 5" class="text-center space-y-6">
         <div class="text-7xl animate-bounce">🎉</div>
         <h2 class="text-2xl font-extrabold text-white">¡Cita Confirmada!</h2>
-        <p class="text-sm text-slate-400">Te contactaremos pronto para confirmar tu evaluación visual especializada.</p>
+        <p class="text-sm text-slate-400">Te enviamos la confirmación por WhatsApp. Te esperamos en Óptica Johanna Guayaquil.</p>
         <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-left space-y-2 text-sm text-slate-300">
           <p>📋 <strong class="text-white">Nombre:</strong> {{ form.nombre }}</p>
           <p>📱 <strong class="text-white">Celular:</strong> {{ form.telefono }}</p>
-          <p v-if="form.fecha_cita">📅 <strong class="text-white">Fecha:</strong> {{ form.fecha_cita }} {{ form.hora_cita }}</p>
+          <p v-if="form.turno">📅 <strong class="text-white">Turno:</strong> {{ form.turno === 'manana' ? 'Mañana (10:30 – 12:30)' : 'Tarde (15:30 – 18:00)' }}</p>
           <p>📍 <strong class="text-white">Sucursal:</strong> Óptica Johanna Matriz · Guayaquil</p>
         </div>
         <a href="/analytics/visitors" class="inline-block mt-4 px-6 py-3 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-mono text-sm hover:bg-cyan-500/25 transition">
@@ -205,10 +228,29 @@
 
     </main>
   </div>
+
+  <!-- EXIT-INTENT MODAL -->
+  <Teleport to="body">
+    <div v-if="showExitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" @click.self="showExitModal = false">
+      <div class="max-w-sm w-full bg-slate-900 border border-amber-500/40 rounded-2xl p-6 space-y-4 shadow-2xl shadow-amber-500/10">
+        <div class="text-center">
+          <span class="text-4xl block mb-2">⚠️</span>
+          <h3 class="text-lg font-extrabold text-white">¡Espera! Tu diagnóstico tiene un beneficio activo</h3>
+          <p class="text-sm text-slate-400 mt-2">¿Deseas que te enviemos tu reporte por WhatsApp para que no lo pierdas?</p>
+        </div>
+        <button @click="sendReportByWhatsApp" class="w-full py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:from-green-500 hover:to-emerald-400 transition cursor-pointer">
+          📱 Recibir mi reporte en WhatsApp
+        </button>
+        <button @click="showExitModal = false" class="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition cursor-pointer">
+          No, seguir revisando
+        </button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch, onUnmounted } from 'vue'
 import { usePulsoTracker } from '../composables/usePulsoTracker'
 import { normalizeEcuadorianPhone } from '../composables/usePulsoTracker'
 
@@ -231,6 +273,7 @@ const form = reactive({
   telefono: '',
   fecha_cita: '',
   hora_cita: '',
+  turno: '',
 })
 
 const phoneError = ref('')
@@ -294,6 +337,63 @@ const recommendations = computed(() => {
 })
 
 // ===========================================================================
+// WHATSAPP
+// ===========================================================================
+function openWhatsApp(msg: string) {
+  const phone = '593999999999' // TODO: cambiar por número real de Óptica Johanna
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  window.open(url, '_blank')
+}
+
+function sendReportByWhatsApp() {
+  const phone = '593999999999' // TODO: cambiar por número real
+  const msg = `Hola, acabo de hacer la evaluación de fatiga visual de Óptica Johanna. Mi resultado: ${diagnosisTitle.value}. Me gustaría recibir mi reporte y conocer opciones de lentes con filtro sin compromiso.`
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  showExitModal.value = false
+}
+
+// ===========================================================================
+// EXIT-INTENT
+// ===========================================================================
+const showExitModal = ref(false)
+let exitTimer: ReturnType<typeof setTimeout> | null = null
+let exitIntentBound = false
+
+function onMouseMove(e: MouseEvent) {
+  if (e.clientY < 50 && !showExitModal.value) {
+    showExitModal.value = true
+    removeExitListeners()
+  }
+}
+function resetExitTimer() {
+  if (exitTimer) clearTimeout(exitTimer)
+  exitTimer = setTimeout(() => {
+    if (!showExitModal.value) showExitModal.value = true
+  }, 7000)
+}
+function addExitListeners() {
+  if (exitIntentBound) return
+  exitIntentBound = true
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('click', resetExitTimer)
+  document.addEventListener('keydown', resetExitTimer)
+  resetExitTimer()
+}
+function removeExitListeners() {
+  document.removeEventListener('mousemove', onMouseMove)
+  document.removeEventListener('click', resetExitTimer)
+  document.removeEventListener('keydown', resetExitTimer)
+  if (exitTimer) { clearTimeout(exitTimer); exitTimer = null }
+  exitIntentBound = false
+}
+
+watch(step, (val) => {
+  if (val === 4) addExitListeners()
+  else removeExitListeners()
+})
+onUnmounted(() => removeExitListeners())
+
+// ===========================================================================
 // NAVEGACIÓN
 // ===========================================================================
 async function startQuiz() {
@@ -327,6 +427,11 @@ async function selectStep3(value: string, event: MouseEvent) {
   setTimeout(() => { step.value = 4 }, 350)
 }
 
+function selectTurno(turno: string, hora: string) {
+  form.turno = turno
+  form.hora_cita = hora
+}
+
 async function submitForm() {
   phoneError.value = ''
   submitError.value = ''
@@ -343,10 +448,12 @@ async function submitForm() {
     fecha_cita: form.fecha_cita || null,
     hora_cita: form.hora_cita || null,
     sucursal: 'Matriz Guayaquil',
-    metadata: { ...answers },
+    metadata: { ...answers, turno: form.turno, diagnostico: diagnosisTitle.value },
   })
 
   if (success) {
+    const msg = `¡Hola! Acabo de completar el chequeo de fatiga visual de Óptica Johanna (${diagnosisTitle.value}). Aparté el turno ${form.turno === 'manana' ? 'de la mañana (10:30)' : 'de la tarde (15:30)'} para mi evaluación gratuita en Matriz Guayaquil. ¿Me confirmas la dirección?`
+    openWhatsApp(msg)
     step.value = 5
   } else {
     submitError.value = tracker.errorMsg.value || 'Error al guardar. Intenta de nuevo.'
