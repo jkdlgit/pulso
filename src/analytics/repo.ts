@@ -472,6 +472,9 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const devXOffset = ((Number(lead.id) * 17) % 15) - 7
       const devYOffset = ((Number(lead.id) * 13) % 9) - 4
 
+      const isQuiz2Lead = quizName.includes('quiz2') || quizName.includes('visioncheck')
+      const qPagePath = isQuiz2Lead ? '/quiz2' : '/quiz1'
+
       // 1. Visita a la landing del quiz
       const evVisitaId = Number(lead.id) * 100 + 1
       if (!eventMap.has(evVisitaId)) {
@@ -482,8 +485,8 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           visitor_id: vid,
           ts: new Date(tBase).toISOString(),
           type: 'visita',
-          page: `/${quizName}`,
-          label: `Ingreso a ${quizName}`,
+          page: qPagePath,
+          label: isQuiz2Lead ? 'Ingreso a Quiz 2 · VisiónCheck' : 'Ingreso a Quiz 1 · Chequeo Visual',
           metadata: { device: devType, source, city },
         })
       }
@@ -496,150 +499,249 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           business_id: businessId,
           session_id: sid,
           visitor_id: vid,
-          ts: new Date(tBase + 1800).toISOString(),
+          ts: new Date(tBase + 1500).toISOString(),
           type: 'scroll',
-          page: `/${quizName}`,
-          label: 'Lectura de cabecera',
-          metadata: { scroll: 32 },
+          page: qPagePath,
+          label: 'Lectura de instrucciones y optotipo',
+          metadata: { scroll: 25 },
         })
       }
 
-      // 3. Clic inicial para iniciar evaluación (CTA)
-      const evStartClickId = Number(lead.id) * 100 + 3
-      if (!eventMap.has(evStartClickId)) {
-        eventMap.set(evStartClickId, {
-          id: evStartClickId,
-          business_id: businessId,
-          session_id: sid,
-          visitor_id: vid,
-          ts: new Date(tBase + 3500).toISOString(),
-          type: 'click',
-          page: `/${quizName}`,
-          label: 'Botón: Iniciar Test Visual',
-          metadata: {
-            x: Math.max(18, Math.min(82, 50 + devXOffset)),
-            y: Math.max(25, Math.min(88, 68 + devYOffset)),
-            step: 0,
-          },
-        })
-      }
-
-      // 4. Inicio de preguntas
-      const evStartId = Number(lead.id) * 100 + 4
-      if (!eventMap.has(evStartId)) {
-        eventMap.set(evStartId, {
-          id: evStartId,
-          business_id: businessId,
-          session_id: sid,
-          visitor_id: vid,
-          ts: new Date(tBase + 4000).toISOString(),
-          type: 'quiz_start',
-          page: `/${quizName}`,
-          label: 'Inicio de preguntas',
-          metadata: { quiz: quizName },
-        })
-      }
-
-      // 5. Clics y scroll en cada respuesta del usuario
-      if (quizSteps.length > 0) {
-        quizSteps.forEach((q, idx) => {
-          const stepNum = idx + 1
-          const yPos = Math.min(82, 38 + ((idx % 4) * 12) + devYOffset)
-          const xPos = Math.max(18, Math.min(82, 50 + devXOffset))
-
-          const evOptionClickId = Number(lead.id) * 100 + 10 + idx * 3
-          if (!eventMap.has(evOptionClickId)) {
-            eventMap.set(evOptionClickId, {
-              id: evOptionClickId,
+      // 3. Flujo interactivo según Quiz
+      if (isQuiz2Lead) {
+        if (lead.estado === 'Visita') {
+          // Abandono sin responder
+          const evAbandonId = Number(lead.id) * 100 + 5
+          if (!eventMap.has(evAbandonId)) {
+            eventMap.set(evAbandonId, {
+              id: evAbandonId,
               business_id: businessId,
               session_id: sid,
               visitor_id: vid,
-              ts: new Date(tBase + 5000 + stepNum * 5500).toISOString(),
-              type: 'click',
-              page: `/${quizName}`,
-              label: `Opción: ${q.question.replace(/¿|\?/g, '').slice(0, 24)} → ${(q.answer || '').slice(0, 18)}`,
-              metadata: {
-                x: resp.last_click?.x ?? xPos,
-                y: resp.last_click?.y ?? yPos,
-                step: stepNum,
-                question: q.question_id,
-                answer: q.answer || '',
-              },
+              ts: new Date(tBase + 6000).toISOString(),
+              type: 'exit',
+              page: qPagePath,
+              label: 'Abandono en Ronda 1 (sin interacción)',
+              metadata: { round: 1, x: 50, y: 50 },
             })
           }
+        } else {
+          // Determinamos cuántas rondas completó
+          const isFullCompleted = lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || (resp.score && resp.score !== '> 20/200')
+          const maxR = isFullCompleted ? 10 : (lead.estado === 'Paso 2' ? 3 : 1)
+          const q2Letters = ['C', 'D', 'E', 'F', 'L', 'N', 'O', 'P', 'T', 'Z']
+          const q2Sizes = [96, 84, 72, 60, 48, 36, 28, 20, 16, 12]
 
-          const evStepScrollId = Number(lead.id) * 100 + 11 + idx * 3
-          if (!eventMap.has(evStepScrollId)) {
-            eventMap.set(evStepScrollId, {
-              id: evStepScrollId,
-              business_id: businessId,
-              session_id: sid,
-              visitor_id: vid,
-              ts: new Date(tBase + 5000 + stepNum * 5500 + 1200).toISOString(),
-              type: 'scroll',
-              page: `/${quizName}`,
-              label: `Avance a Paso ${stepNum + 1}`,
-              metadata: { scroll: Math.min(95, 30 + stepNum * 18) },
-            })
+          for (let r = 1; r <= maxR; r++) {
+            const letter = q2Letters[(r - 1) % q2Letters.length]
+            const size = q2Sizes[(r - 1) % q2Sizes.length]
+            const tRound = tBase + 3000 + (r * 3200)
+
+            // En la ronda 3, simular ajuste de slider manual
+            if (r === 3) {
+              const evSliderId = Number(lead.id) * 100 + 10 + r * 3 - 1
+              if (!eventMap.has(evSliderId)) {
+                eventMap.set(evSliderId, {
+                  id: evSliderId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tRound - 1000).toISOString(),
+                  type: 'click',
+                  page: qPagePath,
+                  label: 'Ajuste manual de tamaño de letra (Slider)',
+                  metadata: { x: 48 + devXOffset, y: 72 + devYOffset, round: r, action: 'slider' },
+                })
+              }
+            }
+
+            // Clic de respuesta a la letra
+            const isFailed = (r === maxR && !isFullCompleted)
+            const evAnswerId = Number(lead.id) * 100 + 10 + r * 3
+            if (!eventMap.has(evAnswerId)) {
+              eventMap.set(evAnswerId, {
+                id: evAnswerId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tRound).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Ronda ${r}/10: ${isFailed ? '👎 No veo bien' : '👍 Sí, la veo clara'} (Letra ${letter})`,
+                metadata: {
+                  x: isFailed ? (26 + devXOffset) : (74 + devXOffset),
+                  y: 88 + devYOffset,
+                  round: r,
+                  step: r,
+                  letter,
+                  size,
+                  action: isFailed ? 'no_veo' : 'veo_clara',
+                },
+              })
+            }
           }
-        })
-      } else if (lead.estado && lead.estado.startsWith('Paso')) {
-        const reachedStep = Number(lead.estado.replace('Paso', '').trim()) || 1
-        for (let s = 1; s <= reachedStep; s++) {
-          const evPasoClickId = Number(lead.id) * 100 + 20 + s * 2
-          if (!eventMap.has(evPasoClickId)) {
-            eventMap.set(evPasoClickId, {
-              id: evPasoClickId,
-              business_id: businessId,
-              session_id: sid,
-              visitor_id: vid,
-              ts: new Date(tBase + 5000 + s * 4500).toISOString(),
-              type: 'click',
-              page: `/${quizName}`,
-              label: `Selección Paso ${s}`,
-              metadata: {
-                x: resp.last_click?.x ?? Math.max(20, Math.min(80, 50 + devXOffset)),
-                y: resp.last_click?.y ?? (38 + s * 14 + devYOffset),
-                step: s,
-              },
-            })
+
+          // Si completó o tiene resultado
+          if (isFullCompleted || lead.resultado) {
+            const scoreText = resp.score || '20/15'
+            const evCompleteId = Number(lead.id) * 100 + 70
+            if (!eventMap.has(evCompleteId)) {
+              eventMap.set(evCompleteId, {
+                id: evCompleteId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 36000).toISOString(),
+                type: 'quiz_complete',
+                page: '/resultado',
+                label: `Evaluación Completada: Agudeza ${scoreText}`,
+                metadata: { score: scoreText },
+              })
+            }
+
+            const evAgendarId = Number(lead.id) * 100 + 71
+            if (!eventMap.has(evAgendarId)) {
+              eventMap.set(evAgendarId, {
+                id: evAgendarId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 39000).toISOString(),
+                type: 'click',
+                page: '/resultado',
+                label: 'Botón: Agendar Cita Gratuita',
+                metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+              })
+            }
           }
         }
-      }
+      } else {
+        // QUIZ 1 (Síntomas y molestias)
+        if (lead.estado === 'Visita') {
+          // Abandono sin responder síntomas
+          const evAbandonId = Number(lead.id) * 100 + 5
+          if (!eventMap.has(evAbandonId)) {
+            eventMap.set(evAbandonId, {
+              id: evAbandonId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 6000).toISOString(),
+              type: 'exit',
+              page: qPagePath,
+              label: 'Abandono en selección de síntomas',
+              metadata: { step: 1, x: 50, y: 40 },
+            })
+          }
+        } else {
+          // Paso 1: Síntomas
+          const symptomAns = Array.isArray(resp.sintomas) ? resp.sintomas[0] : (resp.sintomas || 'fatiga')
+          const symptomMap: Record<string, { label: string; y: number }> = {
+            fatiga: { label: 'Fatiga visual o cansancio', y: 32 },
+            dolor_cabeza: { label: 'Dolores de cabeza frecuentes', y: 39 },
+            ardor: { label: 'Ardor o picazón en los ojos', y: 46 },
+            secos: { label: 'Ojos secos', y: 53 },
+            lagrimeo: { label: 'Lagrimeo excesivo', y: 60 },
+            sensibilidad: { label: 'Sensibilidad a la luz', y: 67 },
+            ninguna: { label: 'Ninguna de las anteriores', y: 74 },
+          }
+          const symInfo = symptomMap[symptomAns] || { label: 'Fatiga visual o cansancio', y: 32 }
 
-      // 6. Diagnóstico y finalización
-      if (lead.estado === 'Completado' || isBooked || !!lead.resultado) {
-        const evDiagClickId = Number(lead.id) * 100 + 70
-        if (!eventMap.has(evDiagClickId)) {
-          eventMap.set(evDiagClickId, {
-            id: evDiagClickId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 30000).toISOString(),
-            type: 'click',
-            page: `/${quizName}`,
-            label: 'Botón: Ver Diagnóstico Visual',
-            metadata: {
-              x: Math.max(20, Math.min(80, 50 + devXOffset)),
-              y: 74 + devYOffset,
-            },
-          })
-        }
+          const evSymId = Number(lead.id) * 100 + 10
+          if (!eventMap.has(evSymId)) {
+            eventMap.set(evSymId, {
+              id: evSymId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 4500).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: `Síntoma: ${symInfo.label}`,
+              metadata: { x: 50 + devXOffset, y: symInfo.y + devYOffset, step: 1, answer: symptomAns },
+            })
+          }
 
-        const evCompleteId = Number(lead.id) * 100 + 71
-        if (!eventMap.has(evCompleteId)) {
-          eventMap.set(evCompleteId, {
-            id: evCompleteId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 31000).toISOString(),
-            type: 'quiz_complete',
-            page: '/resultado',
-            label: 'Completó evaluación',
-            metadata: { score: lead.resultado },
-          })
+          // Si avanzó a Paso 2 o más
+          if (lead.estado !== 'Paso 1') {
+            const evVisionLejosId = Number(lead.id) * 100 + 20
+            if (!eventMap.has(evVisionLejosId)) {
+              eventMap.set(evVisionLejosId, {
+                id: evVisionLejosId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 10000).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Visión de lejos: ${resp.vision_lejos === 'mucho' ? 'Sí, me cuesta ver de lejos' : 'Visión de lejos normal'}`,
+                metadata: { x: 50 + devXOffset, y: 44 + devYOffset, step: 2 },
+              })
+            }
+
+            const evVisionCercaId = Number(lead.id) * 100 + 25
+            if (!eventMap.has(evVisionCercaId)) {
+              eventMap.set(evVisionCercaId, {
+                id: evVisionCercaId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 15000).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Visión de cerca: ${resp.vision_cerca === 'mucho' ? 'Sí, me cuesta ver celular' : 'Visión de cerca normal'}`,
+                metadata: { x: 50 + devXOffset, y: 44 + devYOffset, step: 2 },
+              })
+            }
+
+            const evColorsId = Number(lead.id) * 100 + 30
+            if (!eventMap.has(evColorsId)) {
+              eventMap.set(evColorsId, {
+                id: evColorsId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 21000).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Prueba cromática: ${resp.problemas_colores === 'si' ? 'Sí, confusión colores' : 'Colores normales'}`,
+                metadata: { x: 50 + devXOffset, y: 62 + devYOffset, step: 3 },
+              })
+            }
+
+            // Diagnóstico y finalización
+            if (lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || lead.resultado) {
+              const evCompleteId = Number(lead.id) * 100 + 70
+              if (!eventMap.has(evCompleteId)) {
+                eventMap.set(evCompleteId, {
+                  id: evCompleteId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 28000).toISOString(),
+                  type: 'quiz_complete',
+                  page: '/resultado',
+                  label: 'Diagnóstico visual completado',
+                  metadata: { step: 4 },
+                })
+              }
+
+              const evAgendarId = Number(lead.id) * 100 + 71
+              if (!eventMap.has(evAgendarId)) {
+                eventMap.set(evAgendarId, {
+                  id: evAgendarId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 32000).toISOString(),
+                  type: 'click',
+                  page: '/resultado',
+                  label: 'Botón: Agendar Cita Gratuita',
+                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+                })
+              }
+            }
+          }
         }
       }
 
