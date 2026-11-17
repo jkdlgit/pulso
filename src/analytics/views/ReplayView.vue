@@ -107,60 +107,67 @@
                 <!-- CASO 1: QUIZ 2 (VISIÓNCHECK - VCPRUEBA 1:1) -->
                 <!-- ========================================== -->
                 <template v-if="isQuiz2">
-                  <!-- Pantalla de Resultados de VisiónCheck (VCResultado.vue CRO) -->
+                  <!-- Pantalla de Resultados de VisiónCheck (VCResultado.vue CRO — Senior Friendly) -->
                   <div v-if="isResultStage" class="text-center py-2 space-y-3">
-                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-1 bg-emerald-100 text-emerald-600 text-2xl">
-                      🎯
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-1 bg-slate-100 text-slate-800 text-2xl shadow-sm">
+                      🩺
                     </div>
                     
-                    <h4 class="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
-                      Tu resultado califica para 1 Examen Computarizado con Optómetra (Sin Costo)
+                    <h4 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                      Hemos analizado tu agudeza visual.
                     </h4>
-                    <p class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-200">
-                      🔒 Sin compromiso de compra. No te llamaremos; coordinas 100% por chat.
-                    </p>
                     
-                    <div class="inline-block bg-slate-100 rounded-2xl px-5 py-2 border border-slate-200 shadow-inner">
-                      <span class="text-xs text-slate-500 block">Agudeza Visual Estimada:</span>
-                      <span class="text-2xl font-black text-blue-900 tracking-tight font-mono">{{ quiz2ScoreValue }}</span>
+                    <div class="inline-block bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 w-full text-left shadow-sm">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Tu agudeza visual estimada:</span>
+                      <span class="text-xl font-black text-emerald-800 tracking-tight font-mono">{{ quiz2ScoreValue }}</span>
                     </div>
 
-                    <!-- Micro-selector de Horarios de 1 Toque -->
-                    <div class="pt-1 text-left space-y-1.5">
-                      <span class="text-[10px] font-mono font-bold text-slate-500 uppercase">Elige tu turno preferido:</span>
+                    <p class="text-xs text-slate-700 leading-relaxed text-left">
+                      Tu puntaje indica que tus ojos necesitan una revisión presencial para evitar fatiga o pérdida de enfoque.<br><br>
+                      <strong class="text-slate-900">Da clic abajo</strong> para enviar automáticamente tu test a nuestro especialista en Guayaquil y elegir tu hora.
+                    </p>
+
+                    <!-- Selector de cuándo quieres venir -->
+                    <div class="pt-1 text-left space-y-1">
+                      <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Elige cuándo quieres venir:</span>
                       <div class="grid grid-cols-2 gap-2">
                         <div
-                          class="p-2.5 rounded-xl border text-center transition-all"
+                          class="p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer"
                           :class="bookedTurno === 'manana'
                             ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                            : 'bg-white border-slate-200 text-slate-600'"
                         >
                           <span class="text-base block">🌅</span>
-                          <span class="text-xs block">Turno Mañana</span>
-                          <span class="text-[10px] text-slate-500">10:30 a 12:30</span>
+                          <span class="text-xs font-bold block">Mañana</span>
+                          <span class="text-[10px] text-slate-500 font-medium">10:30 a 12:30</span>
                         </div>
                         <div
-                          class="p-2.5 rounded-xl border text-center transition-all"
+                          class="p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer"
                           :class="bookedTurno === 'tarde'
                             ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                            : 'bg-white border-slate-200 text-slate-600'"
                         >
                           <span class="text-base block">🌙</span>
-                          <span class="text-xs block">Turno Tarde</span>
-                          <span class="text-[10px] text-slate-500">15:30 a 18:00</span>
+                          <span class="text-xs font-bold block">Tarde</span>
+                          <span class="text-[10px] text-slate-500 font-medium">15:30 a 18:00</span>
                         </div>
                       </div>
                     </div>
 
+                    <!-- CTA Principal: Block button WhatsApp #25D366, min-h-[48px] -->
                     <div class="pt-1">
                       <button
-                        class="w-full bg-[#25D366] hover:bg-[#20ba59] text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
-                        :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('Apartar') || currentEvent?.label?.includes('WhatsApp') }"
+                        class="w-full bg-[#25D366] text-white font-black py-3 px-3 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-xs sm:text-sm min-h-[48px] transition-all"
+                        :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('Enviar') || currentEvent?.label?.includes('apartar') || currentEvent?.label?.includes('WhatsApp') }"
                       >
                         <span class="text-base">💬</span>
-                        <span>Apartar mi Turno por WhatsApp</span>
+                        <span>Enviar mi resultado y apartar mi cita</span>
                       </button>
                     </div>
+
+                    <p class="text-[9px] text-slate-500 leading-tight text-center pt-0.5">
+                      🔒 Tu resultado es confidencial. Escríbenos y te asignamos horario inmediato en nuestra óptica en Guayaquil, sin filas de espera.
+                    </p>
                   </div>
 
                   <!-- Pantalla del Test de Snellen (2 Rondas - Sin Slider) -->
@@ -219,9 +226,8 @@
                             : 'bg-rose-50 text-rose-700 border-rose-200'
                         ]"
                       >
-                        <span class="text-xl leading-none">🔴</span>
-                        <span class="text-xs uppercase font-bold tracking-wide">No las veo bien</span>
-                        <span class="text-[9px] text-slate-500">Activa oferta</span>
+                        <span class="text-xl leading-none">👎</span>
+                        <span class="text-xs uppercase font-bold tracking-wide">No veo bien</span>
                       </div>
                       <div
                         :class="[
@@ -231,9 +237,8 @@
                             : 'bg-emerald-600 text-white border-transparent'
                         ]"
                       >
-                        <span class="text-xl leading-none">🟢</span>
-                        <span class="text-xs uppercase font-bold tracking-wide">Las veo bien</span>
-                        <span class="text-[9px] text-emerald-100">Siguiente ronda</span>
+                        <span class="text-xl leading-none">👍</span>
+                        <span class="text-xs uppercase font-bold tracking-wide">Sí, las veo</span>
                       </div>
                     </div>
                   </div>
@@ -243,58 +248,60 @@
                 <!-- CASO 2: QUIZ 1 (CHEQUEO SÍNTOMAS - 1:1)    -->
                 <!-- ========================================== -->
                 <template v-else>
-                  <!-- Pantalla de Resultado de Quiz 1 (Step5Result.vue CRO) -->
+                  <!-- Pantalla de Resultado de Quiz 1 (Step5Result.vue CRO — Senior Friendly) -->
                   <div v-if="isResultStage" class="text-center py-2 space-y-3">
-                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-1 bg-teal-100 text-[#00897B] text-2xl">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-1 bg-slate-100 text-slate-800 text-2xl shadow-sm">
                       🩺
                     </div>
-                    <h4 class="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
-                      Tu resultado califica para un Examen Computarizado con Optómetra — Sin Costo
+                    <h4 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                      Hemos analizado tu agudeza visual.
                     </h4>
-                    <p class="text-[11px] text-teal-800 font-semibold bg-teal-50 py-1.5 px-3 rounded-lg border border-teal-200">
-                      🔒 Sin compromiso de compra. No te llamaremos; coordinas 100% por chat.
-                    </p>
                     
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-left text-xs text-slate-700 leading-relaxed shadow-sm">
-                      {{ quiz1ResultMessage }}
-                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed text-left">
+                      Tu puntaje indica que tus ojos necesitan una revisión presencial para evitar fatiga o pérdida de enfoque.<br><br>
+                      <strong class="text-slate-900">Da clic abajo</strong> para enviar automáticamente tu test a nuestro especialista en Guayaquil y elegir tu hora.
+                    </p>
 
-                    <!-- Micro-selector de Horarios de 1 Toque -->
-                    <div class="pt-1 text-left space-y-1.5">
-                      <span class="text-[10px] font-mono font-bold text-slate-500 uppercase">Turno de preferencia:</span>
+                    <!-- Selector de cuándo quieres venir -->
+                    <div class="pt-1 text-left space-y-1">
+                      <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Elige cuándo quieres venir:</span>
                       <div class="grid grid-cols-2 gap-2">
                         <div
-                          class="p-2.5 rounded-xl border text-center transition-all"
+                          class="p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer"
                           :class="bookedTurno === 'manana'
-                            ? 'bg-teal-50 border-teal-500 text-teal-950 font-bold ring-2 ring-teal-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
+                            : 'bg-white border-slate-200 text-slate-600'"
                         >
                           <span class="text-base block">🌅</span>
-                          <span class="text-xs block">Turno Mañana</span>
-                          <span class="text-[10px] text-slate-500">10:30 a 12:30</span>
+                          <span class="text-xs font-bold block">Mañana</span>
+                          <span class="text-[10px] text-slate-500 font-medium">10:30 a 12:30</span>
                         </div>
                         <div
-                          class="p-2.5 rounded-xl border text-center transition-all"
+                          class="p-2.5 rounded-xl border-2 text-center transition-all cursor-pointer"
                           :class="bookedTurno === 'tarde'
                             ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-600'"
+                            : 'bg-white border-slate-200 text-slate-600'"
                         >
                           <span class="text-base block">🌙</span>
-                          <span class="text-xs block">Turno Tarde</span>
-                          <span class="text-[10px] text-slate-500">15:30 a 18:00</span>
+                          <span class="text-xs font-bold block">Tarde</span>
+                          <span class="text-[10px] text-slate-500 font-medium">15:30 a 18:00</span>
                         </div>
                       </div>
                     </div>
 
                     <div class="pt-1">
                       <button
-                        class="w-full bg-[#00897B] hover:bg-[#00796B] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#00897B]/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
-                        :class="{ 'ring-4 ring-teal-300 scale-95': currentEvent?.label?.includes('Apartar') || currentEvent?.label?.includes('WhatsApp') }"
+                        class="w-full bg-[#25D366] text-white font-black py-3 px-3 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-xs sm:text-sm min-h-[48px] transition-all"
+                        :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('Enviar') || currentEvent?.label?.includes('apartar') || currentEvent?.label?.includes('WhatsApp') }"
                       >
-                        <span class="text-sm">💬</span>
-                        <span>Apartar mi Turno por WhatsApp</span>
+                        <span class="text-base">💬</span>
+                        <span>Enviar mi resultado y apartar mi cita</span>
                       </button>
                     </div>
+
+                    <p class="text-[9px] text-slate-500 leading-tight text-center pt-0.5">
+                      🔒 Tu resultado es confidencial. Escríbenos y te asignamos horario inmediato en nuestra óptica en Guayaquil, sin filas de espera.
+                    </p>
                   </div>
 
                   <!-- Pantalla de Preguntas Paso a Paso (Step2Symptoms.vue, Step3Vision, Step4Colors) -->
@@ -679,9 +686,20 @@ const isQuiz2 = computed(() => {
 
 const isResultStage = computed(() => {
   const p = (currentPage.value || '').toLowerCase()
-  const ev = currentEvent.value?.type || ''
+  const ev = (currentEvent.value?.type || '').toLowerCase()
   const lbl = (currentEvent.value?.label || '').toLowerCase()
-  return p.includes('resultado') || p.includes('agendar') || ev === 'booking' || ev === 'sale' || lbl.includes('resultado') || lbl.includes('cita') || lbl.includes('completada')
+  return (
+    p.includes('resultado') ||
+    p.includes('agendar') ||
+    ev === 'booking' ||
+    ev === 'sale' ||
+    ev === 'quiz_complete' ||
+    lbl.includes('resultado') ||
+    lbl.includes('cita') ||
+    lbl.includes('completad') ||
+    lbl.includes('enviar mi resultado') ||
+    lbl.includes('apartar')
+  )
 })
 
 const currentBrowserUrl = computed(() => {
@@ -703,7 +721,7 @@ const quiz2CurrentRound = computed(() => {
     return evRound
   }
   const ratio = index.value / Math.max(1, frames.value.length - 1)
-  return Math.min(2, Math.max(1, Math.round(ratio * 1) + 1))
+  return ratio < 0.6 ? 1 : 2
 })
 
 const quiz2CurrentLetter = computed(() => {
@@ -832,8 +850,8 @@ const dwellTimeSeconds = computed(() => {
 
 const exitStageName = computed(() => {
   if (session.value?.booked) return 'Pantalla Final / Cita Agendada en WhatsApp'
-  if (session.value?.quiz_completed) return 'Pantalla de Resultados Finales (/resultado)'
-  if (isQuiz2.value) return `Ronda ${quiz2CurrentRound.value}/10 de Agudeza Snellen`
+  if (session.value?.quiz_completed || isResultStage.value) return 'Pantalla de Resultados (/resultado)'
+  if (isQuiz2.value) return `Ronda ${quiz2CurrentRound.value}/2 de Agudeza Snellen`
   return `Paso ${quiz1CurrentStep.value} de 3 del Chequeo Clínico`
 })
 
@@ -841,27 +859,27 @@ const forensicRootCause = computed(() => {
   const s = session.value
   if (!s) return ''
   if (s.booked) {
-    return 'Conversión Exitosa: El usuario completó todas las evaluaciones clínicas y avanzó directamente a WhatsApp para apartar su turno en Óptica Johanna Matriz Guayaquil.'
+    return 'Conversión Exitosa: El usuario completó la evaluación y envió su resultado por WhatsApp para apartar su turno en Óptica Johanna Matriz Guayaquil.'
   }
   if (s.quiz_completed) {
     if (isQuiz2.value) {
-      return `Sesgo de 'Visión Buena' & Fricción de Cita: El paciente completó el test de agudeza visual y obtuvo su score (${quiz2ScoreValue.value}). Permaneció ${dwellTimeSeconds.value}s leyendo en la pantalla de resultados. Al ver que su visión estimada es favorable ('20/15' o '20/20'), su cerebro desactivó la urgencia de consulta inmediata. Con el nuevo Micro-selector de turnos Mañana/Tarde y el Exit-Intent activo, este usuario ahora es recuperado con 1 toque hacia WhatsApp.`
+      return `Fricción de Transición & Fatiga de Decisión (>50 años): El paciente completó el test de 2 rondas (Score: ${quiz2ScoreValue.value}) y leyó el diagnóstico en /resultado durante ${dwellTimeSeconds.value}s. El 61.6% de la audiencia tiene más de 50 años; si perciben incertidumbre o pasos adicionales, abandonan sin tocar WhatsApp. Con el rediseño senior-friendly (titular directo 'Hemos analizado tu agudeza visual', botón masivo de 56px 'Enviar mi resultado y apartar mi cita' y texto de confidencialidad), la fricción se reduce a cero.`
     }
-    return `Parálisis por Incertidumbre de Cita: El usuario reportó sus molestias visuales y leyó la recomendación de revisión. Permaneció ${dwellTimeSeconds.value}s en pantalla antes de cerrar. Abandonó porque 'Agendar mi Cita' generó temor a llamadas telefónicas insistentes o costos sorpresa. Faltó la garantía explícita 'Sin compromiso · Coordinas tu hora 100% por chat'.`
+    return `Incertidumbre en la Pantalla Final: El usuario completó las preguntas de síntomas y leyó su diagnóstico preliminar. Permaneció ${dwellTimeSeconds.value}s antes de salir. Con el botón directo en primera persona y la garantía de atención inmediata en Guayaquil sin filas, se elimina la pérdida entre lead y cita.`
   }
   if (s.quiz_started) {
-    return `Fricción Temprana o Distracción Móvil: El usuario navegaba desde Meta Ads en celular (${s.device || 'Móvil'}). Inició la prueba pero abandonó tras ${dwellTimeSeconds.value}s de inactividad en la pregunta clínica. Causa común: interrupción externa, carga de datos o toque accidental desde el feed de Facebook/Instagram.`
+    return `Fricción Temprana o Distracción Móvil: El usuario navegaba desde Meta Ads en celular (${s.device || 'Móvil'}). Inició la prueba pero abandonó tras ${dwellTimeSeconds.value}s de inactividad. Causa común: interrupción externa o toque accidental en redes sociales.`
   }
   return `Rebote Inmediato (Bounce): El usuario tocó el anuncio de Meta Ads pero cerró el navegador en los primeros 3 a 5 segundos antes de responder ninguna pregunta.`
 })
 
 const croRescueRecommendation = computed(() => {
   const s = session.value
-  if (!s || s.booked) return 'Mantener activo el protocolo de respuesta rápida en WhatsApp (< 2 minutos).'
+  if (!s || s.booked) return 'Mantener activo el protocolo de respuesta inmediata en WhatsApp (< 2 minutos).'
   if (s.quiz_completed) {
-    return '1) Añadir Micro-selector de Horarios (Mañana / Tarde) en la pantalla de resultados para reducir la indecisión. 2) Activar Exit-Intent Banner en móvil: "¿Deseas guardar tu reporte en WhatsApp antes de salir?". 3) Micro-copy de confianza: "Sin llamadas spam · Asesoría gratuita por chat".'
+    return '1) Botón de acción masivo (56px) en primera persona: "Enviar mi resultado y apartar mi cita". 2) Micro-texto de seguridad: "Tu resultado es confidencial, sin filas". 3) Mensaje pre-llenado en WhatsApp para eliminar el esfuerzo mental de redactar.'
   }
-  return 'Reducir la latencia de carga inicial en redes móviles 4G y mantener botones de un solo toque sin preguntas abiertas ni fricción de tipeo.'
+  return 'Mantener el flujo corto de 2 rondas sin slider para reducir la fatiga en personas mayores de 50 años.'
 })
 
 watch(selectedId, () => { index.value = 0; stop() })

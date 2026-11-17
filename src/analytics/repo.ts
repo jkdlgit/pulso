@@ -521,41 +521,23 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
               ts: new Date(tBase + 6000).toISOString(),
               type: 'exit',
               page: qPagePath,
-              label: 'Abandono en Ronda 1 (sin interacción)',
+              label: 'Abandono en Ronda 1 (sin responder letras)',
               metadata: { round: 1, x: 50, y: 50 },
             })
           }
         } else {
-          // Determinamos cuántas rondas completó
+          // Flujo actual de Quiz 2: Exactamente 2 rondas ágiles sin slider
           const isFullCompleted = lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || (resp.score && resp.score !== '> 20/200')
-          const maxR = isFullCompleted ? 10 : (lead.estado === 'Paso 2' ? 3 : 1)
-          const q2Letters = ['C', 'D', 'E', 'F', 'L', 'N', 'O', 'P', 'T', 'Z']
-          const q2Sizes = [96, 84, 72, 60, 48, 36, 28, 20, 16, 12]
+          const maxR = isFullCompleted ? 2 : 1
+          const q2Letters = ['E   P   T   O', 'C   D   L   V']
+          const q2Sizes = [16, 9.5]
 
           for (let r = 1; r <= maxR; r++) {
-            const letter = q2Letters[(r - 1) % q2Letters.length]
-            const size = q2Sizes[(r - 1) % q2Sizes.length]
-            const tRound = tBase + 3000 + (r * 3200)
+            const letter = q2Letters[r - 1]
+            const size = q2Sizes[r - 1]
+            const tRound = tBase + 3000 + (r * 4500)
 
-            // En la ronda 3, simular ajuste de slider manual
-            if (r === 3) {
-              const evSliderId = Number(lead.id) * 100 + 10 + r * 3 - 1
-              if (!eventMap.has(evSliderId)) {
-                eventMap.set(evSliderId, {
-                  id: evSliderId,
-                  business_id: businessId,
-                  session_id: sid,
-                  visitor_id: vid,
-                  ts: new Date(tRound - 1000).toISOString(),
-                  type: 'click',
-                  page: qPagePath,
-                  label: 'Ajuste manual de tamaño de letra (Slider)',
-                  metadata: { x: 48 + devXOffset, y: 72 + devYOffset, round: r, action: 'slider' },
-                })
-              }
-            }
-
-            // Clic de respuesta a la letra
+            // Clic de respuesta a la letra (Verde: Sí, las veo / Rojo: No veo bien)
             const isFailed = (r === maxR && !isFullCompleted)
             const evAnswerId = Number(lead.id) * 100 + 10 + r * 3
             if (!eventMap.has(evAnswerId)) {
@@ -567,7 +549,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                 ts: new Date(tRound).toISOString(),
                 type: 'click',
                 page: qPagePath,
-                label: `Ronda ${r}/10: ${isFailed ? '👎 No veo bien' : '👍 Sí, la veo clara'} (Letra ${letter})`,
+                label: `Ronda ${r}/2: ${isFailed ? '👎 No veo bien' : '👍 Sí, las veo'} (Letras ${size}px)`,
                 metadata: {
                   x: isFailed ? (26 + devXOffset) : (74 + devXOffset),
                   y: 88 + devYOffset,
@@ -583,7 +565,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
 
           // Si completó o tiene resultado
           if (isFullCompleted || lead.resultado) {
-            const scoreText = resp.score || '20/15'
+            const scoreText = resp.score || '20/20'
             const evCompleteId = Number(lead.id) * 100 + 70
             if (!eventMap.has(evCompleteId)) {
               eventMap.set(evCompleteId, {
@@ -591,7 +573,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                 business_id: businessId,
                 session_id: sid,
                 visitor_id: vid,
-                ts: new Date(tBase + 36000).toISOString(),
+                ts: new Date(tBase + 15000).toISOString(),
                 type: 'quiz_complete',
                 page: '/resultado',
                 label: `Evaluación Completada: Agudeza ${scoreText}`,
@@ -599,7 +581,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
               })
             }
 
-            // Lectura/interacción con la tarjeta de diagnóstico en /resultado
+            // Lectura/interacción con la pantalla de diagnóstico en /resultado
             const evCardTapId = Number(lead.id) * 100 + 69
             if (!eventMap.has(evCardTapId)) {
               eventMap.set(evCardTapId, {
@@ -607,11 +589,11 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                 business_id: businessId,
                 session_id: sid,
                 visitor_id: vid,
-                ts: new Date(tBase + 37500).toISOString(),
+                ts: new Date(tBase + 18000).toISOString(),
                 type: 'click',
                 page: '/resultado',
-                label: `Tarjeta de Diagnóstico Visual (Score ${scoreText})`,
-                metadata: { x: 50 + devXOffset, y: 44 + devYOffset },
+                label: `Lectura de resultado: Hemos analizado tu agudeza visual (${scoreText})`,
+                metadata: { x: 50 + devXOffset, y: 35 + devYOffset },
               })
             }
 
@@ -624,11 +606,11 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                   business_id: businessId,
                   session_id: sid,
                   visitor_id: vid,
-                  ts: new Date(tBase + 39000).toISOString(),
+                  ts: new Date(tBase + 24000).toISOString(),
                   type: 'click',
                   page: '/resultado',
-                  label: 'Botón: Agendar Cita Gratuita (WhatsApp)',
-                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+                  label: 'Botón: Enviar mi resultado y apartar mi cita (WhatsApp)',
+                  metadata: { x: 50 + devXOffset, y: 76 + devYOffset },
                 })
               }
             } else {
@@ -640,11 +622,11 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                   business_id: businessId,
                   session_id: sid,
                   visitor_id: vid,
-                  ts: new Date(tBase + 42000).toISOString(),
+                  ts: new Date(tBase + 28000).toISOString(),
                   type: 'exit',
                   page: '/resultado',
-                  label: 'Lectura de resultado (sin agendar cita)',
-                  metadata: { x: 50 + devXOffset, y: 55 + devYOffset },
+                  label: 'Abandono en /resultado sin enviar por WhatsApp',
+                  metadata: { x: 50 + devXOffset, y: 65 + devYOffset },
                 })
               }
             }
@@ -809,8 +791,8 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                     ts: new Date(tBase + 32000).toISOString(),
                     type: 'click',
                     page: '/resultado',
-                    label: 'Botón: Agendar Cita Gratuita (WhatsApp)',
-                    metadata: { x: 50 + devXOffset, y: 78 + devYOffset },
+                    label: 'Botón: Enviar mi resultado y apartar mi cita (WhatsApp)',
+                    metadata: { x: 50 + devXOffset, y: 76 + devYOffset },
                   })
                 }
               } else {
@@ -825,8 +807,8 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
                     ts: new Date(tBase + 35000).toISOString(),
                     type: 'exit',
                     page: '/resultado',
-                    label: 'Lectura de diagnóstico (sin agendar cita)',
-                    metadata: { x: 50 + devXOffset, y: 55 + devYOffset },
+                    label: 'Abandono en /resultado sin enviar por WhatsApp',
+                    metadata: { x: 50 + devXOffset, y: 65 + devYOffset },
                   })
                 }
               }

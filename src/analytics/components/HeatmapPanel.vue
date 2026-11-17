@@ -168,13 +168,10 @@
           <!-- ========================================================= -->
           <template v-else-if="isResult">
             <div class="text-center space-y-1 pt-1">
-              <span class="text-xl block">🎯</span>
-              <h4 class="text-[9px] font-extrabold text-white leading-tight">
-                Tu resultado califica para 1 Examen Computarizado con Optómetra (Sin Costo)
+              <span class="text-xl block">🩺</span>
+              <h4 class="text-[10px] font-black text-white leading-tight">
+                Hemos analizado tu agudeza visual.
               </h4>
-              <p class="text-[7.5px] text-emerald-400 font-mono">
-                🔒 Sin compromiso de compra. Coordinas 100% por chat sin llamadas.
-              </p>
             </div>
 
             <!-- Tarjeta de Score Clínico -->
@@ -182,22 +179,22 @@
               class="my-auto p-2 rounded-xl border border-pulso-border/80 bg-slate-900/90 shadow-xl space-y-1 text-center"
               :class="{ 'ring-2 ring-cyan-400': mode === 'zones' }"
             >
-              <div class="text-amber-300 text-base font-black font-tech">Score Estimado: 20/40</div>
+              <div class="text-emerald-300 text-sm font-black font-tech">Score Estimado: 20/40</div>
               <p class="text-[7.5px] text-slate-300 leading-tight">
-                Disminución de nitidez detectada en visión cercana. Requiere calibración con equipo computarizado.
+                Tu puntaje indica que tus ojos necesitan una revisión presencial para evitar fatiga.
               </p>
             </div>
 
-            <!-- Micro-selector de Horarios de 1 Toque (Mañana / Tarde) -->
-            <div class="space-y-1.5 pb-1">
-              <div class="text-[8px] font-mono text-slate-400 text-center font-bold">ELIGE TU TURNO DE PREFERENCIA:</div>
+            <!-- Selector de cuándo quieres venir (Mañana / Tarde) -->
+            <div class="space-y-1 pb-1">
+              <div class="text-[7.5px] font-mono text-slate-400 text-center font-bold">ELIGE CUÁNDO QUIERES VENIR:</div>
               <div class="grid grid-cols-2 gap-1.5">
                 <div
                   class="rounded-lg p-1.5 text-center border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 shadow"
                   :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
                 >
                   <span class="text-xs block">🌅</span>
-                  <span class="text-[8px] font-bold block">Turno Mañana</span>
+                  <span class="text-[8px] font-bold block">Mañana</span>
                   <span class="text-[7px] text-slate-400">10:30 a 12:30</span>
                 </div>
                 <div
@@ -205,19 +202,20 @@
                   :class="{ 'ring-2 ring-violet-400': mode === 'zones' }"
                 >
                   <span class="text-xs block">🌙</span>
-                  <span class="text-[8px] font-bold block">Turno Tarde</span>
+                  <span class="text-[8px] font-bold block">Tarde</span>
                   <span class="text-[7px] text-slate-400">15:30 a 18:00</span>
                 </div>
               </div>
 
-              <!-- Botón CTA WhatsApp -->
+              <!-- Botón CTA WhatsApp Masivo Senior-Friendly -->
               <div
-                class="w-full py-2 rounded-xl bg-[#25D366] text-slate-950 font-black text-center text-[9px] shadow-lg flex items-center justify-center gap-1 mt-1"
+                class="w-full py-2.5 rounded-xl bg-[#25D366] text-white font-black text-center text-[8.5px] shadow-lg flex items-center justify-center gap-1 mt-1"
                 :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
               >
                 <span>💬</span>
-                <span>Apartar mi Turno por WhatsApp</span>
+                <span>Enviar mi resultado y apartar mi cita</span>
               </div>
+              <p class="text-[6.5px] text-slate-400 text-center">🔒 Tu resultado es confidencial, sin filas.</p>
             </div>
           </template>
 
