@@ -78,47 +78,93 @@
           <!-- ========================================================= -->
           <!-- CASO 0: QUIZ 5 · OFERTA DIRECTA & CUENTA REGRESIVA          -->
           <!-- ========================================================= -->
+          <!-- CASO 0: QUIZ 5 · SELECTOR DE ARMAZONES & DESCUENTO $25    -->
+          <!-- ========================================================= -->
           <template v-if="isQuiz5">
-            <!-- Header y Urgencia -->
-            <div class="space-y-1.5 pb-1">
-              <div class="flex items-center justify-between text-[10px] font-bold text-slate-300">
-                <span class="flex items-center gap-1 text-emerald-400">👓 Óptica Johanna · Oferta Especial</span>
-                <span class="text-amber-400 font-mono">Solo 4 cupos</span>
-              </div>
-              <!-- Contador -->
-              <div class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-center">
-                <span class="text-[8px] text-amber-300 uppercase tracking-wider block font-bold">⏳ Tiempo restante:</span>
-                <span class="font-mono text-xs font-black text-white">02D : 14H : 35M : 50S</span>
-              </div>
-            </div>
-
-            <!-- Card Central Oferta $35->$0 -->
-            <div class="my-auto space-y-1.5 text-center">
-              <h4 class="text-[10px] font-black text-white leading-tight">
-                ¿Tienes que alejar las cosas para leerlas bien?
+            <!-- Header -->
+            <div class="space-y-1 pb-1 text-center">
+              <span class="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block">👓 Óptica Johanna · Guayaquil</span>
+              <h4 class="text-[11px] font-black text-white leading-tight">
+                ¿Cuál armazón te gusta más?
               </h4>
-              <div class="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-left space-y-1">
-                <div class="flex justify-between text-[8px]">
-                  <span class="text-slate-200">Examen Computarizado:</span>
-                  <span class="text-emerald-400 font-bold">HOY: $0</span>
-                </div>
-                <div class="flex justify-between text-[8px]">
-                  <span class="text-slate-200">Mantenimiento y limpieza:</span>
-                  <span class="text-emerald-400 font-bold">HOY: $0</span>
-                </div>
-              </div>
+              <p class="text-[8px] text-amber-300 font-bold leading-tight">
+                Elige tu estilo con descuento ($25) + examen gratis 🎁
+              </p>
             </div>
 
-            <!-- Botón CTA WhatsApp -->
-            <div class="space-y-1 pb-1">
+            <!-- 3 Tarjetas de Armazones -->
+            <div class="space-y-1.5 my-auto overflow-y-auto max-h-[300px] pr-1">
+              <!-- Armazón 1: Cat Eye -->
               <div
-                class="w-full py-2.5 rounded-xl bg-[#25D366] text-white font-black text-center text-[9px] shadow-lg flex items-center justify-center gap-1"
+                class="p-1.5 rounded-xl border border-rose-500/40 bg-rose-950/30 flex items-center justify-between"
+                :class="{ 'ring-2 ring-rose-400': mode === 'zones' }"
+              >
+                <div class="flex items-center gap-2">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+                    <img src="https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=120&q=80&fit=crop" class="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span class="bg-rose-500 text-white text-[6.5px] font-black px-1.5 py-0.2 rounded-full uppercase">Ella</span>
+                    <p class="text-white font-bold text-[9px] leading-tight">Cat Eye Clásico</p>
+                    <p class="text-[7px] text-rose-300">Elegante · Sofisticado</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[7.5px] text-slate-400 line-through block">$45</span>
+                  <span class="text-amber-300 font-bold text-[11px]">$25</span>
+                </div>
+              </div>
+
+              <!-- Armazón 2: Rectangular -->
+              <div
+                class="p-1.5 rounded-xl border border-blue-500/40 bg-blue-950/30 flex items-center justify-between"
+                :class="{ 'ring-2 ring-blue-400': mode === 'zones' }"
+              >
+                <div class="flex items-center gap-2">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+                    <img src="https://images.unsplash.com/photo-1508296695146-257a814070b4?w=120&q=80&fit=crop" class="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span class="bg-blue-600 text-white text-[6.5px] font-black px-1.5 py-0.2 rounded-full uppercase">Él</span>
+                    <p class="text-white font-bold text-[9px] leading-tight">Rectangular Clásico</p>
+                    <p class="text-[7px] text-blue-300">Formal · Duradero</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[7.5px] text-slate-400 line-through block">$45</span>
+                  <span class="text-amber-300 font-bold text-[11px]">$25</span>
+                </div>
+              </div>
+
+              <!-- Armazón 3: Redondo -->
+              <div
+                class="p-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 flex items-center justify-between"
                 :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
               >
-                <span>💬</span>
-                <span>Agendar mi cita gratis por WhatsApp</span>
+                <div class="flex items-center gap-2">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+                    <img src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=120&q=80&fit=crop" class="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <span class="bg-emerald-600 text-white text-[6.5px] font-black px-1.5 py-0.2 rounded-full uppercase">Unisex</span>
+                    <p class="text-white font-bold text-[9px] leading-tight">Redondo Moderno</p>
+                    <p class="text-[7px] text-emerald-300">Juvenil · Para todos</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[7.5px] text-slate-400 line-through block">$45</span>
+                  <span class="text-amber-300 font-bold text-[11px]">$25</span>
+                </div>
               </div>
-              <p class="text-[7px] text-slate-400 text-center">🔒 Sin compromiso de compra. No te llamaremos.</p>
+            </div>
+
+            <!-- Footer WhatsApp -->
+            <div class="pt-1 text-center">
+              <div class="w-full py-2 rounded-xl bg-[#25D366] text-white font-black text-center text-[8.5px] shadow-lg flex items-center justify-center gap-1">
+                <span>💬</span>
+                <span>Apartar mi armazón y cita gratis</span>
+              </div>
+              <p class="text-[6.5px] text-slate-400 mt-0.5">🔒 Sin compromiso · Coordinas 100% por WhatsApp</p>
             </div>
           </template>
 
@@ -385,15 +431,18 @@
         >
           <div class="w-full max-w-[420px] h-full relative">
             <template v-if="isQuiz5">
-              <!-- Zonas Quiz 5 Oferta Directa -->
-              <div class="absolute left-1/2 -translate-x-1/2 bottom-3 bg-emerald-400 text-slate-950 font-black text-[9px] font-mono px-3 py-1 rounded-full shadow-xl border border-white">
-                🔥 {{ quiz5CtaShare }}% de clics en WhatsApp
+              <!-- Zonas Quiz 5 Selector Armazones ($25) -->
+              <div class="absolute left-1/2 -translate-x-1/2 top-24 bg-rose-500/90 text-white font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
+                Cat Eye (Ella): {{ quiz5CatEyeShare }}%
               </div>
-              <div class="absolute left-1/2 -translate-x-1/2 top-36 bg-amber-400 text-slate-950 font-black text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
-                Oferta $0: {{ quiz5BenefitShare }}%
+              <div class="absolute left-1/2 -translate-x-1/2 top-44 bg-blue-500/90 text-white font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
+                Rectangular (Él): {{ quiz5RectShare }}%
               </div>
-              <div class="absolute left-1/2 -translate-x-1/2 top-10 bg-cyan-500/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
-                Contador & Urgencia: {{ quiz5TimerShare }}%
+              <div class="absolute left-1/2 -translate-x-1/2 top-64 bg-emerald-500/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
+                Redondo (Unisex): {{ quiz5RoundShare }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-2 bg-[#25D366] text-slate-950 font-black text-[9px] font-mono px-3 py-1 rounded-full shadow-xl border border-white">
+                🔥 Apartar por WhatsApp: {{ quiz5CtaShare }}%
               </div>
             </template>
 
@@ -602,22 +651,28 @@ const thermalPoints = computed(() => {
   })
 })
 
-// Cálculos de zonas para Quiz 5 (Oferta Directa)
+// Cálculos de zonas para Quiz 5 (Selector de Armazones $25)
+const quiz5CatEyeShare = computed(() => {
+  if (props.points.length === 0) return 42
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('cat_eye') || (p.label || '').toLowerCase().includes('ella') || (p.y >= 20 && p.y < 38)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 42
+})
+
+const quiz5RectShare = computed(() => {
+  if (props.points.length === 0) return 31
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('rectangular') || (p.label || '').toLowerCase().includes('él') || (p.y >= 38 && p.y < 58)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 31
+})
+
+const quiz5RoundShare = computed(() => {
+  if (props.points.length === 0) return 19
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('redondo') || (p.label || '').toLowerCase().includes('unisex') || (p.y >= 58 && p.y < 80)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 19
+})
+
 const quiz5CtaShare = computed(() => {
-  if (props.points.length === 0) return 72
-  const c = props.points.filter(p => p.y > 70 || (p.label || '').toLowerCase().includes('whatsapp') || (p.label || '').toLowerCase().includes('agendar')).reduce((a, b) => a + b.weight, 0)
-  return Math.round((c / Math.max(1, total.value)) * 100) || 72
-})
-
-const quiz5BenefitShare = computed(() => {
-  if (props.points.length === 0) return 20
-  const c = props.points.filter(p => (p.y >= 30 && p.y <= 60) || (p.label || '').toLowerCase().includes('gratis') || (p.label || '').toLowerCase().includes('oferta')).reduce((a, b) => a + b.weight, 0)
-  return Math.round((c / Math.max(1, total.value)) * 100) || 20
-})
-
-const quiz5TimerShare = computed(() => {
   if (props.points.length === 0) return 8
-  const c = props.points.filter(p => p.y < 25 || (p.label || '').toLowerCase().includes('contador') || (p.label || '').toLowerCase().includes('urgencia')).reduce((a, b) => a + b.weight, 0)
+  const c = props.points.filter(p => p.y >= 80 || (p.label || '').toLowerCase().includes('whatsapp') || (p.label || '').toLowerCase().includes('apartar')).reduce((a, b) => a + b.weight, 0)
   return Math.round((c / Math.max(1, total.value)) * 100) || 8
 })
 

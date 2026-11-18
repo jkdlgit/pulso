@@ -104,99 +104,96 @@
                 </div>
 
                 <!-- ========================================== -->
-                <!-- CASO 0: QUIZ 5 (OFERTA DIRECTA - LANDING)  -->
+                <!-- CASO 0: QUIZ 5 (SELECTOR ARMAZONES)       -->
                 <!-- ========================================== -->
                 <template v-if="isQuiz5">
-                  <div class="space-y-3 py-1">
-                    <!-- Banner de Urgencia & Contador -->
-                    <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-2.5 shadow-md border border-slate-700 text-center">
-                      <div class="flex items-center justify-center gap-1.5 text-[9px] font-bold text-amber-300 mb-1">
-                        <span>⏳</span>
-                        <span class="uppercase tracking-wider">Cortesía por tiempo limitado</span>
-                      </div>
-                      <div class="grid grid-cols-4 gap-1.5 max-w-[220px] mx-auto text-center font-mono">
-                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
-                          <span class="text-xs font-black block leading-none">02</span>
-                          <span class="text-[7px] text-slate-400 uppercase">Días</span>
-                        </div>
-                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
-                          <span class="text-xs font-black block leading-none">14</span>
-                          <span class="text-[7px] text-slate-400 uppercase">Horas</span>
-                        </div>
-                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
-                          <span class="text-xs font-black block leading-none">35</span>
-                          <span class="text-[7px] text-slate-400 uppercase">Min</span>
-                        </div>
-                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
-                          <span class="text-xs font-black text-amber-400 block leading-none">50</span>
-                          <span class="text-[7px] text-slate-400 uppercase">Seg</span>
-                        </div>
-                      </div>
-                      <div class="mt-1.5 text-[8px] text-amber-200 font-medium flex items-center justify-center gap-1">
-                        <span>⚠️</span>
-                        <span>Agenda limitada: Solo 4 cupos hoy en Guayaquil</span>
-                      </div>
+                  <div class="space-y-0 py-0 -mx-5 -mt-5 overflow-hidden rounded-b-3xl">
+                    <!-- Header oscuro -->
+                    <div class="bg-slate-900 text-white text-center px-4 py-3">
+                      <p class="text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5">👓 Óptica Johanna · Guayaquil</p>
+                      <h4 class="text-sm font-black leading-tight text-white">¿Cuál armazón te gusta más?</h4>
+                      <p class="text-[9px] text-slate-300 mt-0.5">Elige y recibe <strong class="text-amber-300">descuento especial</strong> + examen gratis 🎁</p>
                     </div>
 
-                    <!-- Título Mental 'SÍ' -->
-                    <div class="text-center space-y-1">
-                      <h4 class="text-sm font-black text-slate-900 leading-tight">
-                        ¿Sientes que tienes que alejar las cosas para leerlas bien?
-                      </h4>
-                      <p class="text-[10px] text-slate-600 leading-relaxed">
-                        Recupera la nitidez de tu vista sin pagar nada por tu examen computarizado en Guayaquil.
-                      </p>
+                    <!-- Instrucción -->
+                    <div class="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-center">
+                      <p class="text-[9px] font-bold text-amber-800">👇 Presiona el que más te guste</p>
                     </div>
 
-                    <!-- Reciprocidad Precios $35->$0 -->
-                    <div class="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 text-left space-y-1.5">
-                      <span class="text-[8px] font-black uppercase text-emerald-950 block">Lo que recibes gratis hoy:</span>
-                      <div class="flex items-center justify-between text-[9px] border-b border-emerald-200 pb-1">
-                        <span class="font-bold text-slate-800">1. Examen Computarizado</span>
-                        <div><span class="line-through text-slate-400 text-[8px] mr-1">$35.00</span><strong class="text-emerald-700">HOY: $0</strong></div>
-                      </div>
-                      <div class="flex items-center justify-between text-[9px]">
-                        <span class="font-bold text-slate-800">2. Mantenimiento y limpieza</span>
-                        <div><span class="line-through text-slate-400 text-[8px] mr-1">$15.00</span><strong class="text-emerald-700">HOY: $0</strong></div>
-                      </div>
-                    </div>
-
-                    <!-- Selector de Turno -->
-                    <div class="grid grid-cols-2 gap-2 text-left">
-                      <div
-                        class="p-2 rounded-xl border-2 text-center transition-all cursor-pointer"
-                        :class="bookedTurno === 'manana'
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
-                          : 'bg-white border-slate-200 text-slate-600'"
-                      >
-                        <span class="text-sm block">🌅</span>
-                        <span class="text-xs font-bold block">Mañana</span>
-                        <span class="text-[9px] text-slate-500">10:30 a 12:30</span>
-                      </div>
-                      <div
-                        class="p-2 rounded-xl border-2 text-center transition-all cursor-pointer"
-                        :class="bookedTurno === 'tarde'
-                          ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
-                          : 'bg-white border-slate-200 text-slate-600'"
-                      >
-                        <span class="text-sm block">🌙</span>
-                        <span class="text-xs font-bold block">Tarde</span>
-                        <span class="text-[9px] text-slate-500">15:30 a 18:00</span>
-                      </div>
-                    </div>
-
-                    <!-- Botón Principal WhatsApp -->
-                    <button
-                      class="w-full bg-[#25D366] text-white font-black py-2.5 px-3 rounded-xl shadow-lg flex items-center justify-center gap-1.5 text-xs min-h-[46px]"
-                      :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('WhatsApp') || currentEvent?.label?.includes('Agendar') }"
+                    <!-- Armazón 1: Cat Eye -->
+                    <div
+                      class="relative overflow-hidden border-b border-slate-100 transition-all"
+                      :class="{ 'ring-2 ring-inset ring-rose-400': currentEvent?.label?.includes('cat') || currentEvent?.label?.includes('Cat') }"
+                      style="height: 80px; background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);"
                     >
-                      <span class="text-base">💬</span>
-                      <span>Agendar mi cita gratis por WhatsApp</span>
-                    </button>
+                      <div class="absolute inset-0 flex items-center px-3 justify-between">
+                        <div>
+                          <span class="inline-block bg-rose-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase mb-0.5">Para ella</span>
+                          <p class="text-xs font-black text-slate-900 leading-none">Cat Eye Clásico</p>
+                          <p class="text-[9px] text-rose-600 font-medium">Elegante · Sofisticado</p>
+                        </div>
+                        <div class="text-right">
+                          <span class="text-[9px] text-slate-400 line-through block">$45</span>
+                          <span class="text-sm font-black text-amber-600">$25</span>
+                        </div>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 bg-rose-50 border-t border-rose-100 px-3 py-1 flex items-center justify-between">
+                        <span class="text-[8px] font-bold text-slate-700">Quiero este con descuento</span>
+                        <span class="text-xs">💬</span>
+                      </div>
+                    </div>
 
-                    <p class="text-[8px] text-slate-500 text-center">
-                      🔒 Sin compromiso de compra. No te llamaremos por teléfono.
-                    </p>
+                    <!-- Armazón 2: Rectangular -->
+                    <div
+                      class="relative overflow-hidden border-b border-slate-100 transition-all"
+                      :class="{ 'ring-2 ring-inset ring-blue-400': currentEvent?.label?.includes('rectangular') || currentEvent?.label?.includes('Rectangular') }"
+                      style="height: 80px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);"
+                    >
+                      <div class="absolute inset-0 flex items-center px-3 justify-between">
+                        <div>
+                          <span class="inline-block bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase mb-0.5">Para él</span>
+                          <p class="text-xs font-black text-slate-900 leading-none">Rectangular Clásico</p>
+                          <p class="text-[9px] text-blue-600 font-medium">Formal · Duradero</p>
+                        </div>
+                        <div class="text-right">
+                          <span class="text-[9px] text-slate-400 line-through block">$45</span>
+                          <span class="text-sm font-black text-amber-600">$25</span>
+                        </div>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 bg-blue-50 border-t border-blue-100 px-3 py-1 flex items-center justify-between">
+                        <span class="text-[8px] font-bold text-slate-700">Quiero este con descuento</span>
+                        <span class="text-xs">💬</span>
+                      </div>
+                    </div>
+
+                    <!-- Armazón 3: Redondo -->
+                    <div
+                      class="relative overflow-hidden transition-all"
+                      :class="{ 'ring-2 ring-inset ring-emerald-400': currentEvent?.label?.includes('redondo') || currentEvent?.label?.includes('Redondo') }"
+                      style="height: 80px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);"
+                    >
+                      <div class="absolute inset-0 flex items-center px-3 justify-between">
+                        <div>
+                          <span class="inline-block bg-emerald-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase mb-0.5">Unisex</span>
+                          <p class="text-xs font-black text-slate-900 leading-none">Redondo Moderno</p>
+                          <p class="text-[9px] text-emerald-600 font-medium">Juvenil · Para todos</p>
+                        </div>
+                        <div class="text-right">
+                          <span class="text-[9px] text-slate-400 line-through block">$45</span>
+                          <span class="text-sm font-black text-amber-600">$25</span>
+                        </div>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 bg-emerald-50 border-t border-emerald-100 px-3 py-1 flex items-center justify-between">
+                        <span class="text-[8px] font-bold text-slate-700">Quiero este con descuento</span>
+                        <span class="text-xs">💬</span>
+                      </div>
+                    </div>
+
+                    <!-- Pie garantía -->
+                    <div class="bg-slate-50 border-t border-slate-200 px-4 py-2 text-center">
+                      <p class="text-[9px] font-bold text-slate-600">🎁 Incluye examen visual <strong class="text-emerald-700">sin costo</strong></p>
+                      <p class="text-[8px] text-slate-400">🔒 Sin compromiso · WhatsApp · Sin llamadas</p>
+                    </div>
                   </div>
                 </template>
 
@@ -400,7 +397,7 @@
                     <div class="mb-3">
                       <div class="flex items-center justify-between mb-2">
                         <span class="text-slate-600 font-bold text-xs tracking-wide">
-                          Ronda {{ quiz2CurrentRound }} de 2 · {{ quiz2CurrentRound === 1 ? 'Escala Base (16px)' : 'Escala Fina Mínima (9.5px)' }}
+                          Ronda {{ quiz2CurrentRound }} de 2 · {{ quiz2CurrentRound === 1 ? 'Escala Grande (72px)' : 'Escala Reducida (44px)' }}
                         </span>
                         <div class="flex items-center gap-1.5">
                           <span class="text-indigo-600 font-black text-xs bg-indigo-50 px-2.5 py-0.5 rounded-full">
@@ -974,7 +971,7 @@ const quiz4MolestiaOptions = computed(() => {
   const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'molestia')?.answer || '').toLowerCase()
   const clicked = (currentEvent.value?.label || '').toLowerCase()
   return [
-    { id: 'celular', label: 'Leer el celular o letras pequeñas', icon: '📱', isSelected: clicked.includes('celular') || ans.includes('celular') || true },
+    { id: 'celular', label: 'Leer el celular o letras pequeñas', icon: '📱', isSelected: clicked.includes('celular') || ans.includes('celular') },
     { id: 'noche', label: 'Manejar de noche o luces de frente', icon: '🚗', isSelected: clicked.includes('noche') || ans.includes('noche') },
     { id: 'television', label: 'Ver la televisión o enfocar de lejos', icon: '📺', isSelected: clicked.includes('television') || ans.includes('television') },
   ]
@@ -985,7 +982,7 @@ const quiz4TiempoOptions = computed(() => {
   const clicked = (currentEvent.value?.label || '').toLowerCase()
   return [
     { id: 'menos_1', label: 'Menos de 1 año', icon: '🗓️', isSelected: clicked.includes('menos') || ans.includes('menos') },
-    { id: 'mas_1', label: 'Más de 1 año', icon: '⏳', isSelected: clicked.includes('más') || clicked.includes('mas') || ans.includes('mas') || true },
+    { id: 'mas_1', label: 'Más de 1 año', icon: '⏳', isSelected: clicked.includes('más') || clicked.includes('mas') || ans.includes('mas') },
     { id: 'no_recuerdo', label: 'No recuerdo o nunca me he examinado', icon: '❓', isSelected: clicked.includes('recuerdo') || ans.includes('recuerdo') },
   ]
 })
@@ -994,15 +991,15 @@ const quiz4NecesidadOptions = computed(() => {
   const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'necesidad')?.answer || '').toLowerCase()
   const clicked = (currentEvent.value?.label || '').toLowerCase()
   return [
-    { id: 'leer', label: 'Leer y ver el celular sin cansancio', icon: '📖', isSelected: clicked.includes('leer') || ans.includes('leer') || true },
+    { id: 'leer', label: 'Leer y ver el celular sin cansancio', icon: '📖', isSelected: clicked.includes('leer') || ans.includes('leer') },
     { id: 'trabajar', label: 'Trabajar y actividades del día', icon: '💼', isSelected: clicked.includes('trabajar') || ans.includes('trabajar') },
     { id: 'manejar', label: 'Manejar y salir a la calle con seguridad', icon: '🚘', isSelected: clicked.includes('manejar') || ans.includes('manejar') },
   ]
 })
 
-// Letras reducidas del nuevo test de 2 rondas de Quiz 2
+// Letras del test de 2 rondas de Quiz 2 (tamaños reales: 72px y 44px para +50 años)
 const quiz2Letters = ['E   P   T   O', 'C   D   L   V']
-const quiz2Sizes = [16, 9.5]
+const quiz2Sizes = [72, 44]
 
 const quiz2CurrentRound = computed(() => {
   if (!isQuiz2.value) return 1

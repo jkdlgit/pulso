@@ -74,8 +74,11 @@ export function applyFilters(ds: AnalyticsDataset, filters: AnalyticsFilters, en
   const communications = ds.communications.filter(c => sessionIds.has(c.session_id))
   const sales = ds.sales.filter(s => sessionIds.has(s.session_id))
 
-  // El presupuesto se prorratea por el período seleccionado (spend = diario)
-  const adSpend = campaigns.reduce((sum, c) => sum + c.spend * filters.days, 0)
+  // El presupuesto se prorratea por el período seleccionado en demo, pero en Live / Meta Ads spend ya es la cifra acumulada real
+  const adSpend = campaigns.reduce((sum, c) => {
+    const isLiveSpend = ds.mode === 'live' || c.platform === 'Meta Ads'
+    return sum + (isLiveSpend ? c.spend : c.spend * filters.days)
+  }, 0)
 
   return {
     base: ds, filters, start, end, campaigns, visitors, sessions,
@@ -224,7 +227,9 @@ export function bySource(fd: FilteredData): BreakdownRow[] {
   const spendBySource = new Map<string, number>()
   for (const c of fd.campaigns) {
     const src = campaignSource(c)
-    spendBySource.set(src, (spendBySource.get(src) || 0) + c.spend * fd.filters.days)
+    const isLiveSpend = fd.base.mode === 'live' || c.platform === 'Meta Ads'
+    const s = isLiveSpend ? c.spend : c.spend * fd.filters.days
+    spendBySource.set(src, (spendBySource.get(src) || 0) + s)
   }
   const map = new Map<string, ReturnType<typeof emptyAcc>>()
   for (const s of fd.sessions) {
@@ -247,7 +252,9 @@ export function bySource(fd: FilteredData): BreakdownRow[] {
 export function byCampaign(fd: FilteredData): BreakdownRow[] {
   const map = new Map<string, ReturnType<typeof emptyAcc>>()
   for (const c of fd.campaigns) {
-    map.set(c.id, { ...emptyAcc(), label: c.name, spend: c.spend * fd.filters.days, color: c.platform === 'Google Ads' ? '#f59e0b' : c.platform === 'TikTok Ads' ? '#22d3ee' : '#3b82f6' })
+    const isLiveSpend = fd.base.mode === 'live' || c.platform === 'Meta Ads'
+    const s = isLiveSpend ? c.spend : c.spend * fd.filters.days
+    map.set(c.id, { ...emptyAcc(), label: c.name, spend: s, color: c.platform === 'Google Ads' ? '#f59e0b' : c.platform === 'TikTok Ads' ? '#22d3ee' : '#3b82f6' })
   }
   for (const s of fd.sessions) {
     if (!s.campaign_id) continue
@@ -857,6 +864,8 @@ export function computeOptimizationCommandCenter(
     quiz1: 'Quiz 1 · Test Visual General',
     quiz2: 'Quiz 2 · VisiónCheck & Agudeza Visual',
     quiz3: 'Quiz 3 · Fatiga Visual & Luz Azul',
+    quiz4: 'Quiz 4 · Lentes y Vista Cansada',
+    quiz5: 'Quiz 5 · Selector de Armazones & Descuento',
   }
 
   // 2. Construcción de Reconciliación por cada Quiz descubierto
@@ -869,6 +878,8 @@ export function computeOptimizationCommandCenter(
       if (quizKey === 'quiz1') return lp.includes('quiz1')
       if (quizKey === 'quiz2') return lp.includes('quiz2') || lp.includes('visioncheck')
       if (quizKey === 'quiz3') return lp.includes('quiz3') || lp.includes('fatiga') || lp.includes('luz')
+      if (quizKey === 'quiz4') return lp.includes('quiz4') || lp.includes('lentes')
+      if (quizKey === 'quiz5') return lp.includes('quiz5') || lp.includes('oferta') || lp.includes('armazon')
       return lp.includes(quizKey)
     })
 
@@ -1104,8 +1115,14 @@ export function computeOptimizationCommandCenter(
   const totalSample = reconciliations.reduce((acc, r) => acc + r.sampleSize, 0)
   const globalConfidence = Math.min(95, Math.max(20, Math.round((totalSample / 350) * 100)))
 
-  // Resumen ejecutivo
-  const executiveSummary = `Actualmente tu tráfico en Guayaquil muestra una eficacia de anuncio sobresaliente (CTR hasta 8.19%), con costos por visita sumamente bajos ($0.017 a $0.028). Sin embargo, se detecta una pérdida técnica del 10-14% entre el clic de Facebook y la carga de la página, y una concentración del 61% en mayores de 50 años. Resolver la velocidad de carga y afinar el seguimiento por WhatsApp de los prospectos captados generará el mayor salto de rentabilidad.`
+  // Resumen ejecutivo dinámico basado en métricas reales de pauta y conversión
+  const totalSpend = reconciliations.reduce((acc, r) => acc + r.metaSpend, 0)
+  const totalLeads = reconciliations.reduce((acc, r) => acc + r.leads, 0)
+  const totalAppts = reconciliations.reduce((acc, r) => acc + r.appointments, 0)
+  const overallCpl = totalLeads > 0 && totalSpend > 0 ? (totalSpend / totalLeads).toFixed(2) : '0.00'
+  const bestVariant = [...reconciliations].sort((a, b) => (b.appointments / Math.max(1, b.webSessions)) - (a.appointments / Math.max(1, a.webSessions)))[0]
+
+  const executiveSummary = `Actualmente tu tráfico en Guayaquil registra $${totalSpend.toFixed(2)} de inversión total en Meta Ads, generando ${totalLeads} leads observados y ${totalAppts} citas coordinadas por WhatsApp (CPL global estimado de $${overallCpl}). La variante con mayor tracción es "${bestVariant?.quizName || 'Quiz 2'}" (${bestVariant?.webSessions || 0} visitas, ${bestVariant?.appointments || 0} citas). El ${totalAppts > 0 ? 'flujo hacia WhatsApp está activo' : 'objetivo prioritario es maximizar la tasa de agendamiento en WhatsApp'}; los micro-selectores de turnos y las opciones de armazones reducen la fricción para la audiencia senior (+50 años).`
 
   return {
     healthScore,

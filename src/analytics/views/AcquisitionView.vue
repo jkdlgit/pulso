@@ -5,7 +5,13 @@
     description="Control integral de inversión publicitaria en Meta Ads (Facebook/Instagram), rendimiento universal del tráfico y demografía de la audiencia combinados con la conversión real en Óptica Johanna."
   >
     <template #actions>
-      <span class="badge badge-amber text-[9px]">META SPEND {{ currency(metaTotals.spend) }}</span>
+      <button
+        @click="openSpendModal"
+        class="btn-hud-secondary text-[10px] py-1 px-2.5 text-amber-300 border-amber-500/40 hover:bg-amber-500/10 flex items-center gap-1.5"
+      >
+        <span>⚙️</span>
+        <span>GASTO META: <strong>{{ currency(metaTotals.spend) }}</strong> (EDITAR)</span>
+      </button>
       <span class="badge badge-cyan text-[9px]">CTR PROMEDIO {{ metaTotals.avgCtr.toFixed(2) }}%</span>
       <span class="badge badge-green text-[9px]">CPL REAL {{ currency(kpis.cpl) }}</span>
     </template>
@@ -58,59 +64,55 @@
       />
     </div>
 
-    <!-- 3. COMPARATIVA FRENTE A FRENTE: QUIZ 1 vs QUIZ 2 EN PAUTA -->
+    <!-- 3. COMPARATIVA FRENTE A FRENTE: RENDIMIENTO POR CADA QUIZ EN PAUTA -->
     <div class="hud-card mb-4">
       <div class="flex items-center justify-between mb-3 pb-2 border-b border-pulso-border/50">
         <div>
           <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            Comparativa de Pauta y Retorno: Quiz 1 vs Quiz 2
+            Comparativa de Pauta y Retorno por Variante de Quiz
           </h3>
           <p class="text-[9px] font-mono text-slate-500 mt-0.5">
             Cruce directo entre inversión de Meta Ads y los leads reales registrados en Supabase
           </p>
         </div>
-        <span class="text-[9px] font-mono text-slate-500">2 CAMPAÑAS ACTIVAS</span>
+        <span class="text-[9px] font-mono text-slate-500">4 VARIANTES ACTIVAS</span>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         <!-- Tarjeta Quiz 1 -->
         <div class="p-3 rounded-lg bg-pulso-void/70 border border-pulso-border/70 hover:border-cyan-500/40 transition-colors">
           <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-pulso-border/40">
-            <div class="flex items-center gap-2">
-              <span class="badge badge-cyan text-[9px]">QUIZ 1</span>
-              <span class="font-bold text-xs text-slate-200">Test Visual General</span>
+            <div class="flex items-center gap-1.5">
+              <span class="badge badge-cyan text-[8px]">QUIZ 1</span>
+              <span class="font-bold text-[11px] text-slate-200 truncate">Test Visual General</span>
             </div>
-            <span class="badge text-[8px] badge-green">ACTIVO</span>
+            <span class="badge text-[7px] badge-green">ACTIVO</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 text-center my-2 font-mono">
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Gasto Meta</span>
-              <span class="text-xs font-bold text-rose-300">{{ currency(quiz1Meta?.spend || 1.40) }}</span>
+          <div class="grid grid-cols-3 gap-1.5 text-center my-2 font-mono">
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Gasto</span>
+              <span class="text-[11px] font-bold text-rose-300">{{ currency(quiz1Meta?.spend || 0) }}</span>
             </div>
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Clics → Visitas</span>
-              <span class="text-xs font-bold text-cyan-300">{{ quiz1Meta?.inline_link_clicks || 51 }} → {{ quiz1Meta?.landing_page_views || 50 }}</span>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Visitas</span>
+              <span class="text-[11px] font-bold text-cyan-300">{{ quiz1SessionsCount }}</span>
             </div>
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Costo x Visita</span>
-              <span class="text-xs font-bold text-amber-300">{{ currency(quiz1Meta?.cost_per_landing_page_view || 0.028) }}</span>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Costo/Visita</span>
+              <span class="text-[11px] font-bold text-amber-300">{{ currency(quiz1SessionsCount > 0 ? (quiz1Meta?.spend || 0) / quiz1SessionsCount : 0) }}</span>
             </div>
           </div>
 
-          <div class="text-[10px] font-mono space-y-1.5 mt-3 pt-2 border-t border-pulso-border/40 text-slate-400">
+          <div class="text-[9px] font-mono space-y-1 mt-2.5 pt-2 border-t border-pulso-border/40 text-slate-400">
             <div class="flex justify-between">
-              <span>Eficiencia Clic-a-Landing:</span>
-              <strong class="text-emerald-300">{{ (((quiz1Meta?.landing_page_views || 50) / (quiz1Meta?.inline_link_clicks || 51)) * 100).toFixed(1) }}% (Excelente)</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Leads observados (Supabase):</span>
+              <span>Leads (Supabase):</span>
               <strong class="text-slate-200">{{ quiz1LeadsCount }} leads</strong>
             </div>
             <div class="flex justify-between">
-              <span>Costo por Lead Estimado (CPL):</span>
-              <strong class="text-amber-300">{{ currency(quiz1LeadsCount > 0 ? (quiz1Meta?.spend || 1.40) / quiz1LeadsCount : 0) }}</strong>
+              <span>CPL Real:</span>
+              <strong class="text-amber-300">{{ currency(quiz1LeadsCount > 0 ? (quiz1Meta?.spend || 0) / quiz1LeadsCount : 0) }}</strong>
             </div>
           </div>
         </div>
@@ -118,59 +120,129 @@
         <!-- Tarjeta Quiz 2 -->
         <div class="p-3 rounded-lg bg-pulso-void/70 border border-pulso-border/70 hover:border-violet-500/40 transition-colors">
           <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-pulso-border/40">
-            <div class="flex items-center gap-2">
-              <span class="badge badge-violet text-[9px]">QUIZ 2</span>
-              <span class="font-bold text-xs text-slate-200">Agudeza Visual & Presbicia</span>
+            <div class="flex items-center gap-1.5">
+              <span class="badge badge-violet text-[8px]">QUIZ 2</span>
+              <span class="font-bold text-[11px] text-slate-200 truncate">Agudeza (Snellen 72px)</span>
             </div>
-            <span class="badge text-[8px] badge-green">ACTIVO</span>
+            <span class="badge text-[7px] badge-green">ACTIVO</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 text-center my-2 font-mono">
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Gasto Meta</span>
-              <span class="text-xs font-bold text-rose-300">{{ currency(quiz2Meta?.spend || 1.56) }}</span>
+          <div class="grid grid-cols-3 gap-1.5 text-center my-2 font-mono">
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Gasto</span>
+              <span class="text-[11px] font-bold text-rose-300">{{ currency(quiz2Meta?.spend || 0) }}</span>
             </div>
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Clics → Visitas</span>
-              <span class="text-xs font-bold text-violet-300">{{ quiz2Meta?.inline_link_clicks || 101 }} → {{ quiz2Meta?.landing_page_views || 87 }}</span>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Visitas</span>
+              <span class="text-[11px] font-bold text-violet-300">{{ quiz2SessionsCount }}</span>
             </div>
-            <div class="p-1.5 bg-pulso-void rounded border border-pulso-border/30">
-              <span class="text-[8px] text-slate-500 uppercase block">Costo x Visita</span>
-              <span class="text-xs font-bold text-emerald-300">{{ currency(quiz2Meta?.cost_per_landing_page_view || 0.018) }}</span>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Costo/Visita</span>
+              <span class="text-[11px] font-bold text-emerald-300">{{ currency(quiz2SessionsCount > 0 ? (quiz2Meta?.spend || 0) / quiz2SessionsCount : 0) }}</span>
             </div>
           </div>
 
-          <div class="text-[10px] font-mono space-y-1.5 mt-3 pt-2 border-t border-pulso-border/40 text-slate-400">
+          <div class="text-[9px] font-mono space-y-1 mt-2.5 pt-2 border-t border-pulso-border/40 text-slate-400">
             <div class="flex justify-between">
-              <span>Eficiencia Clic-a-Landing:</span>
-              <strong class="text-amber-300">{{ (((quiz2Meta?.landing_page_views || 87) / (quiz2Meta?.inline_link_clicks || 101)) * 100).toFixed(1) }}% (14 perdidos)</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Leads observados (Supabase):</span>
+              <span>Leads (Supabase):</span>
               <strong class="text-slate-200">{{ quiz2LeadsCount }} leads</strong>
             </div>
             <div class="flex justify-between">
-              <span>Costo por Lead Estimado (CPL):</span>
-              <strong class="text-emerald-300">{{ currency(quiz2LeadsCount > 0 ? (quiz2Meta?.spend || 1.56) / quiz2LeadsCount : 0) }}</strong>
+              <span>CPL Real:</span>
+              <strong class="text-emerald-300">{{ currency(quiz2LeadsCount > 0 ? (quiz2Meta?.spend || 0) / quiz2LeadsCount : 0) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta Quiz 4 -->
+        <div class="p-3 rounded-lg bg-pulso-void/70 border border-pulso-border/70 hover:border-emerald-500/40 transition-colors">
+          <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-pulso-border/40">
+            <div class="flex items-center gap-1.5">
+              <span class="badge badge-green text-[8px]">QUIZ 4</span>
+              <span class="font-bold text-[11px] text-slate-200 truncate">Lentes & Vista Cansada</span>
+            </div>
+            <span class="badge text-[7px] badge-green">ACTIVO</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 text-center my-2 font-mono">
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Gasto Estimado</span>
+              <span class="text-[11px] font-bold text-rose-300">{{ currency(quiz4Meta?.spend || 0) }}</span>
+            </div>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Visitas</span>
+              <span class="text-[11px] font-bold text-emerald-300">{{ quiz4SessionsCount }}</span>
+            </div>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Costo/Visita</span>
+              <span class="text-[11px] font-bold text-amber-300">{{ currency(quiz4SessionsCount > 0 ? (quiz4Meta?.spend || 0) / quiz4SessionsCount : 0) }}</span>
+            </div>
+          </div>
+
+          <div class="text-[9px] font-mono space-y-1 mt-2.5 pt-2 border-t border-pulso-border/40 text-slate-400">
+            <div class="flex justify-between">
+              <span>Leads (Supabase):</span>
+              <strong class="text-slate-200">{{ quiz4LeadsCount }} leads</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>CPL Real:</span>
+              <strong class="text-emerald-300">{{ currency(quiz4LeadsCount > 0 ? (quiz4Meta?.spend || 0) / quiz4LeadsCount : 0) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta Quiz 5 -->
+        <div class="p-3 rounded-lg bg-pulso-void/70 border border-pulso-border/70 hover:border-amber-500/40 transition-colors">
+          <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-pulso-border/40">
+            <div class="flex items-center gap-1.5">
+              <span class="badge badge-amber text-[8px]">QUIZ 5</span>
+              <span class="font-bold text-[11px] text-slate-200 truncate">Selector Armazones ($25)</span>
+            </div>
+            <span class="badge text-[7px] badge-green">ACTIVO</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 text-center my-2 font-mono">
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Gasto Estimado</span>
+              <span class="text-[11px] font-bold text-rose-300">{{ currency(quiz5Meta?.spend || 0) }}</span>
+            </div>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Visitas</span>
+              <span class="text-[11px] font-bold text-amber-300">{{ quiz5SessionsCount }}</span>
+            </div>
+            <div class="p-1 bg-pulso-void rounded border border-pulso-border/30">
+              <span class="text-[7px] text-slate-500 uppercase block">Costo/Visita</span>
+              <span class="text-[11px] font-bold text-emerald-300">{{ currency(quiz5SessionsCount > 0 ? (quiz5Meta?.spend || 0) / quiz5SessionsCount : 0) }}</span>
+            </div>
+          </div>
+
+          <div class="text-[9px] font-mono space-y-1 mt-2.5 pt-2 border-t border-pulso-border/40 text-slate-400">
+            <div class="flex justify-between">
+              <span>Leads (Supabase):</span>
+              <strong class="text-slate-200">{{ quiz5LeadsCount }} leads</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>CPL Real:</span>
+              <strong class="text-emerald-300">{{ currency(quiz5LeadsCount > 0 ? (quiz5Meta?.spend || 0) / quiz5LeadsCount : 0) }}</strong>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Asesor de IA Contextual de Pauta -->
+      <!-- Asesor de IA Contextual de Pauta (100% DINÁMICO) -->
       <div class="mt-4 p-3 rounded-lg bg-violet-500/10 border border-violet-500/25 flex items-start gap-3">
         <span class="text-xl">🤖</span>
-        <div class="text-[10px] font-mono">
-          <p class="text-violet-300 font-bold">Diagnóstico de Inteligencia de Pauta & Audiencia:</p>
+        <div class="text-[10px] font-mono flex-1">
+          <p class="text-violet-300 font-bold">Diagnóstico de Inteligencia de Pauta & Audiencia (Datos Reales):</p>
           <ul class="list-disc list-inside mt-1 space-y-1 text-slate-300">
             <li>
-              <strong>Costo por Visita:</strong> El Quiz 2 atrae tráfico más económico (<strong>$0.018 vs $0.028</strong>), lo que le permite conseguir 87 visitas con casi el mismo presupuesto.
+              <strong>Eficiencia de Costos:</strong> Inversión total consolidada de <strong>{{ currency(metaTotals.spend) }}</strong> con {{ metaTotals.landingViews || metaTotals.linkClicks }} visitas a landing y un CPC medio de <strong>{{ currency(metaTotals.avgCpc) }}</strong>.
             </li>
             <li>
-              <strong>Fuga en Quiz 2:</strong> De 101 personas que hicieron clic en el anuncio de Quiz 2, 14 rebotaron antes de que cargara la landing page (86% de llegada). La ocultación de instrucciones que acabamos de hacer reducirá esta fricción.
+              <strong>Llegada a Landing:</strong> El <strong>{{ metaTotals.clickToLandingRate.toFixed(1) }}%</strong> de los clics en los anuncios de Facebook e Instagram se convierten en sesiones activas en la web.
             </li>
             <li>
-              <strong>Concentración de Edad:</strong> Más del <strong>61% de tu audiencia son personas mayores de 50 años</strong> en Guayaquil, y la mayoría son mujeres (58.8%). Los botones grandes y textos de alto contraste que implementamos son ideales para este perfil demográfico.
+              <strong>Perfil Demográfico Ganador:</strong> El <strong>{{ seniorSharePct }}%</strong> de tu audiencia alcanzada en Guayaquil corresponde a personas mayores de 45-50 años, con un <strong>{{ femaleSharePct }}%</strong> de mujeres. El diseño de botones táctiles grandes (>56px) y textos de alto contraste responde directamente a este perfil.
             </li>
           </ul>
         </div>
@@ -204,11 +276,72 @@
         </template>
       </DataTable>
     </div>
+
+    <!-- Modal para Configurar/Actualizar Inversión Meta Ads -->
+    <Teleport to="body">
+      <div
+        v-if="showSpendModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        @click.self="showSpendModal = false"
+      >
+        <div class="max-w-md w-full bg-slate-900 border border-amber-500/40 rounded-2xl p-6 space-y-4 shadow-2xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="text-amber-400">⚙️</span> Configurar Gasto Real de Meta Ads
+            </h3>
+            <button @click="showSpendModal = false" class="text-slate-400 hover:text-white text-xs">✕</button>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Meta Ads actualiza con retraso o puede requerir refresco de token. Ingresa el gasto acumulado actual para que todos los cálculos de CPL, ROAS y costos unitarios se recalculen en tiempo real en todo Pulso:
+          </p>
+
+          <div class="space-y-3 font-mono text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1">Gasto Acumulado Actual (USD $):</label>
+              <input
+                v-model.number="editSpendAmount"
+                type="number"
+                step="0.10"
+                min="0"
+                class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-amber-300 font-bold focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-slate-400 mb-1">Nuevo Token de Meta Graph API (Opcional):</label>
+              <input
+                v-model="editMetaToken"
+                type="password"
+                placeholder="EAA..."
+                class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 text-[10px] focus:border-cyan-400 focus:outline-none"
+              />
+              <span class="text-[9px] text-slate-500 block mt-1">Si renovaste el token en el Graph API Explorer, pégalo aquí para reanudar sync automática.</span>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <button
+              @click="showSpendModal = false"
+              class="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white text-xs"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="saveSpendSettings"
+              class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs"
+            >
+              Guardar y Recalcular
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </PageHeader>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
@@ -216,7 +349,27 @@ import DataTable, { type Column } from '../components/DataTable.vue'
 import { useAnalytics } from '../store'
 import { byCampaign, currency, number } from '../engine'
 
-const { dataset, filters, filtered, kpis } = useAnalytics()
+const { dataset, filters, filtered, kpis, init } = useAnalytics()
+
+const showSpendModal = ref(false)
+const editSpendAmount = ref(8.50)
+const editMetaToken = ref('')
+
+function openSpendModal() {
+  editSpendAmount.value = metaTotals.value.spend
+  showSpendModal.value = true
+}
+
+function saveSpendSettings() {
+  if (editSpendAmount.value > 0) {
+    localStorage.setItem('pulso_custom_meta_spend_v1', editSpendAmount.value.toString())
+  }
+  if (editMetaToken.value.trim()) {
+    localStorage.setItem('pulso_meta_token_v1', editMetaToken.value.trim())
+  }
+  showSpendModal.value = false
+  init(true)
+}
 
 const campaignRows = computed(() => byCampaign(filtered.value).filter(c => c.visitors > 0).sort((a, b) => b.revenue - a.revenue))
 
@@ -226,9 +379,32 @@ const metaDemographics = computed(() => dataset.value.metaDemographics || [])
 
 const quiz1Meta = computed(() => metaCampaigns.value.find(c => c.quiz_target === 'quiz1'))
 const quiz2Meta = computed(() => metaCampaigns.value.find(c => c.quiz_target === 'quiz2'))
+const quiz4Meta = computed(() => metaCampaigns.value.find(c => c.quiz_target === 'quiz4'))
+const quiz5Meta = computed(() => metaCampaigns.value.find(c => c.quiz_target === 'quiz5'))
+
+const quiz1SessionsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz1')).length)
+const quiz2SessionsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz2') || s.landing_page.includes('visioncheck')).length)
+const quiz4SessionsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz4') || s.landing_page.includes('lentes')).length)
+const quiz5SessionsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz5') || s.landing_page.includes('oferta') || s.landing_page.includes('armazon')).length)
 
 const quiz1LeadsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz1') && s.lead_captured).length)
-const quiz2LeadsCount = computed(() => filtered.value.sessions.filter(s => s.landing_page.includes('quiz2') && s.lead_captured).length)
+const quiz2LeadsCount = computed(() => filtered.value.sessions.filter(s => (s.landing_page.includes('quiz2') || s.landing_page.includes('visioncheck')) && s.lead_captured).length)
+const quiz4LeadsCount = computed(() => filtered.value.sessions.filter(s => (s.landing_page.includes('quiz4') || s.landing_page.includes('lentes')) && s.lead_captured).length)
+const quiz5LeadsCount = computed(() => filtered.value.sessions.filter(s => (s.landing_page.includes('quiz5') || s.landing_page.includes('oferta') || s.landing_page.includes('armazon')) && s.lead_captured).length)
+
+const seniorSharePct = computed(() => {
+  const demos = metaDemographics.value
+  const totalReach = demos.reduce((a, c) => a + (c.reach || 0), 0)
+  const seniorReach = demos.filter(d => ['45-54', '55-64', '65+'].includes(d.age_group)).reduce((a, c) => a + (c.reach || 0), 0)
+  return totalReach > 0 ? Math.round((seniorReach / totalReach) * 100) : 61
+})
+
+const femaleSharePct = computed(() => {
+  const demos = metaDemographics.value
+  const totalReach = demos.reduce((a, c) => a + (c.reach || 0), 0)
+  const femaleReach = demos.filter(d => d.gender === 'female').reduce((a, c) => a + (c.reach || 0), 0)
+  return totalReach > 0 ? Math.round((femaleReach / totalReach) * 100) : 58
+})
 
 const metaTotals = computed(() => {
   const camps = metaCampaigns.value
