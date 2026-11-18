@@ -347,6 +347,7 @@ import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DataTable, { type Column } from '../components/DataTable.vue'
 import { useAnalytics } from '../store'
+import { proDb } from '../supabaseAnalytics'
 import { byCampaign, currency, number } from '../engine'
 
 const { dataset, filters, filtered, kpis, init } = useAnalytics()
@@ -360,9 +361,19 @@ function openSpendModal() {
   showSpendModal.value = true
 }
 
-function saveSpendSettings() {
+async function saveSpendSettings() {
   if (editSpendAmount.value > 0) {
     localStorage.setItem('pulso_custom_meta_spend_v1', editSpendAmount.value.toString())
+    try {
+      const q1Ratio = 0.435
+      const q2Ratio = 0.565
+      await Promise.all([
+        proDb.from('meta_campaign_insights').update({ spend: Number((editSpendAmount.value * q1Ratio).toFixed(2)), date: new Date().toISOString().split('T')[0] }).eq('quiz_target', 'quiz1'),
+        proDb.from('meta_campaign_insights').update({ spend: Number((editSpendAmount.value * q2Ratio).toFixed(2)), date: new Date().toISOString().split('T')[0] }).eq('quiz_target', 'quiz2')
+      ])
+    } catch (e) {
+      console.warn('[ACQUISITION] No se pudo guardar gasto en Supabase pro:', e)
+    }
   }
   if (editMetaToken.value.trim()) {
     localStorage.setItem('pulso_meta_token_v1', editMetaToken.value.trim())

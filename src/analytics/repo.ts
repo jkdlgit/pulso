@@ -481,7 +481,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
         page_count: pageviews.length,
         scroll_avg: isBooked ? 85 : 55,
         clicks: isBooked ? 12 : 5,
-        quiz_started: true,
+        quiz_started: lead.estado !== 'Visita' || (quizSteps.length > 0 && quizSteps.some(qs => qs.answered)),
         quiz_completed: lead.estado === 'Completado' || isBooked || !!lead.resultado,
         quiz_steps: quizSteps,
         form_started: isIdentified || isBooked,
