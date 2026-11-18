@@ -76,9 +76,96 @@
         <div class="w-full max-w-[420px] h-full relative px-4 py-3 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black pointer-events-none select-none">
           
           <!-- ========================================================= -->
+          <!-- CASO 0: QUIZ 5 · OFERTA DIRECTA & CUENTA REGRESIVA          -->
+          <!-- ========================================================= -->
+          <template v-if="isQuiz5">
+            <!-- Header y Urgencia -->
+            <div class="space-y-1.5 pb-1">
+              <div class="flex items-center justify-between text-[10px] font-bold text-slate-300">
+                <span class="flex items-center gap-1 text-emerald-400">👓 Óptica Johanna · Oferta Especial</span>
+                <span class="text-amber-400 font-mono">Solo 4 cupos</span>
+              </div>
+              <!-- Contador -->
+              <div class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-center">
+                <span class="text-[8px] text-amber-300 uppercase tracking-wider block font-bold">⏳ Tiempo restante:</span>
+                <span class="font-mono text-xs font-black text-white">02D : 14H : 35M : 50S</span>
+              </div>
+            </div>
+
+            <!-- Card Central Oferta $35->$0 -->
+            <div class="my-auto space-y-1.5 text-center">
+              <h4 class="text-[10px] font-black text-white leading-tight">
+                ¿Tienes que alejar las cosas para leerlas bien?
+              </h4>
+              <div class="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-left space-y-1">
+                <div class="flex justify-between text-[8px]">
+                  <span class="text-slate-200">Examen Computarizado:</span>
+                  <span class="text-emerald-400 font-bold">HOY: $0</span>
+                </div>
+                <div class="flex justify-between text-[8px]">
+                  <span class="text-slate-200">Mantenimiento y limpieza:</span>
+                  <span class="text-emerald-400 font-bold">HOY: $0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botón CTA WhatsApp -->
+            <div class="space-y-1 pb-1">
+              <div
+                class="w-full py-2.5 rounded-xl bg-[#25D366] text-white font-black text-center text-[9px] shadow-lg flex items-center justify-center gap-1"
+                :class="{ 'ring-2 ring-emerald-400': mode === 'zones' }"
+              >
+                <span>💬</span>
+                <span>Agendar mi cita gratis por WhatsApp</span>
+              </div>
+              <p class="text-[7px] text-slate-400 text-center">🔒 Sin compromiso de compra. No te llamaremos.</p>
+            </div>
+          </template>
+
+          <!-- ========================================================= -->
+          <!-- CASO 0.5: QUIZ 4 · LENTES Y VISTA CANSADA                  -->
+          <!-- ========================================================= -->
+          <template v-else-if="isQuiz4">
+            <div class="space-y-1 pb-1">
+              <div class="flex items-center justify-between text-[9px] font-bold text-slate-300">
+                <span class="text-emerald-400">Test de Lentes y Cansancio</span>
+                <span class="text-slate-400">Pregunta 1 de 3</span>
+              </div>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="w-1/3 h-full bg-emerald-400"></div>
+              </div>
+              <h4 class="text-[10px] font-bold text-white pt-1">¿Qué te molesta más al mirar?</h4>
+            </div>
+
+            <div class="space-y-1.5 my-auto">
+              <div
+                class="flex items-center gap-2 p-2 rounded-lg border border-slate-800 bg-slate-900/60 text-slate-300 text-[8px]"
+                :class="{ 'border-emerald-500/50 bg-emerald-950/20': mode === 'zones' }"
+              >
+                <span class="text-base">📱</span>
+                <span class="font-bold flex-1">Leer el celular o letras pequeñas</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 rounded-lg border border-slate-800 bg-slate-900/60 text-slate-300 text-[8px]">
+                <span class="text-base">🚗</span>
+                <span class="flex-1">Manejar de noche o luces de frente</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 rounded-lg border border-slate-800 bg-slate-900/60 text-slate-300 text-[8px]">
+                <span class="text-base">📺</span>
+                <span class="flex-1">Ver la televisión o enfocar de lejos</span>
+              </div>
+            </div>
+
+            <div class="pt-1">
+              <div class="w-full py-2 rounded-lg bg-emerald-600/80 text-white text-center text-[9px] font-bold shadow-md">
+                Siguiente Pregunta →
+              </div>
+            </div>
+          </template>
+
+          <!-- ========================================================= -->
           <!-- CASO 1: QUIZ 2 · VISIÓNCHECK TEST DE LETRAS (2 RONDAS)       -->
           <!-- ========================================================= -->
-          <template v-if="isQuiz2">
+          <template v-else-if="isQuiz2">
             <!-- Header VisiónCheck -->
             <div class="space-y-1.5">
               <div class="flex items-center justify-between text-[10px] font-bold text-slate-300">
@@ -297,7 +384,33 @@
           class="absolute inset-0 pointer-events-none z-30 flex justify-center"
         >
           <div class="w-full max-w-[420px] h-full relative">
-            <template v-if="isQuiz2">
+            <template v-if="isQuiz5">
+              <!-- Zonas Quiz 5 Oferta Directa -->
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-3 bg-emerald-400 text-slate-950 font-black text-[9px] font-mono px-3 py-1 rounded-full shadow-xl border border-white">
+                🔥 {{ quiz5CtaShare }}% de clics en WhatsApp
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 top-36 bg-amber-400 text-slate-950 font-black text-[8px] font-mono px-2 py-0.5 rounded shadow border border-white/60">
+                Oferta $0: {{ quiz5BenefitShare }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 top-10 bg-cyan-500/90 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Contador & Urgencia: {{ quiz5TimerShare }}%
+              </div>
+            </template>
+
+            <template v-else-if="isQuiz4">
+              <!-- Zonas Quiz 4 Lentes y Vista Cansada -->
+              <div class="absolute left-1/2 -translate-x-1/2 top-28 bg-emerald-400 text-slate-950 font-black text-[9px] font-mono px-2.5 py-0.5 rounded shadow-lg border border-white/60">
+                🔥 Celular / Lectura: {{ quiz4Opt1Share }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 top-40 bg-cyan-400 text-slate-950 font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Manejar de Noche: {{ quiz4Opt2Share }}%
+              </div>
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-2 bg-teal-500 text-white font-bold text-[8px] font-mono px-2 py-0.5 rounded shadow">
+                Avanzar: {{ quiz4NextShare }}%
+              </div>
+            </template>
+
+            <template v-else-if="isQuiz2">
               <!-- Zona Botón Sí, veo clara -->
               <div class="absolute right-4 bottom-2 bg-emerald-500/90 text-slate-950 font-black text-[9px] font-mono px-2 py-0.5 rounded shadow-lg border border-white/60">
                 🔥 {{ quiz2RightShare }}% de clics
@@ -410,6 +523,8 @@ const total = computed(() => props.points.reduce((a, p) => a + p.weight, 0))
 
 const currentBrowserPath = computed(() => {
   const p = (props.pagePath || '').toLowerCase()
+  if (p.includes('quiz5')) return '/quiz5'
+  if (p.includes('quiz4')) return '/quiz4'
   if (p.includes('quiz2')) return '/quiz2'
   if (p.includes('quiz1')) return '/quiz1'
   if (p.includes('resultado')) return '/resultado'
@@ -417,13 +532,28 @@ const currentBrowserPath = computed(() => {
   return props.pagePath || '/quiz2'
 })
 
+const isQuiz5 = computed(() => {
+  const path = currentBrowserPath.value.toLowerCase()
+  const sub = (props.subtitle || '').toLowerCase()
+  return path.includes('quiz5') || sub.includes('quiz 5') || sub.includes('oferta')
+})
+
+const isQuiz4 = computed(() => {
+  if (isQuiz5.value) return false
+  const path = currentBrowserPath.value.toLowerCase()
+  const sub = (props.subtitle || '').toLowerCase()
+  return path.includes('quiz4') || sub.includes('quiz 4') || sub.includes('lentes')
+})
+
 const isQuiz2 = computed(() => {
+  if (isQuiz5.value || isQuiz4.value) return false
   const path = currentBrowserPath.value.toLowerCase()
   const sub = (props.subtitle || '').toLowerCase()
   return path.includes('quiz2') || sub.includes('quiz 2') || sub.includes('snellen')
 })
 
 const isQuiz1 = computed(() => {
+  if (isQuiz5.value || isQuiz4.value || isQuiz2.value) return false
   const path = currentBrowserPath.value.toLowerCase()
   const sub = (props.subtitle || '').toLowerCase()
   return path.includes('quiz1') || sub.includes('quiz 1') || sub.includes('síntoma')
@@ -470,6 +600,44 @@ const thermalPoints = computed(() => {
       gradient,
     }
   })
+})
+
+// Cálculos de zonas para Quiz 5 (Oferta Directa)
+const quiz5CtaShare = computed(() => {
+  if (props.points.length === 0) return 72
+  const c = props.points.filter(p => p.y > 70 || (p.label || '').toLowerCase().includes('whatsapp') || (p.label || '').toLowerCase().includes('agendar')).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 72
+})
+
+const quiz5BenefitShare = computed(() => {
+  if (props.points.length === 0) return 20
+  const c = props.points.filter(p => (p.y >= 30 && p.y <= 60) || (p.label || '').toLowerCase().includes('gratis') || (p.label || '').toLowerCase().includes('oferta')).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 20
+})
+
+const quiz5TimerShare = computed(() => {
+  if (props.points.length === 0) return 8
+  const c = props.points.filter(p => p.y < 25 || (p.label || '').toLowerCase().includes('contador') || (p.label || '').toLowerCase().includes('urgencia')).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 8
+})
+
+// Cálculos de zonas para Quiz 4 (Lentes y Vista Cansada)
+const quiz4Opt1Share = computed(() => {
+  if (props.points.length === 0) return 55
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('celular') || (p.y >= 25 && p.y < 38)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 55
+})
+
+const quiz4Opt2Share = computed(() => {
+  if (props.points.length === 0) return 28
+  const c = props.points.filter(p => (p.label || '').toLowerCase().includes('noche') || (p.y >= 38 && p.y < 55)).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 28
+})
+
+const quiz4NextShare = computed(() => {
+  if (props.points.length === 0) return 17
+  const c = props.points.filter(p => p.y >= 75 || (p.label || '').toLowerCase().includes('siguiente')).reduce((a, b) => a + b.weight, 0)
+  return Math.round((c / Math.max(1, total.value)) * 100) || 17
 })
 
 // Cálculos de zonas para Quiz 2

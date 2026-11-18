@@ -243,9 +243,22 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const client = lead.client_id || resp.client || 'optica'
       const businessId = client === 'taller' ? 'taller' : 'optica'
       const quizName = lead.origen || resp.quiz || 'quiz3'
-      const isQuiz2Lead = quizName.includes('quiz2') || quizName.includes('visioncheck') || String(lead.id) === '593'
-      const qPagePath = isQuiz2Lead ? '/quiz2' : '/quiz1'
-      const qPageLabel = isQuiz2Lead ? 'Quiz 2 · VisiónCheck (Snellen)' : 'Quiz 1 · Chequeo Clínico'
+      const isQuiz5Lead = quizName.includes('quiz5') || quizName.includes('oferta') || quizName.includes('promo')
+      const isQuiz4Lead = !isQuiz5Lead && (quizName.includes('quiz4') || quizName.includes('lentes'))
+      const isQuiz2Lead = !isQuiz5Lead && !isQuiz4Lead && (quizName.includes('quiz2') || quizName.includes('visioncheck') || String(lead.id) === '593')
+
+      let qPagePath = '/quiz1'
+      let qPageLabel = 'Quiz 1 · Chequeo Clínico'
+      if (isQuiz5Lead) {
+        qPagePath = '/quiz5'
+        qPageLabel = 'Quiz 5 · Oferta Examen Computarizado'
+      } else if (isQuiz4Lead) {
+        qPagePath = '/quiz4'
+        qPageLabel = 'Quiz 4 · Lentes y Vista Cansada'
+      } else if (isQuiz2Lead) {
+        qPagePath = '/quiz2'
+        qPageLabel = 'Quiz 2 · VisiónCheck (Snellen)'
+      }
       const isIdentified = !!(lead.nombre && lead.nombre !== 'Visita Anónima' && lead.telefono && lead.telefono !== 'Sin registrar')
       const isLead = lead.estado !== 'Visita'
       const isBooked = lead.estado === 'Agendado' || !!lead.fecha_cita
@@ -293,7 +306,53 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
 
       // Si no hay pasos clínicos específicos en el JSON, generar los pasos según el quiz
       if (quizSteps.length === 0) {
-        if (quizName.includes('quiz2') || quizName.includes('visioncheck')) {
+        if (isQuiz5Lead) {
+          quizSteps.push({
+            question_id: 'oferta',
+            question: 'Lectura de Oferta y Beneficios',
+            step: 1,
+            viewed: true,
+            answered: true,
+            answer: 'Examen computarizado gratis + limpieza ultrasónica',
+            time_ms: 15000,
+            changed: false,
+            skipped: false,
+          })
+        } else if (isQuiz4Lead) {
+          quizSteps.push({
+            question_id: 'molestia',
+            question: '¿Qué te molesta más al mirar?',
+            step: 1,
+            viewed: true,
+            answered: true,
+            answer: resp.molestia || 'Leer el celular o letras pequeñas',
+            time_ms: 8000,
+            changed: false,
+            skipped: false,
+          })
+          quizSteps.push({
+            question_id: 'tiempo',
+            question: '¿Hace cuánto no te examinas la vista?',
+            step: 2,
+            viewed: true,
+            answered: true,
+            answer: resp.tiempo || 'Más de 1 año',
+            time_ms: 7000,
+            changed: false,
+            skipped: false,
+          })
+          quizSteps.push({
+            question_id: 'necesidad',
+            question: '¿Para qué necesitas más ver bien?',
+            step: 3,
+            viewed: true,
+            answered: true,
+            answer: resp.necesidad || 'Leer y ver el celular sin cansancio',
+            time_ms: 9000,
+            changed: false,
+            skipped: false,
+          })
+        } else if (quizName.includes('quiz2') || quizName.includes('visioncheck')) {
           quizSteps.push({
             question_id: 'score',
             question: 'Prueba de Agudeza Visual (Letras Snellen)',
@@ -486,7 +545,7 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           ts: new Date(tBase).toISOString(),
           type: 'visita',
           page: qPagePath,
-          label: isQuiz2Lead ? 'Ingreso a Quiz 2 · VisiónCheck' : 'Ingreso a Quiz 1 · Chequeo Visual',
+          label: isQuiz5Lead ? 'Ingreso a Quiz 5 · Oferta Examen' : isQuiz4Lead ? 'Ingreso a Quiz 4 · Lentes y Vista Cansada' : isQuiz2Lead ? 'Ingreso a Quiz 2 · VisiónCheck' : 'Ingreso a Quiz 1 · Chequeo Visual',
           metadata: { device: devType, source, city },
         })
       }
@@ -502,13 +561,206 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
           ts: new Date(tBase + 1500).toISOString(),
           type: 'scroll',
           page: qPagePath,
-          label: 'Lectura de instrucciones y optotipo',
+          label: isQuiz5Lead ? 'Lectura de urgencia y reloj contador' : isQuiz4Lead ? 'Lectura de pregunta 1 de lentes' : 'Lectura de instrucciones y optotipo',
           metadata: { scroll: 25 },
         })
       }
 
       // 3. Flujo interactivo según Quiz
-      if (isQuiz2Lead) {
+      if (isQuiz5Lead) {
+        // QUIZ 5: Página de venta directa con oferta y cuenta regresiva
+        const evScrollTimerId = Number(lead.id) * 100 + 4
+        if (!eventMap.has(evScrollTimerId)) {
+          eventMap.set(evScrollTimerId, {
+            id: evScrollTimerId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 3000).toISOString(),
+            type: 'scroll',
+            page: qPagePath,
+            label: 'Lectura de urgencia: Contador 3 días y solo 4 cupos hoy',
+            metadata: { scroll: 20, x: 50 + devXOffset, y: 15 + devYOffset },
+          })
+        }
+
+        const evBenefitId = Number(lead.id) * 100 + 12
+        if (!eventMap.has(evBenefitId)) {
+          eventMap.set(evBenefitId, {
+            id: evBenefitId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 7500).toISOString(),
+            type: 'click',
+            page: qPagePath,
+            label: 'Interés en reciprocidad: Examen $35 -> $0 Gratis + Mantenimiento',
+            metadata: { x: 50 + devXOffset, y: 38 + devYOffset },
+          })
+        }
+
+        const evTestimId = Number(lead.id) * 100 + 20
+        if (!eventMap.has(evTestimId)) {
+          eventMap.set(evTestimId, {
+            id: evTestimId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 13000).toISOString(),
+            type: 'scroll',
+            page: qPagePath,
+            label: 'Lectura de autoridad de 16 años y testimonios de pacientes',
+            metadata: { scroll: 75, x: 50 + devXOffset, y: 70 + devYOffset },
+          })
+        }
+
+        if (isBooked) {
+          const evAgendarId = Number(lead.id) * 100 + 71
+          if (!eventMap.has(evAgendarId)) {
+            eventMap.set(evAgendarId, {
+              id: evAgendarId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 22000).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: 'Botón: Agendar mi cita gratis por WhatsApp',
+              metadata: { x: 50 + devXOffset, y: 88 + devYOffset, turno: resp.turno || 'manana' },
+            })
+          }
+        } else {
+          const evExitSaleId = Number(lead.id) * 100 + 72
+          if (!eventMap.has(evExitSaleId)) {
+            eventMap.set(evExitSaleId, {
+              id: evExitSaleId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 26000).toISOString(),
+              type: 'exit',
+              page: qPagePath,
+              label: 'Abandono en página de venta sin abrir WhatsApp',
+              metadata: { x: 50 + devXOffset, y: 80 + devYOffset },
+            })
+          }
+        }
+      } else if (isQuiz4Lead) {
+        // QUIZ 4: Lentes y Vista Cansada (3 preguntas concisas + resultado parcial)
+        const molestiaAns = resp.molestia || 'Leer el celular o letras pequeñas'
+        const evMolestiaId = Number(lead.id) * 100 + 10
+        if (!eventMap.has(evMolestiaId)) {
+          eventMap.set(evMolestiaId, {
+            id: evMolestiaId,
+            business_id: businessId,
+            session_id: sid,
+            visitor_id: vid,
+            ts: new Date(tBase + 4500).toISOString(),
+            type: 'click',
+            page: qPagePath,
+            label: `Paso 1: Molestia al mirar (${molestiaAns})`,
+            metadata: { x: 50 + devXOffset, y: 35 + devYOffset, step: 1, answer: molestiaAns },
+          })
+        }
+
+        if (lead.estado !== 'Paso 1') {
+          const tiempoAns = resp.tiempo || 'Más de 1 año'
+          const evTiempoId = Number(lead.id) * 100 + 20
+          if (!eventMap.has(evTiempoId)) {
+            eventMap.set(evTiempoId, {
+              id: evTiempoId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 9500).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: `Paso 2: Último examen (${tiempoAns})`,
+              metadata: { x: 50 + devXOffset, y: 48 + devYOffset, step: 2, answer: tiempoAns },
+            })
+          }
+
+          const necesidadAns = resp.necesidad || 'Leer y ver el celular'
+          const evNecesidadId = Number(lead.id) * 100 + 30
+          if (!eventMap.has(evNecesidadId)) {
+            eventMap.set(evNecesidadId, {
+              id: evNecesidadId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 14500).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: `Paso 3: Necesidad prioritaria (${necesidadAns})`,
+              metadata: { x: 50 + devXOffset, y: 55 + devYOffset, step: 3, answer: necesidadAns },
+            })
+          }
+
+          if (lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || lead.resultado) {
+            const evCompleteId = Number(lead.id) * 100 + 70
+            if (!eventMap.has(evCompleteId)) {
+              eventMap.set(evCompleteId, {
+                id: evCompleteId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 19000).toISOString(),
+                type: 'quiz_complete',
+                page: '/resultado',
+                label: 'Diagnóstico: Señales de vista cansada detectadas',
+                metadata: { step: 4 },
+              })
+            }
+
+            const evCardTapId = Number(lead.id) * 100 + 69
+            if (!eventMap.has(evCardTapId)) {
+              eventMap.set(evCardTapId, {
+                id: evCardTapId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 22000).toISOString(),
+                type: 'click',
+                page: '/resultado',
+                label: 'Lectura de recomendación: Filtro antifatiga + antirreflejo',
+                metadata: { x: 50 + devXOffset, y: 42 + devYOffset },
+              })
+            }
+
+            if (isBooked) {
+              const evAgendarId = Number(lead.id) * 100 + 71
+              if (!eventMap.has(evAgendarId)) {
+                eventMap.set(evAgendarId, {
+                  id: evAgendarId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 27000).toISOString(),
+                  type: 'click',
+                  page: '/resultado',
+                  label: 'Botón: Agendar mi evaluación gratis por WhatsApp',
+                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset, turno: resp.turno || 'manana' },
+                })
+              }
+            } else {
+              const evExitResultId = Number(lead.id) * 100 + 72
+              if (!eventMap.has(evExitResultId)) {
+                eventMap.set(evExitResultId, {
+                  id: evExitResultId,
+                  business_id: businessId,
+                  session_id: sid,
+                  visitor_id: vid,
+                  ts: new Date(tBase + 31000).toISOString(),
+                  type: 'exit',
+                  page: '/resultado',
+                  label: 'Abandono en resultado de lentes sin abrir WhatsApp',
+                  metadata: { x: 50 + devXOffset, y: 65 + devYOffset },
+                })
+              }
+            }
+          }
+        }
+      } else if (isQuiz2Lead) {
         if (lead.estado === 'Visita') {
           // Abandono sin responder
           const evAbandonId = Number(lead.id) * 100 + 5
@@ -1026,28 +1278,34 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
     const q2Booked = sessions.filter(s => s.landing_page.includes('quiz2') && s.booked).length
     const q3Visitors = sessions.filter(s => s.landing_page.includes('quiz3') || s.landing_page.includes('luz')).length
     const q3Booked = sessions.filter(s => (s.landing_page.includes('quiz3') || s.landing_page.includes('luz')) && s.booked).length
+    const q4Visitors = sessions.filter(s => s.landing_page.includes('quiz4') || s.landing_page.includes('lentes')).length
+    const q4Booked = sessions.filter(s => (s.landing_page.includes('quiz4') || s.landing_page.includes('lentes')) && s.booked).length
+    const q5Visitors = sessions.filter(s => s.landing_page.includes('quiz5') || s.landing_page.includes('oferta')).length
+    const q5Booked = sessions.filter(s => (s.landing_page.includes('quiz5') || s.landing_page.includes('oferta')) && s.booked).length
 
     base.experiments = [
       {
         id: 'exp_quiz_versions',
         business_id: 'optica',
-        name: 'Quiz 1 (General) vs Quiz 2 (VisiónCheck) vs Quiz 3 (Fatiga Digital)',
-        hypothesis: 'El nuevo Quiz 3 de fatiga por luz azul genera mayor tasa de agendamiento gracias a un gancho publicitario más específico.',
-        element: 'Copy inicial y diagnóstico de fatiga visual',
+        name: 'Comparativa de Conversión a Citas WhatsApp (Quiz 1 - 5)',
+        hypothesis: 'Las páginas orientadas a mayores de 50 años (Quiz 4 Lentes y Quiz 5 Oferta Directa) reducen la fricción cognitiva y aumentan la tasa de mensajes por WhatsApp.',
+        element: 'Copy persuasivo, selector de turno táctil y eliminación de fricción',
         variants: [
-          { name: 'Quiz 1 · Chequeo General', visitors: q1Visitors, conversions: q1Booked },
-          { name: 'Quiz 2 · VisiónCheck', visitors: q2Visitors, conversions: q2Booked },
-          { name: 'Quiz 3 · Luz Azul / Fatiga', visitors: q3Visitors, conversions: q3Booked },
+          { name: 'Quiz 1 · Chequeo Clínico', visitors: q1Visitors, conversions: q1Booked },
+          { name: 'Quiz 2 · VisiónCheck (Snellen)', visitors: q2Visitors, conversions: q2Booked },
+          { name: 'Quiz 3 · Fatiga Pantallas', visitors: q3Visitors, conversions: q3Booked },
+          { name: 'Quiz 4 · Lentes y Vista Cansada', visitors: q4Visitors, conversions: q4Booked },
+          { name: 'Quiz 5 · Oferta Examen Gratis', visitors: q5Visitors, conversions: q5Booked },
         ],
         metric: 'Tasa de agendamiento (Booking Rate)',
         started_on: new Date(Date.now() - 5 * 86_400_000).toISOString(),
         ended_on: undefined,
         status: 'en_curso',
-        result: (q1Visitors + q2Visitors + q3Visitors) > 0
-          ? `Q1: ${((q1Booked / Math.max(1, q1Visitors)) * 100).toFixed(1)}% · Q2: ${((q2Booked / Math.max(1, q2Visitors)) * 100).toFixed(1)}% · Q3: ${((q3Booked / Math.max(1, q3Visitors)) * 100).toFixed(1)}%`
+        result: (q1Visitors + q2Visitors + q4Visitors + q5Visitors) > 0
+          ? `Q1: ${((q1Booked / Math.max(1, q1Visitors)) * 100).toFixed(1)}% · Q2: ${((q2Booked / Math.max(1, q2Visitors)) * 100).toFixed(1)}% · Q4: ${((q4Booked / Math.max(1, q4Visitors)) * 100).toFixed(1)}% · Q5: ${((q5Booked / Math.max(1, q5Visitors)) * 100).toFixed(1)}%`
           : 'Esperando interacción del usuario',
-        confidence: (q1Visitors + q2Visitors + q3Visitors) >= 5 ? 95 : (q1Visitors + q2Visitors + q3Visitors) > 0 ? 80 : 0,
-        decision: q3Booked > q1Booked && q3Booked > q2Booked ? 'implementar' : 'sin_decision',
+        confidence: (q1Visitors + q2Visitors + q4Visitors + q5Visitors) >= 5 ? 95 : (q1Visitors + q2Visitors + q4Visitors + q5Visitors) > 0 ? 80 : 0,
+        decision: (q5Booked > q1Booked || q4Booked > q1Booked) ? 'implementar' : 'sin_decision',
       },
     ]
 
@@ -1069,6 +1327,11 @@ function formatQuestionLabel(key: string): string {
   switch (key) {
     case 'sintomas': return '¿Cuál es tu molestia principal en los ojos?'
     case 'score': return 'Prueba de Agudeza Visual (Letras Snellen)'
+    case 'molestia': return '¿Qué te molesta más al mirar?'
+    case 'tiempo': return '¿Hace cuánto no te examinas la vista?'
+    case 'necesidad': return '¿Para qué necesitas más ver bien?'
+    case 'turno': return 'Turno preferido para cita'
+    case 'oferta': return 'Lectura de Oferta y Beneficios'
     case 'horas_pantalla': return '¿Cuántas horas al día pasas frente a pantallas?'
     case 'dispositivo_frecuente': return '¿Qué dispositivo usas la mayor parte del tiempo?'
     case 'molestia_principal': return '¿Qué molestia es más frecuente al final de tu jornada?'

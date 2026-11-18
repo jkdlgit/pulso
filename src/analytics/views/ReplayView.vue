@@ -81,7 +81,7 @@
                 <span>{{ currentBrowserUrl }}</span>
               </div>
               <span class="text-[8px] font-mono text-slate-500 uppercase tracking-wider hidden sm:inline">
-                {{ isQuiz2 ? 'VISIÓNCHECK 2.0' : 'VISIOCONTROL QUIZ 1' }}
+                {{ isQuiz5 ? 'OFERTA DIRECTA (QUIZ 5)' : isQuiz4 ? 'LENTES Y FATIGA (QUIZ 4)' : (isQuiz2 ? 'VISIÓNCHECK 2.0 (QUIZ 2)' : 'VISIOCONTROL (QUIZ 1)') }}
               </span>
             </div>
 
@@ -95,18 +95,242 @@
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse"></span>
                     <span class="font-tech text-[11px] font-bold text-slate-800 uppercase tracking-wider">
-                      {{ isQuiz2 ? 'Quiz 2 · VisiónCheck Agudeza Visual' : 'Quiz 1 · Chequeo Síntomas y Visión' }}
+                      {{ isQuiz5 ? 'Quiz 5 · Oferta Examen Computarizado' : isQuiz4 ? 'Quiz 4 · Lentes y Vista Cansada' : (isQuiz2 ? 'Quiz 2 · VisiónCheck Agudeza Visual' : 'Quiz 1 · Chequeo Síntomas y Visión') }}
                     </span>
                   </div>
                   <span class="text-[9px] font-mono font-bold text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200/60">
-                    {{ isResultStage ? 'RESULTADOS CRO' : (isQuiz2 ? `RONDA ${quiz2CurrentRound} DE 2` : `PASO ${quiz1CurrentStep} DE 3`) }}
+                    {{ isQuiz5 ? 'OFERTA DIRECTA' : (isResultStage ? 'RESULTADOS CRO' : (isQuiz4 ? `PASO ${quiz4CurrentStep} DE 3` : (isQuiz2 ? `RONDA ${quiz2CurrentRound} DE 2` : `PASO ${quiz1CurrentStep} DE 3`))) }}
                   </span>
                 </div>
 
                 <!-- ========================================== -->
+                <!-- CASO 0: QUIZ 5 (OFERTA DIRECTA - LANDING)  -->
+                <!-- ========================================== -->
+                <template v-if="isQuiz5">
+                  <div class="space-y-3 py-1">
+                    <!-- Banner de Urgencia & Contador -->
+                    <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-2.5 shadow-md border border-slate-700 text-center">
+                      <div class="flex items-center justify-center gap-1.5 text-[9px] font-bold text-amber-300 mb-1">
+                        <span>⏳</span>
+                        <span class="uppercase tracking-wider">Cortesía por tiempo limitado</span>
+                      </div>
+                      <div class="grid grid-cols-4 gap-1.5 max-w-[220px] mx-auto text-center font-mono">
+                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
+                          <span class="text-xs font-black block leading-none">02</span>
+                          <span class="text-[7px] text-slate-400 uppercase">Días</span>
+                        </div>
+                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
+                          <span class="text-xs font-black block leading-none">14</span>
+                          <span class="text-[7px] text-slate-400 uppercase">Horas</span>
+                        </div>
+                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
+                          <span class="text-xs font-black block leading-none">35</span>
+                          <span class="text-[7px] text-slate-400 uppercase">Min</span>
+                        </div>
+                        <div class="bg-slate-950/80 rounded-lg p-1 border border-slate-700">
+                          <span class="text-xs font-black text-amber-400 block leading-none">50</span>
+                          <span class="text-[7px] text-slate-400 uppercase">Seg</span>
+                        </div>
+                      </div>
+                      <div class="mt-1.5 text-[8px] text-amber-200 font-medium flex items-center justify-center gap-1">
+                        <span>⚠️</span>
+                        <span>Agenda limitada: Solo 4 cupos hoy en Guayaquil</span>
+                      </div>
+                    </div>
+
+                    <!-- Título Mental 'SÍ' -->
+                    <div class="text-center space-y-1">
+                      <h4 class="text-sm font-black text-slate-900 leading-tight">
+                        ¿Sientes que tienes que alejar las cosas para leerlas bien?
+                      </h4>
+                      <p class="text-[10px] text-slate-600 leading-relaxed">
+                        Recupera la nitidez de tu vista sin pagar nada por tu examen computarizado en Guayaquil.
+                      </p>
+                    </div>
+
+                    <!-- Reciprocidad Precios $35->$0 -->
+                    <div class="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 text-left space-y-1.5">
+                      <span class="text-[8px] font-black uppercase text-emerald-950 block">Lo que recibes gratis hoy:</span>
+                      <div class="flex items-center justify-between text-[9px] border-b border-emerald-200 pb-1">
+                        <span class="font-bold text-slate-800">1. Examen Computarizado</span>
+                        <div><span class="line-through text-slate-400 text-[8px] mr-1">$35.00</span><strong class="text-emerald-700">HOY: $0</strong></div>
+                      </div>
+                      <div class="flex items-center justify-between text-[9px]">
+                        <span class="font-bold text-slate-800">2. Mantenimiento y limpieza</span>
+                        <div><span class="line-through text-slate-400 text-[8px] mr-1">$15.00</span><strong class="text-emerald-700">HOY: $0</strong></div>
+                      </div>
+                    </div>
+
+                    <!-- Selector de Turno -->
+                    <div class="grid grid-cols-2 gap-2 text-left">
+                      <div
+                        class="p-2 rounded-xl border-2 text-center transition-all cursor-pointer"
+                        :class="bookedTurno === 'manana'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
+                          : 'bg-white border-slate-200 text-slate-600'"
+                      >
+                        <span class="text-sm block">🌅</span>
+                        <span class="text-xs font-bold block">Mañana</span>
+                        <span class="text-[9px] text-slate-500">10:30 a 12:30</span>
+                      </div>
+                      <div
+                        class="p-2 rounded-xl border-2 text-center transition-all cursor-pointer"
+                        :class="bookedTurno === 'tarde'
+                          ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
+                          : 'bg-white border-slate-200 text-slate-600'"
+                      >
+                        <span class="text-sm block">🌙</span>
+                        <span class="text-xs font-bold block">Tarde</span>
+                        <span class="text-[9px] text-slate-500">15:30 a 18:00</span>
+                      </div>
+                    </div>
+
+                    <!-- Botón Principal WhatsApp -->
+                    <button
+                      class="w-full bg-[#25D366] text-white font-black py-2.5 px-3 rounded-xl shadow-lg flex items-center justify-center gap-1.5 text-xs min-h-[46px]"
+                      :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('WhatsApp') || currentEvent?.label?.includes('Agendar') }"
+                    >
+                      <span class="text-base">💬</span>
+                      <span>Agendar mi cita gratis por WhatsApp</span>
+                    </button>
+
+                    <p class="text-[8px] text-slate-500 text-center">
+                      🔒 Sin compromiso de compra. No te llamaremos por teléfono.
+                    </p>
+                  </div>
+                </template>
+
+                <!-- ========================================== -->
+                <!-- CASO 0.5: QUIZ 4 (LENTES Y VISTA CANSADA)  -->
+                <!-- ========================================== -->
+                <template v-else-if="isQuiz4">
+                  <!-- Pantalla de Resultados de Quiz 4 -->
+                  <div v-if="isResultStage" class="text-center py-2 space-y-3">
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-1 bg-emerald-100 text-emerald-800 text-2xl shadow-sm">
+                      👓
+                    </div>
+
+                    <h4 class="text-lg font-black text-slate-900 tracking-tight leading-tight">
+                      Tus respuestas muestran señales de vista cansada.
+                    </h4>
+
+                    <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left space-y-1">
+                      <p class="text-xs text-slate-800 leading-snug">
+                        Te recomendamos <strong>lentes con filtro antifatiga y antirreflejo</strong> para eliminar el cansancio al leer.
+                      </p>
+                      <p class="text-[10px] text-emerald-800 font-semibold">
+                        🎁 Beneficio: Evaluación visual gratis + descuento preferencial en lunas.
+                      </p>
+                    </div>
+
+                    <!-- Selector de Turno -->
+                    <div class="grid grid-cols-2 gap-2 text-left pt-1">
+                      <div
+                        class="p-2 rounded-xl border-2 text-center"
+                        :class="bookedTurno === 'manana'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-2 ring-emerald-300'
+                          : 'bg-white border-slate-200 text-slate-600'"
+                      >
+                        <span class="text-sm block">🌅</span>
+                        <span class="text-xs font-bold block">Mañana</span>
+                        <span class="text-[9px] text-slate-500">10:30 a 12:30</span>
+                      </div>
+                      <div
+                        class="p-2 rounded-xl border-2 text-center"
+                        :class="bookedTurno === 'tarde'
+                          ? 'bg-violet-50 border-violet-500 text-violet-950 font-bold ring-2 ring-violet-300'
+                          : 'bg-white border-slate-200 text-slate-600'"
+                      >
+                        <span class="text-sm block">🌙</span>
+                        <span class="text-xs font-bold block">Tarde</span>
+                        <span class="text-[9px] text-slate-500">15:30 a 18:00</span>
+                      </div>
+                    </div>
+
+                    <!-- Botón CTA WhatsApp -->
+                    <button
+                      class="w-full bg-[#25D366] text-white font-black py-2.5 px-3 rounded-xl shadow-lg flex items-center justify-center gap-1.5 text-xs min-h-[46px]"
+                      :class="{ 'ring-4 ring-emerald-300 scale-95': currentEvent?.label?.includes('WhatsApp') || currentEvent?.label?.includes('evaluación') }"
+                    >
+                      <span class="text-base">💬</span>
+                      <span>Agendar mi evaluación gratis por WhatsApp</span>
+                    </button>
+
+                    <p class="text-[8px] text-slate-500 text-center">
+                      Sin compromiso. Te respondemos en minutos.
+                    </p>
+                  </div>
+
+                  <!-- Pantalla de Preguntas Quiz 4 (3 pasos) -->
+                  <div v-else class="flex flex-col h-full">
+                    <!-- Progress bar -->
+                    <div class="w-full mb-3">
+                      <div class="flex justify-between items-center mb-1 text-xs font-semibold">
+                        <span class="text-slate-800 font-bold">Pregunta {{ quiz4CurrentStep }} de 3</span>
+                        <span class="text-emerald-700 font-bold">{{ quiz4Percent }}%</span>
+                      </div>
+                      <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full bg-emerald-500 transition-all duration-300" :style="{ width: `${quiz4Percent}%` }"></div>
+                      </div>
+                    </div>
+
+                    <!-- Paso 1 -->
+                    <div v-if="quiz4CurrentStep === 1">
+                      <h3 class="text-sm font-bold text-slate-900 mb-0.5">1. ¿Qué te molesta más al mirar?</h3>
+                      <p class="text-[10px] text-slate-500 mb-2.5">Selecciona tu molestia más frecuente</p>
+                      <div class="space-y-1.5">
+                        <div
+                          v-for="opt in quiz4MolestiaOptions"
+                          :key="opt.id"
+                          class="flex items-center gap-2.5 p-2 rounded-xl border-2 transition-all cursor-pointer"
+                          :class="opt.isSelected ? 'bg-emerald-50 border-emerald-500 text-slate-900 font-bold' : 'bg-white border-slate-200 text-slate-700'"
+                        >
+                          <span class="text-xl flex-shrink-0">{{ opt.icon }}</span>
+                          <span class="flex-1 text-xs text-left">{{ opt.label }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Paso 2 -->
+                    <div v-else-if="quiz4CurrentStep === 2">
+                      <h3 class="text-sm font-bold text-slate-900 mb-0.5">2. ¿Hace cuánto no te examinas la vista?</h3>
+                      <p class="text-[10px] text-slate-500 mb-2.5">Tiempo transcurrido desde tu último control</p>
+                      <div class="space-y-1.5">
+                        <div
+                          v-for="opt in quiz4TiempoOptions"
+                          :key="opt.id"
+                          class="flex items-center gap-2.5 p-2 rounded-xl border-2 transition-all cursor-pointer"
+                          :class="opt.isSelected ? 'bg-emerald-50 border-emerald-500 text-slate-900 font-bold' : 'bg-white border-slate-200 text-slate-700'"
+                        >
+                          <span class="text-xl flex-shrink-0">{{ opt.icon }}</span>
+                          <span class="flex-1 text-xs text-left">{{ opt.label }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Paso 3 -->
+                    <div v-else>
+                      <h3 class="text-sm font-bold text-slate-900 mb-0.5">3. ¿Para qué necesitas más ver bien?</h3>
+                      <p class="text-[10px] text-slate-500 mb-2.5">Prioridad diaria de enfoque visual</p>
+                      <div class="space-y-1.5">
+                        <div
+                          v-for="opt in quiz4NecesidadOptions"
+                          :key="opt.id"
+                          class="flex items-center gap-2.5 p-2 rounded-xl border-2 transition-all cursor-pointer"
+                          :class="opt.isSelected ? 'bg-emerald-50 border-emerald-500 text-slate-900 font-bold' : 'bg-white border-slate-200 text-slate-700'"
+                        >
+                          <span class="text-xl flex-shrink-0">{{ opt.icon }}</span>
+                          <span class="flex-1 text-xs text-left">{{ opt.label }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- ========================================== -->
                 <!-- CASO 1: QUIZ 2 (VISIÓNCHECK - VCPRUEBA 1:1) -->
                 <!-- ========================================== -->
-                <template v-if="isQuiz2">
+                <template v-else-if="isQuiz2">
                   <!-- Pantalla de Resultados de VisiónCheck (VCResultado.vue CRO — Senior Friendly) -->
                   <div v-if="isResultStage" class="text-center py-2 space-y-3">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-1 bg-slate-100 text-slate-800 text-2xl shadow-sm">
@@ -678,7 +902,23 @@ const scrollDepth = computed(() => {
   return Math.min(100, Math.round((index.value / Math.max(1, frames.value.length)) * 100))
 })
 
+const isQuiz5 = computed(() => {
+  const lp = (session.value?.landing_page || '').toLowerCase()
+  const orig = (session.value?.source || '').toLowerCase()
+  const p = (currentPage.value || '').toLowerCase()
+  return lp.includes('quiz5') || lp.includes('oferta') || orig.includes('quiz5') || p.includes('quiz5')
+})
+
+const isQuiz4 = computed(() => {
+  if (isQuiz5.value) return false
+  const lp = (session.value?.landing_page || '').toLowerCase()
+  const orig = (session.value?.source || '').toLowerCase()
+  const p = (currentPage.value || '').toLowerCase()
+  return lp.includes('quiz4') || lp.includes('lentes') || orig.includes('quiz4') || p.includes('quiz4')
+})
+
 const isQuiz2 = computed(() => {
+  if (isQuiz5.value || isQuiz4.value) return false
   const lp = (session.value?.landing_page || '').toLowerCase()
   const orig = (session.value?.source || '').toLowerCase()
   return lp.includes('quiz2') || lp.includes('visioncheck') || orig.includes('quiz2')
@@ -704,9 +944,60 @@ const isResultStage = computed(() => {
 
 const currentBrowserUrl = computed(() => {
   const base = 'https://opticajohanna.ec'
+  if (isQuiz5.value) return `${base}/quiz5`
+  if (isQuiz4.value) {
+    if (isResultStage.value) return `${base}/resultado`
+    return `${base}/quiz4`
+  }
   const path = isQuiz2.value ? '/quiz2' : '/quiz1'
   if (isResultStage.value) return `${base}/resultado`
   return `${base}${path}`
+})
+
+// Quiz 4: Lentes y Vista Cansada
+const quiz4CurrentStep = computed(() => {
+  if (!isQuiz4.value) return 1
+  const evStep = currentEvent.value?.metadata?.step
+  if (typeof evStep === 'number' && evStep >= 1 && evStep <= 3) return evStep
+  const ratio = frames.value.length > 0 ? index.value / frames.value.length : 0
+  if (ratio < 0.35) return 1
+  if (ratio < 0.7) return 2
+  return 3
+})
+
+const quiz4Percent = computed(() => {
+  const s = quiz4CurrentStep.value
+  return s === 1 ? 33 : s === 2 ? 66 : 100
+})
+
+const quiz4MolestiaOptions = computed(() => {
+  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'molestia')?.answer || '').toLowerCase()
+  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  return [
+    { id: 'celular', label: 'Leer el celular o letras pequeñas', icon: '📱', isSelected: clicked.includes('celular') || ans.includes('celular') || true },
+    { id: 'noche', label: 'Manejar de noche o luces de frente', icon: '🚗', isSelected: clicked.includes('noche') || ans.includes('noche') },
+    { id: 'television', label: 'Ver la televisión o enfocar de lejos', icon: '📺', isSelected: clicked.includes('television') || ans.includes('television') },
+  ]
+})
+
+const quiz4TiempoOptions = computed(() => {
+  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'tiempo')?.answer || '').toLowerCase()
+  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  return [
+    { id: 'menos_1', label: 'Menos de 1 año', icon: '🗓️', isSelected: clicked.includes('menos') || ans.includes('menos') },
+    { id: 'mas_1', label: 'Más de 1 año', icon: '⏳', isSelected: clicked.includes('más') || clicked.includes('mas') || ans.includes('mas') || true },
+    { id: 'no_recuerdo', label: 'No recuerdo o nunca me he examinado', icon: '❓', isSelected: clicked.includes('recuerdo') || ans.includes('recuerdo') },
+  ]
+})
+
+const quiz4NecesidadOptions = computed(() => {
+  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'necesidad')?.answer || '').toLowerCase()
+  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  return [
+    { id: 'leer', label: 'Leer y ver el celular sin cansancio', icon: '📖', isSelected: clicked.includes('leer') || ans.includes('leer') || true },
+    { id: 'trabajar', label: 'Trabajar y actividades del día', icon: '💼', isSelected: clicked.includes('trabajar') || ans.includes('trabajar') },
+    { id: 'manejar', label: 'Manejar y salir a la calle con seguridad', icon: '🚘', isSelected: clicked.includes('manejar') || ans.includes('manejar') },
+  ]
 })
 
 // Letras reducidas del nuevo test de 2 rondas de Quiz 2
@@ -850,7 +1141,9 @@ const dwellTimeSeconds = computed(() => {
 
 const exitStageName = computed(() => {
   if (session.value?.booked) return 'Pantalla Final / Cita Agendada en WhatsApp'
+  if (isQuiz5.value) return 'Página de Venta Directa (/quiz5)'
   if (session.value?.quiz_completed || isResultStage.value) return 'Pantalla de Resultados (/resultado)'
+  if (isQuiz4.value) return `Pregunta ${quiz4CurrentStep.value}/3 de Test de Lentes`
   if (isQuiz2.value) return `Ronda ${quiz2CurrentRound.value}/2 de Agudeza Snellen`
   return `Paso ${quiz1CurrentStep.value} de 3 del Chequeo Clínico`
 })
@@ -859,7 +1152,16 @@ const forensicRootCause = computed(() => {
   const s = session.value
   if (!s) return ''
   if (s.booked) {
-    return 'Conversión Exitosa: El usuario completó la evaluación y envió su resultado por WhatsApp para apartar su turno en Óptica Johanna Matriz Guayaquil.'
+    return 'Conversión Exitosa: El usuario completó la interacción y envió su consulta por WhatsApp para apartar su turno en Óptica Johanna Matriz Guayaquil.'
+  }
+  if (isQuiz5.value) {
+    return `Evaluación de Oferta Directa (Quiz 5): El usuario analizó la cuenta regresiva y la comparativa de precio ($35 -> $0 Gratis). Permaneció ${dwellTimeSeconds.value}s antes de salir. Con los botones repetidos en WhatsApp y el micro-selector de turno, el agendamiento es inmediato sin fricción de formularios.`
+  }
+  if (isQuiz4.value) {
+    if (s.quiz_completed || isResultStage.value) {
+      return `Diagnóstico Parcial de Vista Cansada: El paciente completó las 3 preguntas de fatiga y lectura. Leyó la recomendación de filtro antifatiga durante ${dwellTimeSeconds.value}s. Con el micro-selector táctil de turno (Mañana/Tarde) y WhatsApp directo, la pérdida entre lead y cita se reduce drásticamente.`
+    }
+    return `Abandono en Pregunta ${quiz4CurrentStep.value} de 3: El usuario salió a los ${dwellTimeSeconds.value}s mientras contestaba las opciones. Recomendado mantener tipografía grande (>18px) y botones táctiles amplios.`
   }
   if (s.quiz_completed) {
     if (isQuiz2.value) {

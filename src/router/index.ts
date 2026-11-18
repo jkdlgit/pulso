@@ -40,6 +40,8 @@ const router = createRouter({
     { path: '/quiz1', name: 'quiz1-general', component: () => import('../views/QuizGeneralView.vue') },
     { path: '/quiz2', name: 'quiz2-visioncheck', component: () => import('../views/QuizVisionCheckView.vue') },
     { path: '/quiz3', name: 'quiz3-fatiga', component: () => import('../views/QuizFatigaView.vue') },
+    { path: '/quiz4', name: 'quiz4-lentes', component: () => import('../views/QuizLentesView.vue') },
+    { path: '/quiz5', name: 'quiz5-oferta', component: () => import('../views/QuizOfertaView.vue') },
 
     // Compatibilidad con la app Pulso original
     { path: '/site/:siteKey', name: 'legacy-dashboard', component: () => import('../views/DashboardView.vue') },

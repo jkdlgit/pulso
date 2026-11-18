@@ -154,6 +154,8 @@ function matchesPage(eventPage: string, targetPage: string): boolean {
   if (eventPage === targetPage) return true
   const ep = eventPage.toLowerCase().replace(/^\//, '')
   const tp = targetPage.toLowerCase().replace(/^\//, '')
+  if (ep.includes('quiz5') && tp.includes('quiz5')) return true
+  if (ep.includes('quiz4') && tp.includes('quiz4')) return true
   if (ep.includes('quiz2') && tp.includes('quiz2')) return true
   if (ep.includes('quiz1') && tp.includes('quiz1')) return true
   if (ep.includes('resultado') && tp.includes('resultado')) return true
@@ -164,7 +166,9 @@ function matchesPage(eventPage: string, targetPage: string): boolean {
 const pages = computed(() => {
   const list = pathStats(filtered.value).map(p => {
     let lbl = p.label
-    if (p.path.includes('quiz2')) lbl = 'Quiz 2 · VisiónCheck (Snellen)'
+    if (p.path.includes('quiz5')) lbl = 'Quiz 5 · Oferta Examen Computarizado'
+    else if (p.path.includes('quiz4')) lbl = 'Quiz 4 · Lentes y Vista Cansada'
+    else if (p.path.includes('quiz2')) lbl = 'Quiz 2 · VisiónCheck (Snellen)'
     else if (p.path.includes('quiz1')) lbl = 'Quiz 1 · Chequeo Clínico'
     else if (p.path.includes('resultado')) lbl = 'Pantalla de Resultados'
     else if (p.path.includes('agendar')) lbl = 'Agendar Cita (WhatsApp)'
@@ -172,6 +176,8 @@ const pages = computed(() => {
   })
 
   // Garantizar presencia de las páginas clave del funnel
+  if (!list.some(p => p.path.includes('quiz5'))) list.unshift({ path: '/quiz5', label: 'Quiz 5 · Oferta Examen Computarizado' })
+  if (!list.some(p => p.path.includes('quiz4'))) list.unshift({ path: '/quiz4', label: 'Quiz 4 · Lentes y Vista Cansada' })
   if (!list.some(p => p.path.includes('quiz2'))) list.unshift({ path: '/quiz2', label: 'Quiz 2 · VisiónCheck (Snellen)' })
   if (!list.some(p => p.path.includes('quiz1'))) list.push({ path: '/quiz1', label: 'Quiz 1 · Chequeo Clínico' })
   if (!list.some(p => p.path.includes('resultado'))) list.push({ path: '/resultado', label: 'Pantalla de Resultados' })
