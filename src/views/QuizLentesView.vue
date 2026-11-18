@@ -120,59 +120,8 @@
             </p>
           </div>
 
-          <!-- 6) Beneficios en Guayaquil & 7) Regalo (Estuche + Gafas de Sol) -->
-          <div class="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
-            <div class="flex items-center gap-2.5 border-b border-emerald-200/80 pb-2.5">
-              <span class="text-3xl">🎁</span>
-              <h3 class="font-black text-emerald-950 text-xl sm:text-2xl leading-tight">
-                Tus Beneficios y Regalos:
-              </h3>
-            </div>
-
-            <div class="space-y-3 text-emerald-950">
-              <div class="flex items-start gap-2.5">
-                <span class="text-xl font-black text-emerald-600 shrink-0">✓</span>
-                <div>
-                  <p class="text-base sm:text-lg font-black text-emerald-950">Evaluación visual gratis:</p>
-                  <p class="text-sm sm:text-base font-medium text-emerald-900 leading-snug">Con optómetra certificado y equipo computarizado en Guayaquil.</p>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-2.5">
-                <span class="text-xl font-black text-emerald-600 shrink-0">✓</span>
-                <div>
-                  <p class="text-base sm:text-lg font-black text-emerald-950">Beneficio extra:</p>
-                  <p class="text-sm sm:text-base font-medium text-emerald-900 leading-snug">Descuento especial en tus lentes si decides continuar.</p>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-2.5 bg-white/70 p-3.5 rounded-xl border border-emerald-300">
-                <span class="text-2xl shrink-0">🕶️</span>
-                <div>
-                  <p class="text-base sm:text-lg font-black text-emerald-950">Regalo por tu cita:</p>
-                  <p class="text-sm sm:text-base font-bold text-emerald-800 leading-snug">
-                    Te obsequiamos un <span class="underline">estuche protector duro</span> y <span class="underline">gafas de sol</span> con filtro UV.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 7) Por qué es importante el examen visual -->
-          <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-left space-y-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-xl">🩺</span>
-              <h4 class="font-black text-slate-900 text-base sm:text-lg">
-                ¿Por qué es importante este examen?
-              </h4>
-            </div>
-            <p class="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">
-              Con la edad, forzar la vista provoca dolores de cabeza, mareos y mayor cansancio al leer. Una revisión oportuna frena el desgaste de tus ojos y te asegura la graduación exacta.
-            </p>
-          </div>
-
-          <!-- 5) Selector táctil de horarios con horas GRANDES y legibles -->
-          <div class="text-left space-y-2.5">
+          <!-- Selector táctil de horarios con horas GRANDES y legibles -->
+          <div class="text-left space-y-2.5 pt-1">
             <p class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wide">
               Elige tu horario de preferencia:
             </p>
@@ -360,7 +309,7 @@ async function handleWhatsAppBooking() {
     }).eq('id', leadId.value).then(() => {})
   }
 
-  const msg = `Hola, completé mi test de vista cansada en la web. Mi resultado muestra que necesito revisión y quiero apartar mi evaluación visual gratis en Guayaquil con mis regalos (estuche y gafas de sol) para el turno ${turnoTexto}.`
+  const msg = `Hola, completé mi test de vista cansada en la web. Mi resultado muestra que necesito revisión y quiero apartar mi evaluación visual gratis en Guayaquil ${turnoTexto}.`
   window.open(`https://wa.me/593980753069?text=${encodeURIComponent(msg)}`, '_blank')
 }
 </script>
