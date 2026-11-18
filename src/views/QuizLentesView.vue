@@ -3,24 +3,19 @@
     <main class="w-full max-w-lg">
       <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-6 sm:p-8 border border-slate-150 overflow-hidden">
         
-        <!-- Header con identidad médica y ciudad -->
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-base font-bold shadow-md shadow-emerald-600/20">
-              👓
-            </div>
-            <div>
-              <span class="font-extrabold text-slate-900 text-sm tracking-tight block">Óptica Johanna</span>
-              <span class="text-[11px] text-slate-500 block">Matriz Guayaquil · 16 años de experiencia</span>
-            </div>
+        <!-- Header con indicador de paso (sin bloque de 16 años) -->
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">👓</span>
+            <span class="text-sm font-black text-slate-900 tracking-wide uppercase">Test Visual de Vista Cansada</span>
           </div>
-          <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            {{ step <= 3 ? `Pregunta ${step} de 3` : 'Resultado' }}
+          <span class="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            {{ step <= 3 ? `Paso ${step} de 3` : 'Resultado' }}
           </span>
         </div>
 
         <!-- Barra de Progreso Superior -->
-        <div v-if="step <= 3" class="w-full h-2 bg-slate-150 rounded-full mb-6 overflow-hidden">
+        <div v-if="step <= 3" class="w-full h-2.5 bg-slate-150 rounded-full mb-6 overflow-hidden">
           <div
             class="h-full bg-emerald-500 rounded-full transition-all duration-300"
             :style="{ width: `${(step / 3) * 100}%` }"
@@ -114,60 +109,102 @@
             Hemos analizado tus respuestas.
           </h2>
 
-          <!-- Resultado parcial que despierta interés -->
-          <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-left shadow-sm">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-xl">⚠️</span>
-              <span class="font-bold text-amber-950 text-sm uppercase tracking-wide">Diagnóstico preliminar:</span>
+          <!-- 1) Diagnóstico Preliminar Resumido con Letra Grande -->
+          <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 text-left shadow-sm">
+            <div class="flex items-center gap-2.5 mb-2">
+              <span class="text-2xl">⚠️</span>
+              <span class="font-black text-amber-950 text-base sm:text-lg uppercase tracking-wide">Diagnóstico Preliminar:</span>
             </div>
-            <p class="text-slate-800 text-base leading-relaxed">
-              Tus respuestas muestran señales de vista cansada. Te recomendamos lentes con filtro antifatiga y antirreflejo. Un examen visual gratis puede confirmarlo.
+            <p class="text-slate-900 text-lg sm:text-xl font-bold leading-snug">
+              Tus respuestas indican vista cansada. Te recomendamos lentes con filtro antifatiga y antirreflejo. Un examen visual computarizado gratuito lo confirma.
             </p>
           </div>
 
-          <!-- Oferta Principal + Beneficio Extra -->
-          <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 text-left space-y-2">
-            <div class="flex items-start gap-2.5">
-              <span class="text-2xl flex-shrink-0">🎁</span>
-              <div>
-                <p class="font-black text-emerald-950 text-base">Tu beneficio en Guayaquil:</p>
-                <p class="text-emerald-950 text-sm mt-0.5">
-                  ✓ <strong>Evaluación visual gratis:</strong> Con optómetra certificado y equipo computarizado.
-                </p>
-                <p class="text-emerald-950 text-sm mt-0.5">
-                  ✓ <strong>Beneficio extra:</strong> Descuento especial en tus lentes si decides continuar.
-                </p>
+          <!-- 6) Beneficios en Guayaquil & 7) Regalo (Estuche + Gafas de Sol) -->
+          <div class="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
+            <div class="flex items-center gap-2.5 border-b border-emerald-200/80 pb-2.5">
+              <span class="text-3xl">🎁</span>
+              <h3 class="font-black text-emerald-950 text-xl sm:text-2xl leading-tight">
+                Tus Beneficios y Regalos:
+              </h3>
+            </div>
+
+            <div class="space-y-3 text-emerald-950">
+              <div class="flex items-start gap-2.5">
+                <span class="text-xl font-black text-emerald-600 shrink-0">✓</span>
+                <div>
+                  <p class="text-base sm:text-lg font-black text-emerald-950">Evaluación visual gratis:</p>
+                  <p class="text-sm sm:text-base font-medium text-emerald-900 leading-snug">Con optómetra certificado y equipo computarizado en Guayaquil.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-2.5">
+                <span class="text-xl font-black text-emerald-600 shrink-0">✓</span>
+                <div>
+                  <p class="text-base sm:text-lg font-black text-emerald-950">Beneficio extra:</p>
+                  <p class="text-sm sm:text-base font-medium text-emerald-900 leading-snug">Descuento especial en tus lentes si decides continuar.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-2.5 bg-white/70 p-3.5 rounded-xl border border-emerald-300">
+                <span class="text-2xl shrink-0">🕶️</span>
+                <div>
+                  <p class="text-base sm:text-lg font-black text-emerald-950">Regalo por tu cita:</p>
+                  <p class="text-sm sm:text-base font-bold text-emerald-800 leading-snug">
+                    Te obsequiamos un <span class="underline">estuche protector duro</span> y <span class="underline">gafas de sol</span> con filtro UV.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Selector táctil de 2 horarios de 1 toque -->
-          <div class="text-left space-y-2">
-            <p class="text-sm font-bold text-slate-700 uppercase tracking-wider">Elige tu horario de preferencia:</p>
-            <div class="grid grid-cols-2 gap-3">
+          <!-- 7) Por qué es importante el examen visual -->
+          <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-left space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🩺</span>
+              <h4 class="font-black text-slate-900 text-base sm:text-lg">
+                ¿Por qué es importante este examen?
+              </h4>
+            </div>
+            <p class="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">
+              Con la edad, forzar la vista provoca dolores de cabeza, mareos y mayor cansancio al leer. Una revisión oportuna frena el desgaste de tus ojos y te asegura la graduación exacta.
+            </p>
+          </div>
+
+          <!-- 5) Selector táctil de horarios con horas GRANDES y legibles -->
+          <div class="text-left space-y-2.5">
+            <p class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wide">
+              Elige tu horario de preferencia:
+            </p>
+            <div class="grid grid-cols-2 gap-3.5">
               <button
                 type="button"
                 @click="selectedTurno = 'manana'"
                 :class="selectedTurno === 'manana'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-400 font-bold shadow-md'
-                  : 'bg-white border-slate-200 text-slate-600'"
-                class="p-3.5 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1 min-h-[76px]"
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-4 ring-emerald-400 font-bold shadow-lg scale-[1.02]'
+                  : 'bg-white border-slate-300 text-slate-700 hover:border-emerald-300'"
+                class="p-4 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 min-h-[95px]"
               >
-                <span class="text-2xl leading-none">🌅</span>
-                <span class="text-sm font-bold">Mañana</span>
-                <span class="text-xs text-slate-500">10:30 a 12:30</span>
+                <span class="text-3xl leading-none">🌅</span>
+                <span class="text-base sm:text-lg font-black text-slate-900">Turno Mañana</span>
+                <span class="text-base sm:text-lg font-black text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                  10:30 a 12:30
+                </span>
               </button>
+
               <button
                 type="button"
                 @click="selectedTurno = 'tarde'"
                 :class="selectedTurno === 'tarde'
-                  ? 'bg-violet-50 border-violet-500 text-violet-950 ring-2 ring-violet-400 font-bold shadow-md'
-                  : 'bg-white border-slate-200 text-slate-600'"
-                class="p-3.5 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1 min-h-[76px]"
+                  ? 'bg-violet-50 border-violet-500 text-violet-950 ring-4 ring-violet-400 font-bold shadow-lg scale-[1.02]'
+                  : 'bg-white border-slate-300 text-slate-700 hover:border-violet-300'"
+                class="p-4 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 min-h-[95px]"
               >
-                <span class="text-2xl leading-none">🌙</span>
-                <span class="text-sm font-bold">Tarde</span>
-                <span class="text-xs text-slate-500">15:30 a 18:00</span>
+                <span class="text-3xl leading-none">🌙</span>
+                <span class="text-base sm:text-lg font-black text-slate-900">Turno Tarde</span>
+                <span class="text-base sm:text-lg font-black text-violet-700 bg-violet-100/80 px-2.5 py-0.5 rounded-lg border border-violet-300">
+                  15:30 a 18:00
+                </span>
               </button>
             </div>
           </div>
@@ -175,16 +212,18 @@
           <!-- Botón final masivo para WhatsApp -->
           <button
             @click="handleWhatsAppBooking"
-            class="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1ebd5a] active:scale-[0.98] text-white min-h-[56px] rounded-2xl text-lg font-black shadow-xl shadow-[#25D366]/40 transition-all cursor-pointer border-none"
+            class="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1ebd5a] active:scale-[0.98] text-white min-h-[60px] rounded-2xl text-lg sm:text-xl font-black shadow-xl shadow-[#25D366]/40 transition-all cursor-pointer border-none"
           >
-            <span class="text-2xl">💬</span> Agendar mi evaluación gratis por WhatsApp
+            <span class="text-3xl">💬</span> Agendar mi evaluación gratis por WhatsApp
           </button>
 
-          <!-- Textos de confianza requeridos -->
-          <p class="text-sm font-bold text-slate-700">
+          <!-- 3) Sin compromiso. Te respondemos en minutos. (MÁS GRANDE) -->
+          <p class="text-base sm:text-lg font-black text-slate-900 leading-snug">
             Sin compromiso. Te respondemos en minutos.
           </p>
-          <p class="text-xs text-slate-500">
+
+          <!-- 4) No te llamaremos por teléfono (MÁS GRANDE) -->
+          <p class="text-sm sm:text-base font-bold text-slate-700 leading-snug">
             🔒 No te llamaremos por teléfono; coordinas tu cupo 100% por chat.
           </p>
         </div>
@@ -200,8 +239,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { supabase, hasSupabaseConfig } from '@/supabase'
-import { usePulsoTracker } from '@/composables/usePulsoTracker'
+import { supabase, hasSupabaseConfig } from '../supabase'
+import { usePulsoTracker } from '../composables/usePulsoTracker'
 
 const tracker = usePulsoTracker({
   clientSlug: 'opticajohanna',
@@ -321,7 +360,7 @@ async function handleWhatsAppBooking() {
     }).eq('id', leadId.value).then(() => {})
   }
 
-  const msg = `Hola, completé el test de vista cansada en la web de Óptica Johanna. Mis respuestas muestran vista cansada y deseo apartar mi evaluación visual gratis en Guayaquil ${turnoTexto}.`
+  const msg = `Hola, completé mi test de vista cansada en la web. Mi resultado muestra que necesito revisión y quiero apartar mi evaluación visual gratis en Guayaquil con mis regalos (estuche y gafas de sol) para el turno ${turnoTexto}.`
   window.open(`https://wa.me/593980753069?text=${encodeURIComponent(msg)}`, '_blank')
 }
 </script>
