@@ -573,6 +573,33 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
       const devXOffset = ((Number(lead.id) * 17) % 15) - 7
       const devYOffset = ((Number(lead.id) * 13) % 9) - 4
 
+      // Si el lead contiene eventos REALES capturados por tracker.js / usePulsoTracker:
+      if (Array.isArray(resp.events) && resp.events.length > 0) {
+        resp.events.forEach((evRaw: any, idx: number) => {
+          const evId = Number(lead.id) * 1000 + idx + 1
+          if (!eventMap.has(evId)) {
+            eventMap.set(evId, {
+              id: evId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: evRaw.ts || new Date(tBase + idx * 1000).toISOString(),
+              type: evRaw.type || 'click',
+              page: evRaw.page || qPagePath,
+              label: evRaw.label || 'Interacción de usuario',
+              metadata: {
+                x: typeof evRaw.x === 'number' ? evRaw.x : 50,
+                y: typeof evRaw.y === 'number' ? evRaw.y : 50,
+                step: evRaw.step,
+                answer: evRaw.answer,
+                ...(evRaw.metadata || {})
+              }
+            })
+          }
+        })
+        return // Prioridad absoluta a telemetría real: omitir eventos sintéticos
+      }
+
       // 1. Visita a la landing del quiz
       const evVisitaId = Number(lead.id) * 100 + 1
       if (!eventMap.has(evVisitaId)) {
@@ -607,194 +634,230 @@ export async function loadLiveDataset(): Promise<AnalyticsDataset> {
 
       // 3. Flujo interactivo según Quiz
       if (isQuiz5Lead) {
-        // QUIZ 5: Página de venta directa con oferta y cuenta regresiva
-        const evScrollTimerId = Number(lead.id) * 100 + 4
-        if (!eventMap.has(evScrollTimerId)) {
-          eventMap.set(evScrollTimerId, {
-            id: evScrollTimerId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 3000).toISOString(),
-            type: 'scroll',
-            page: qPagePath,
-            label: 'Lectura de urgencia: Contador 3 días y solo 4 cupos hoy',
-            metadata: { scroll: 20, x: 50 + devXOffset, y: 15 + devYOffset },
-          })
-        }
-
-        const evBenefitId = Number(lead.id) * 100 + 12
-        if (!eventMap.has(evBenefitId)) {
-          eventMap.set(evBenefitId, {
-            id: evBenefitId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 7500).toISOString(),
-            type: 'click',
-            page: qPagePath,
-            label: 'Interés en reciprocidad: Examen $35 -> $0 Gratis + Mantenimiento',
-            metadata: { x: 50 + devXOffset, y: 38 + devYOffset },
-          })
-        }
-
-        const evTestimId = Number(lead.id) * 100 + 20
-        if (!eventMap.has(evTestimId)) {
-          eventMap.set(evTestimId, {
-            id: evTestimId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 13000).toISOString(),
-            type: 'scroll',
-            page: qPagePath,
-            label: 'Lectura de autoridad de 16 años y testimonios de pacientes',
-            metadata: { scroll: 75, x: 50 + devXOffset, y: 70 + devYOffset },
-          })
-        }
-
-        if (isBooked) {
-          const evAgendarId = Number(lead.id) * 100 + 71
-          if (!eventMap.has(evAgendarId)) {
-            eventMap.set(evAgendarId, {
-              id: evAgendarId,
-              business_id: businessId,
-              session_id: sid,
-              visitor_id: vid,
-              ts: new Date(tBase + 22000).toISOString(),
-              type: 'click',
-              page: qPagePath,
-              label: 'Botón: Agendar mi cita gratis por WhatsApp',
-              metadata: { x: 50 + devXOffset, y: 88 + devYOffset, turno: resp.turno || 'manana' },
-            })
-          }
-        } else {
-          const evExitSaleId = Number(lead.id) * 100 + 72
+        if (lead.estado === 'Visita') {
+          // Usuario rebotó sin interactuar
+          const evExitSaleId = Number(lead.id) * 100 + 5
           if (!eventMap.has(evExitSaleId)) {
             eventMap.set(evExitSaleId, {
               id: evExitSaleId,
               business_id: businessId,
               session_id: sid,
               visitor_id: vid,
-              ts: new Date(tBase + 26000).toISOString(),
+              ts: new Date(tBase + 4000).toISOString(),
               type: 'exit',
               page: qPagePath,
-              label: 'Abandono en página de venta sin abrir WhatsApp',
-              metadata: { x: 50 + devXOffset, y: 80 + devYOffset },
+              label: 'Abandono rápido en oferta de armazones',
+              metadata: { x: 50 + devXOffset, y: 50 + devYOffset },
             })
           }
-        }
-      } else if (isQuiz4Lead) {
-        // QUIZ 4: Lentes y Vista Cansada (3 preguntas concisas + resultado parcial)
-        const molestiaAns = resp.molestia || 'Leer el celular o letras pequeñas'
-        const evMolestiaId = Number(lead.id) * 100 + 10
-        if (!eventMap.has(evMolestiaId)) {
-          eventMap.set(evMolestiaId, {
-            id: evMolestiaId,
-            business_id: businessId,
-            session_id: sid,
-            visitor_id: vid,
-            ts: new Date(tBase + 4500).toISOString(),
-            type: 'click',
-            page: qPagePath,
-            label: `Paso 1: Molestia al mirar (${molestiaAns})`,
-            metadata: { x: 50 + devXOffset, y: 35 + devYOffset, step: 1, answer: molestiaAns },
-          })
-        }
-
-        if (lead.estado !== 'Paso 1') {
-          const tiempoAns = resp.tiempo || 'Más de 1 año'
-          const evTiempoId = Number(lead.id) * 100 + 20
-          if (!eventMap.has(evTiempoId)) {
-            eventMap.set(evTiempoId, {
-              id: evTiempoId,
+        } else {
+          // QUIZ 5: Página de venta directa con oferta y cuenta regresiva
+          const evScrollTimerId = Number(lead.id) * 100 + 4
+          if (!eventMap.has(evScrollTimerId)) {
+            eventMap.set(evScrollTimerId, {
+              id: evScrollTimerId,
               business_id: businessId,
               session_id: sid,
               visitor_id: vid,
-              ts: new Date(tBase + 9500).toISOString(),
-              type: 'click',
+              ts: new Date(tBase + 3000).toISOString(),
+              type: 'scroll',
               page: qPagePath,
-              label: `Paso 2: Último examen (${tiempoAns})`,
-              metadata: { x: 50 + devXOffset, y: 48 + devYOffset, step: 2, answer: tiempoAns },
+              label: 'Lectura de urgencia: Contador 3 días y solo 4 cupos hoy',
+              metadata: { scroll: 20, x: 50 + devXOffset, y: 15 + devYOffset },
             })
           }
 
-          const necesidadAns = resp.necesidad || 'Leer y ver el celular'
-          const evNecesidadId = Number(lead.id) * 100 + 30
-          if (!eventMap.has(evNecesidadId)) {
-            eventMap.set(evNecesidadId, {
-              id: evNecesidadId,
+          const evBenefitId = Number(lead.id) * 100 + 12
+          if (!eventMap.has(evBenefitId)) {
+            eventMap.set(evBenefitId, {
+              id: evBenefitId,
               business_id: businessId,
               session_id: sid,
               visitor_id: vid,
-              ts: new Date(tBase + 14500).toISOString(),
+              ts: new Date(tBase + 7500).toISOString(),
               type: 'click',
               page: qPagePath,
-              label: `Paso 3: Necesidad prioritaria (${necesidadAns})`,
-              metadata: { x: 50 + devXOffset, y: 55 + devYOffset, step: 3, answer: necesidadAns },
+              label: 'Interés en reciprocidad: Examen $35 -> $0 Gratis + Mantenimiento',
+              metadata: { x: 50 + devXOffset, y: 38 + devYOffset },
             })
           }
 
-          if (lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || lead.resultado) {
-            const evCompleteId = Number(lead.id) * 100 + 70
-            if (!eventMap.has(evCompleteId)) {
-              eventMap.set(evCompleteId, {
-                id: evCompleteId,
-                business_id: businessId,
-                session_id: sid,
-                visitor_id: vid,
-                ts: new Date(tBase + 19000).toISOString(),
-                type: 'quiz_complete',
-                page: '/resultado',
-                label: 'Diagnóstico: Señales de vista cansada detectadas',
-                metadata: { step: 4 },
-              })
-            }
+          const evTestimId = Number(lead.id) * 100 + 20
+          if (!eventMap.has(evTestimId)) {
+            eventMap.set(evTestimId, {
+              id: evTestimId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 13000).toISOString(),
+              type: 'scroll',
+              page: qPagePath,
+              label: 'Lectura de autoridad de 16 años y testimonios de pacientes',
+              metadata: { scroll: 75, x: 50 + devXOffset, y: 70 + devYOffset },
+            })
+          }
 
-            const evCardTapId = Number(lead.id) * 100 + 69
-            if (!eventMap.has(evCardTapId)) {
-              eventMap.set(evCardTapId, {
-                id: evCardTapId,
+          if (isBooked) {
+            const evAgendarId = Number(lead.id) * 100 + 71
+            if (!eventMap.has(evAgendarId)) {
+              eventMap.set(evAgendarId, {
+                id: evAgendarId,
                 business_id: businessId,
                 session_id: sid,
                 visitor_id: vid,
                 ts: new Date(tBase + 22000).toISOString(),
                 type: 'click',
-                page: '/resultado',
-                label: 'Lectura de recomendación: Filtro antifatiga + antirreflejo',
-                metadata: { x: 50 + devXOffset, y: 42 + devYOffset },
+                page: qPagePath,
+                label: 'Botón: Agendar mi cita gratis por WhatsApp',
+                metadata: { x: 50 + devXOffset, y: 88 + devYOffset, turno: resp.turno || 'manana' },
+              })
+            }
+          } else {
+            const evExitSaleId = Number(lead.id) * 100 + 72
+            if (!eventMap.has(evExitSaleId)) {
+              eventMap.set(evExitSaleId, {
+                id: evExitSaleId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 26000).toISOString(),
+                type: 'exit',
+                page: qPagePath,
+                label: 'Abandono en página de venta sin abrir WhatsApp',
+                metadata: { x: 50 + devXOffset, y: 80 + devYOffset },
+              })
+            }
+          }
+        }
+      } else if (isQuiz4Lead) {
+        if (lead.estado === 'Visita') {
+          // Usuario rebotó sin interactuar con opciones
+          const evAbandonId = Number(lead.id) * 100 + 5
+          if (!eventMap.has(evAbandonId)) {
+            eventMap.set(evAbandonId, {
+              id: evAbandonId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 4000).toISOString(),
+              type: 'exit',
+              page: qPagePath,
+              label: 'Abandono sin responder preguntas de lentes',
+              metadata: { step: 1, x: 50, y: 40 },
+            })
+          }
+        } else {
+          // QUIZ 4: Lentes y Vista Cansada (3 preguntas concisas + resultado parcial)
+          const molestiaAns = resp.molestia || 'Leer el celular o letras pequeñas'
+          const evMolestiaId = Number(lead.id) * 100 + 10
+          if (!eventMap.has(evMolestiaId)) {
+            eventMap.set(evMolestiaId, {
+              id: evMolestiaId,
+              business_id: businessId,
+              session_id: sid,
+              visitor_id: vid,
+              ts: new Date(tBase + 4500).toISOString(),
+              type: 'click',
+              page: qPagePath,
+              label: `Paso 1: Molestia al mirar (${molestiaAns})`,
+              metadata: { x: 50 + devXOffset, y: 35 + devYOffset, step: 1, answer: molestiaAns },
+            })
+          }
+
+          if (lead.estado !== 'Paso 1') {
+            const tiempoAns = resp.tiempo || 'Más de 1 año'
+            const evTiempoId = Number(lead.id) * 100 + 20
+            if (!eventMap.has(evTiempoId)) {
+              eventMap.set(evTiempoId, {
+                id: evTiempoId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 9500).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Paso 2: Último examen (${tiempoAns})`,
+                metadata: { x: 50 + devXOffset, y: 48 + devYOffset, step: 2, answer: tiempoAns },
               })
             }
 
-            if (isBooked) {
-              const evAgendarId = Number(lead.id) * 100 + 71
-              if (!eventMap.has(evAgendarId)) {
-                eventMap.set(evAgendarId, {
-                  id: evAgendarId,
+            const necesidadAns = resp.necesidad || 'Leer y ver el celular'
+            const evNecesidadId = Number(lead.id) * 100 + 30
+            if (!eventMap.has(evNecesidadId)) {
+              eventMap.set(evNecesidadId, {
+                id: evNecesidadId,
+                business_id: businessId,
+                session_id: sid,
+                visitor_id: vid,
+                ts: new Date(tBase + 14500).toISOString(),
+                type: 'click',
+                page: qPagePath,
+                label: `Paso 3: Necesidad prioritaria (${necesidadAns})`,
+                metadata: { x: 50 + devXOffset, y: 55 + devYOffset, step: 3, answer: necesidadAns },
+              })
+            }
+
+            if (lead.estado === 'Viendo Resultados' || lead.estado === 'Completado' || isBooked || lead.resultado) {
+              const evCompleteId = Number(lead.id) * 100 + 70
+              if (!eventMap.has(evCompleteId)) {
+                eventMap.set(evCompleteId, {
+                  id: evCompleteId,
                   business_id: businessId,
                   session_id: sid,
                   visitor_id: vid,
-                  ts: new Date(tBase + 27000).toISOString(),
-                  type: 'click',
+                  ts: new Date(tBase + 19000).toISOString(),
+                  type: 'quiz_complete',
                   page: '/resultado',
-                  label: 'Botón: Agendar mi evaluación gratis por WhatsApp',
-                  metadata: { x: 50 + devXOffset, y: 78 + devYOffset, turno: resp.turno || 'manana' },
+                  label: 'Diagnóstico: Señales de vista cansada detectadas',
+                  metadata: { step: 4 },
                 })
               }
-            } else {
-              const evExitResultId = Number(lead.id) * 100 + 72
-              if (!eventMap.has(evExitResultId)) {
-                eventMap.set(evExitResultId, {
-                  id: evExitResultId,
+
+              const evCardTapId = Number(lead.id) * 100 + 69
+              if (!eventMap.has(evCardTapId)) {
+                eventMap.set(evCardTapId, {
+                  id: evCardTapId,
                   business_id: businessId,
                   session_id: sid,
                   visitor_id: vid,
-                  ts: new Date(tBase + 31000).toISOString(),
-                  type: 'exit',
+                  ts: new Date(tBase + 22000).toISOString(),
+                  type: 'click',
                   page: '/resultado',
-                  label: 'Abandono en resultado de lentes sin abrir WhatsApp',
-                  metadata: { x: 50 + devXOffset, y: 65 + devYOffset },
+                  label: 'Lectura de recomendación: Filtro antifatiga + antirreflejo',
+                  metadata: { x: 50 + devXOffset, y: 42 + devYOffset },
                 })
+              }
+
+              if (isBooked) {
+                const evAgendarId = Number(lead.id) * 100 + 71
+                if (!eventMap.has(evAgendarId)) {
+                  eventMap.set(evAgendarId, {
+                    id: evAgendarId,
+                    business_id: businessId,
+                    session_id: sid,
+                    visitor_id: vid,
+                    ts: new Date(tBase + 27000).toISOString(),
+                    type: 'click',
+                    page: '/resultado',
+                    label: 'Botón: Agendar mi evaluación gratis por WhatsApp',
+                    metadata: { x: 50 + devXOffset, y: 78 + devYOffset, turno: resp.turno || 'manana' },
+                  })
+                }
+              } else {
+                const evExitResultId = Number(lead.id) * 100 + 72
+                if (!eventMap.has(evExitResultId)) {
+                  eventMap.set(evExitResultId, {
+                    id: evExitResultId,
+                    business_id: businessId,
+                    session_id: sid,
+                    visitor_id: vid,
+                    ts: new Date(tBase + 31000).toISOString(),
+                    type: 'exit',
+                    page: '/resultado',
+                    label: 'Abandono en resultado de lentes sin abrir WhatsApp',
+                    metadata: { x: 50 + devXOffset, y: 65 + devYOffset },
+                  })
+                }
               }
             }
           }

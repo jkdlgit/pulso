@@ -891,6 +891,7 @@ const frames = computed<AnalyticsEvent[]>(() =>
 )
 
 const currentEvent = computed(() => frames.value[index.value])
+const pastAndCurrentEvents = computed(() => frames.value.slice(0, index.value + 1))
 const currentPage = computed(() => currentEvent.value?.page || session.value?.landing_page || '/')
 const scrollDepth = computed(() => {
   const e = currentEvent.value
@@ -967,33 +968,105 @@ const quiz4Percent = computed(() => {
   return s === 1 ? 33 : s === 2 ? 66 : 100
 })
 
+const selectedQuiz4Molestia = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    if (e.metadata?.answer) {
+      const a = String(e.metadata.answer).toLowerCase()
+      if (a.includes('celular') || a.includes('letras')) return 'celular'
+      if (a.includes('noche') || a.includes('luces')) return 'noche'
+      if (a.includes('television') || a.includes('lejos')) return 'television'
+    }
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('molestia') || e.metadata?.step === 1) {
+      if (lbl.includes('celular') || lbl.includes('letras')) return 'celular'
+      if (lbl.includes('noche') || lbl.includes('luces')) return 'noche'
+      if (lbl.includes('television') || lbl.includes('lejos')) return 'television'
+    }
+  }
+  if (quiz4CurrentStep.value > 1) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'molestia')?.answer || '').toLowerCase()
+    if (ans.includes('celular') || ans.includes('letras')) return 'celular'
+    if (ans.includes('noche') || ans.includes('luces')) return 'noche'
+    if (ans.includes('television') || ans.includes('lejos')) return 'television'
+  }
+  return null
+})
+
 const quiz4MolestiaOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'molestia')?.answer || '').toLowerCase()
-  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  const sel = selectedQuiz4Molestia.value
   return [
-    { id: 'celular', label: 'Leer el celular o letras pequeñas', icon: '📱', isSelected: clicked.includes('celular') || ans.includes('celular') },
-    { id: 'noche', label: 'Manejar de noche o luces de frente', icon: '🚗', isSelected: clicked.includes('noche') || ans.includes('noche') },
-    { id: 'television', label: 'Ver la televisión o enfocar de lejos', icon: '📺', isSelected: clicked.includes('television') || ans.includes('television') },
+    { id: 'celular', label: 'Leer el celular o letras pequeñas', icon: '📱', isSelected: sel === 'celular' },
+    { id: 'noche', label: 'Manejar de noche o luces de frente', icon: '🚗', isSelected: sel === 'noche' },
+    { id: 'television', label: 'Ver la televisión o enfocar de lejos', icon: '📺', isSelected: sel === 'television' },
   ]
+})
+
+const selectedQuiz4Tiempo = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    if (e.metadata?.answer) {
+      const a = String(e.metadata.answer).toLowerCase()
+      if (a.includes('menos')) return 'menos_1'
+      if (a.includes('más') || a.includes('mas')) return 'mas_1'
+      if (a.includes('recuerdo') || a.includes('nunca')) return 'no_recuerdo'
+    }
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('último examen') || lbl.includes('tiempo') || e.metadata?.step === 2) {
+      if (lbl.includes('menos')) return 'menos_1'
+      if (lbl.includes('más') || lbl.includes('mas')) return 'mas_1'
+      if (lbl.includes('recuerdo') || lbl.includes('nunca')) return 'no_recuerdo'
+    }
+  }
+  if (quiz4CurrentStep.value > 2) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'tiempo')?.answer || '').toLowerCase()
+    if (ans.includes('menos')) return 'menos_1'
+    if (ans.includes('más') || ans.includes('mas')) return 'mas_1'
+    if (ans.includes('recuerdo') || ans.includes('nunca')) return 'no_recuerdo'
+  }
+  return null
 })
 
 const quiz4TiempoOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'tiempo')?.answer || '').toLowerCase()
-  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  const sel = selectedQuiz4Tiempo.value
   return [
-    { id: 'menos_1', label: 'Menos de 1 año', icon: '🗓️', isSelected: clicked.includes('menos') || ans.includes('menos') },
-    { id: 'mas_1', label: 'Más de 1 año', icon: '⏳', isSelected: clicked.includes('más') || clicked.includes('mas') || ans.includes('mas') },
-    { id: 'no_recuerdo', label: 'No recuerdo o nunca me he examinado', icon: '❓', isSelected: clicked.includes('recuerdo') || ans.includes('recuerdo') },
+    { id: 'menos_1', label: 'Menos de 1 año', icon: '🗓️', isSelected: sel === 'menos_1' },
+    { id: 'mas_1', label: 'Más de 1 año', icon: '⏳', isSelected: sel === 'mas_1' },
+    { id: 'no_recuerdo', label: 'No recuerdo o nunca me he examinado', icon: '❓', isSelected: sel === 'no_recuerdo' },
   ]
 })
 
+const selectedQuiz4Necesidad = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    if (e.metadata?.answer) {
+      const a = String(e.metadata.answer).toLowerCase()
+      if (a.includes('leer') || a.includes('celular')) return 'leer'
+      if (a.includes('trabajar') || a.includes('actividades')) return 'trabajar'
+      if (a.includes('manejar') || a.includes('calle')) return 'manejar'
+    }
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('necesidad') || e.metadata?.step === 3) {
+      if (lbl.includes('leer') || lbl.includes('celular')) return 'leer'
+      if (lbl.includes('trabajar') || lbl.includes('actividades')) return 'trabajar'
+      if (lbl.includes('manejar') || lbl.includes('calle')) return 'manejar'
+    }
+  }
+  if (isResultStage.value || session.value?.quiz_completed) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'necesidad')?.answer || '').toLowerCase()
+    if (ans.includes('leer') || ans.includes('celular')) return 'leer'
+    if (ans.includes('trabajar') || ans.includes('actividades')) return 'trabajar'
+    if (ans.includes('manejar') || ans.includes('calle')) return 'manejar'
+  }
+  return null
+})
+
 const quiz4NecesidadOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'necesidad')?.answer || '').toLowerCase()
-  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  const sel = selectedQuiz4Necesidad.value
   return [
-    { id: 'leer', label: 'Leer y ver el celular sin cansancio', icon: '📖', isSelected: clicked.includes('leer') || ans.includes('leer') },
-    { id: 'trabajar', label: 'Trabajar y actividades del día', icon: '💼', isSelected: clicked.includes('trabajar') || ans.includes('trabajar') },
-    { id: 'manejar', label: 'Manejar y salir a la calle con seguridad', icon: '🚘', isSelected: clicked.includes('manejar') || ans.includes('manejar') },
+    { id: 'leer', label: 'Leer y ver el celular sin cansancio', icon: '📖', isSelected: sel === 'leer' },
+    { id: 'trabajar', label: 'Trabajar y actividades del día', icon: '💼', isSelected: sel === 'trabajar' },
+    { id: 'manejar', label: 'Manejar y salir a la calle con seguridad', icon: '🚙', isSelected: sel === 'manejar' },
   ]
 })
 
@@ -1045,7 +1118,17 @@ const quiz2ScoreValue = computed(() => {
   return '20/15'
 })
 
-const bookedTurno = computed(() => (session.value as any)?.metadata?.turno || 'manana')
+const bookedTurno = computed(() => {
+  // Try to find turno from real events metadata
+  const ev = frames.value.find(e => e.metadata?.turno)
+  if (ev?.metadata?.turno) return ev.metadata.turno
+  // Try to find from quiz_steps answer
+  const step = session.value?.quiz_steps?.find((s: any) =>
+    s.answer?.toLowerCase().includes('tarde') || s.answer?.toLowerCase().includes('mañana') || s.answer?.toLowerCase().includes('manana')
+  )
+  if (step?.answer?.toLowerCase().includes('tarde')) return 'tarde'
+  return 'manana'
+})
 
 const isQuiz2LeftButtonClicked = computed(() => {
   const ev = currentEvent.value
@@ -1083,34 +1166,106 @@ const quiz1Percent = computed(() => {
   return step === 1 ? 33 : step === 2 ? 66 : 100
 })
 
+const selectedQuiz1Symptom = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    if (e.metadata?.answer) {
+      const a = String(e.metadata.answer).toLowerCase()
+      if (a.includes('fatiga')) return 'fatiga'
+      if (a.includes('dolor') || a.includes('cabeza')) return 'dolor_cabeza'
+      if (a.includes('ardor')) return 'ardor'
+      if (a.includes('seco')) return 'secos'
+      if (a.includes('lagrimeo')) return 'lagrimeo'
+      if (a.includes('sensib')) return 'sensibilidad'
+      if (a.includes('ningun')) return 'ninguna'
+    }
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('síntoma') || lbl.includes('sintoma') || lbl.includes('toque en opción') || e.metadata?.step === 1) {
+      if (lbl.includes('fatiga')) return 'fatiga'
+      if (lbl.includes('dolor') || lbl.includes('cabeza')) return 'dolor_cabeza'
+      if (lbl.includes('ardor')) return 'ardor'
+      if (lbl.includes('seco')) return 'secos'
+      if (lbl.includes('lagrimeo')) return 'lagrimeo'
+      if (lbl.includes('sensib')) return 'sensibilidad'
+      if (lbl.includes('ningun')) return 'ninguna'
+    }
+  }
+  if (quiz1CurrentStep.value > 1) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'sintomas')?.answer || '').toLowerCase()
+    if (ans.includes('fatiga')) return 'fatiga'
+    if (ans.includes('dolor') || ans.includes('cabeza')) return 'dolor_cabeza'
+    if (ans.includes('ardor')) return 'ardor'
+    if (ans.includes('seco')) return 'secos'
+    if (ans.includes('lagrimeo')) return 'lagrimeo'
+    if (ans.includes('sensib')) return 'sensibilidad'
+    if (ans.includes('ningun')) return 'ninguna'
+  }
+  return null
+})
+
 const quiz1SymptomsOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id === 'sintomas')?.answer || '').toLowerCase()
-  const clicked = (currentEvent.value?.label || '').toLowerCase()
+  const sel = selectedQuiz1Symptom.value
   return [
-    { id: 'fatiga', label: 'Fatiga visual o cansancio en los ojos', emoji: '😩', isSelected: clicked.includes('fatiga') || ans.includes('fatiga') || (!ans && true) },
-    { id: 'dolor_cabeza', label: 'Dolores de cabeza frecuentes', emoji: '🤕', isSelected: clicked.includes('dolor') || clicked.includes('cabeza') || ans.includes('dolor') || ans.includes('cabeza') },
-    { id: 'ardor', label: 'Ardor o picazón en los ojos', emoji: '🔥', isSelected: clicked.includes('ardor') || ans.includes('ardor') },
-    { id: 'secos', label: 'Ojos secos', emoji: '💧', isSelected: clicked.includes('seco') || ans.includes('seco') },
-    { id: 'lagrimeo', label: 'Lagrimeo excesivo', emoji: '😢', isSelected: clicked.includes('lagrimeo') || ans.includes('lagrimeo') },
-    { id: 'sensibilidad', label: 'Sensibilidad a la luz', emoji: '☀️', isSelected: clicked.includes('sensib') || ans.includes('sensib') },
-    { id: 'ninguna', label: 'Ninguna de las anteriores', emoji: '✅', isSelected: clicked.includes('ningun') || ans.includes('ningun') },
+    { id: 'fatiga', label: 'Fatiga visual o cansancio en los ojos', emoji: '😩', isSelected: sel === 'fatiga' },
+    { id: 'dolor_cabeza', label: 'Dolores de cabeza frecuentes', emoji: '🤕', isSelected: sel === 'dolor_cabeza' },
+    { id: 'ardor', label: 'Ardor o picazón en los ojos', emoji: '🔥', isSelected: sel === 'ardor' },
+    { id: 'secos', label: 'Ojos secos', emoji: '💧', isSelected: sel === 'secos' },
+    { id: 'lagrimeo', label: 'Lagrimeo excesivo', emoji: '😢', isSelected: sel === 'lagrimeo' },
+    { id: 'sensibilidad', label: 'Sensibilidad a la luz', emoji: '☀️', isSelected: sel === 'sensibilidad' },
+    { id: 'ninguna', label: 'Ninguna de las anteriores', emoji: '✅', isSelected: sel === 'ninguna' },
   ]
+})
+
+const selectedQuiz1Vision = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('visión') || lbl.includes('vision') || lbl.includes('borroso') || e.metadata?.step === 2) {
+      if (lbl.includes('cerca') || lbl.includes('celular')) return 'cerca'
+      if (lbl.includes('ambas')) return 'ambas'
+      if (lbl.includes('lejos')) return 'lejos'
+    }
+  }
+  if (quiz1CurrentStep.value > 2) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id?.includes('vision'))?.answer || '').toLowerCase()
+    if (ans.includes('cerca')) return 'cerca'
+    if (ans.includes('ambas')) return 'ambas'
+    if (ans.includes('lejos')) return 'lejos'
+  }
+  return null
 })
 
 const quiz1VisionOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id?.includes('vision'))?.answer || '').toLowerCase()
+  const sel = selectedQuiz1Vision.value
   return [
-    { id: 'lejos', icon: '🚗', label: 'Veo borroso de lejos', desc: 'Dificultad con señales, TV o placas en la calle', isSelected: ans.includes('lejos') || true },
-    { id: 'cerca', icon: '📱', label: 'Veo borroso de cerca', desc: 'Dificultad con celular, lectura o computadora', isSelected: ans.includes('cerca') },
-    { id: 'ambas', icon: '👁️', label: 'Borroso en ambas distancias', desc: 'Molestia tanto de cerca como al mirar a lo lejos', isSelected: ans.includes('ambas') },
+    { id: 'lejos', icon: '🚗', label: 'Veo borroso de lejos', desc: 'Dificultad con señales, TV o placas en la calle', isSelected: sel === 'lejos' },
+    { id: 'cerca', icon: '📱', label: 'Veo borroso de cerca', desc: 'Dificultad con celular, lectura o computadora', isSelected: sel === 'cerca' },
+    { id: 'ambas', icon: '👁️', label: 'Borroso en ambas distancias', desc: 'Molestia tanto de cerca como al mirar a lo lejos', isSelected: sel === 'ambas' },
   ]
 })
 
+const selectedQuiz1Colors = computed(() => {
+  for (let i = pastAndCurrentEvents.value.length - 1; i >= 0; i--) {
+    const e = pastAndCurrentEvents.value[i]
+    const lbl = (e.label || '').toLowerCase()
+    if (lbl.includes('cromática') || lbl.includes('cromatica') || lbl.includes('color') || e.metadata?.step === 3) {
+      if (lbl.includes('sí') || lbl.includes('si') || lbl.includes('confusión') || lbl.includes('problemas')) return 'si'
+      if (lbl.includes('no') || lbl.includes('normal')) return 'no'
+    }
+  }
+  if (isResultStage.value || session.value?.quiz_completed) {
+    const ans = (session.value?.quiz_steps?.find(s => s.question_id?.includes('color'))?.answer || '').toLowerCase()
+    if (ans.includes('si') || ans.includes('sí')) return 'si'
+    if (ans.includes('no')) return 'no'
+  }
+  return null
+})
+
 const quiz1ColorsOptions = computed(() => {
-  const ans = (session.value?.quiz_steps?.find(s => s.question_id?.includes('color'))?.answer || '').toLowerCase()
+  const sel = selectedQuiz1Colors.value
   return [
-    { id: 'no', icon: '🟢', label: 'No, veo todos los colores bien', isSelected: !ans.includes('si') },
-    { id: 'si', icon: '🔴', label: 'Sí, tengo problemas con algunos colores', isSelected: ans.includes('si') },
+    { id: 'no', icon: '🟢', label: 'No, veo todos los colores bien', isSelected: sel === 'no' },
+    { id: 'si', icon: '🔴', label: 'Sí, tengo problemas con algunos colores', isSelected: sel === 'si' },
   ]
 })
 

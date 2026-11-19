@@ -123,6 +123,43 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
 
   const answersMap = reactive<Record<string, any>>({})
   const stepsLogs: QuizStepLog[] = []
+  const eventsBuffer: Array<{
+    ts: string
+    type: string
+    page: string
+    label: string
+    x: number
+    y: number
+    step?: number
+    answer?: string
+    metadata?: Record<string, any>
+  }> = []
+
+  function pushLocalEvent(ev: any) {
+    eventsBuffer.push(ev)
+    if (typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.setItem('_pulso_events_' + sessionId.value, JSON.stringify(eventsBuffer.slice(-50))) } catch {}
+    }
+  }
+
+  function handleDocClick(ev: MouseEvent) {
+    if (typeof window === 'undefined') return
+    const target = ev.target as HTMLElement | null
+    if (!target) return
+    const x = Math.round((ev.clientX / window.innerWidth) * 100)
+    const y = Math.round((ev.clientY / window.innerHeight) * 100)
+    let rawLabel = (target.innerText || target.getAttribute('aria-label') || target.tagName || '').trim()
+    if (rawLabel.length > 50) rawLabel = rawLabel.substring(0, 47) + '...'
+    if (!rawLabel) rawLabel = 'Interacción en pantalla'
+    pushLocalEvent({
+      ts: new Date().toISOString(),
+      type: 'click',
+      page: window.location.pathname || `/${quizKey.value}`,
+      label: rawLabel,
+      x,
+      y,
+    })
+  }
   let stepStartTime = Date.now()
 
   // Helper para emitir telemetría al canal local
@@ -136,6 +173,9 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
   }
 
   onMounted(async () => {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', handleDocClick, { passive: true })
+    }
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       utmParams.source = urlParams.get('utm_source') || 'directo'
@@ -315,12 +355,24 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
 
     if (leadId.value && hasConfig) {
       try {
+        pushLocalEvent({
+          ts: new Date().toISOString(),
+          type: 'quiz_step',
+          page: `/${quizKey.value}`,
+          label: `Paso ${stepNumber}: ${answerVal}`,
+          x: coords.x,
+          y: coords.y,
+          step: stepNumber,
+          answer: answerVal,
+        })
         await devDb.from('leads').update({
+          estado: `Paso ${stepNumber}`,
           respuestas: {
             ...answersMap,
             paso_maximo: stepNumber,
             session_id: sessionId.value,
             visitor_id: visitorId.value,
+            events: eventsBuffer.slice(-50),
           },
         }).eq('id', leadId.value)
       } catch (e) { /* noop */ }
@@ -351,10 +403,19 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
 
     if (leadId.value && hasConfig) {
       try {
+        pushLocalEvent({
+          ts: new Date().toISOString(),
+          type: 'quiz_complete',
+          page: '/resultado',
+          label: `Diagnóstico: ${payload.diagnosis || 'Fatiga Detectada'}`,
+          x: 50,
+          y: 45,
+          step: 4,
+        })
         await devDb.from('leads').update({
           estado: 'Completado',
           resultado: payload.diagnosis || 'Fatiga visual detectada',
-          respuestas: { ...answersMap, ...payload.answers, score: payload.score },
+          respuestas: { ...answersMap, ...payload.answers, score: payload.score, events: eventsBuffer.slice(-50) },
         }).eq('id', leadId.value)
       } catch (e) { /* noop */ }
     }
@@ -412,6 +473,7 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
         sucursal: booking.sucursal || 'Matriz Sangolquí',
         session_id: sessionId.value,
         visitor_id: visitorId.value,
+        events: eventsBuffer.slice(-50),
         ...booking.metadata,
       },
     }
